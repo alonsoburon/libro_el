@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECL Charts — Diagram Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0f0f1a; --surface: #181825; --card: #1e1e34;
+      --border: #2a2a45; --text: #cdd6f4; --dim: #8888a8; --muted: #5c5c78;
+      --accent: #4a6fa5;
+      --mono: 'DM Mono', 'Consolas', monospace;
+      --serif: 'Source Serif 4', Georgia, serif;
+    }
+    html { font-size: 16px; }
+    body { background: var(--bg); color: var(--text); font-family: var(--serif); min-height: 100vh; line-height: 1.6; }
+
+    .header { padding: 3rem 2rem 2rem; max-width: 960px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+    .header-label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    .header h1 { font-size: 1.8rem; font-weight: 600; letter-spacing: -0.02em; }
+    .header p { margin-top: 0.5rem; font-size: 0.95rem; color: var(--dim); font-weight: 300; }
+
+    .content { max-width: 960px; margin: 0 auto; padding: 0 2rem 4rem; }
+
+    .section { margin-top: 2.5rem; }
+    .section-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    .section-title { font-family: var(--mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    .section-count { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 1rem; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); }
+    .card-id { font-family: var(--mono); font-size: 0.7rem; font-weight: 500; color: var(--accent); }
+    .card-title { font-family: var(--serif); font-size: 0.9rem; color: var(--dim); margin-left: 0.7rem; font-style: italic; }
+    .btn { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); background: transparent; border: 1px solid var(--border); border-radius: 3px; padding: 0.3rem 0.6rem; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { color: var(--text); border-color: #3a3a5c; background: #252542; }
+    .btn--ok { color: var(--accent); border-color: #344d73; }
+    .card-body { padding: 1rem; display: flex; justify-content: center; background: var(--surface); }
+    .card-body svg { display: block; max-width: 100%; height: auto; }
+
+    .placeholder { padding: 1.5rem; border: 1px dashed var(--border); border-radius: 6px; text-align: center; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+
+    .footer { max-width: 960px; margin: 0 auto; padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+    .footer-text { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-label">ecl patterns book</div>
+  <h1>Diagram Gallery</h1>
+  <p>All generated charts. Review, then save SVGs for embedding.</p>
+</header>
+
+<main class="content">
+
+  <!-- ── SEGMENT DIAGRAMS ── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Segment Diagrams</span>
+      <span class="section-count">5 diagrams</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0404</span><span class="card-title">orders_log anatomy</span></div><div><button class="btn" onclick="save(this,'c-0404','0404-log-anatomy')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0404"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0205</span><span class="card-title">scoped full replace</span></div><div><button class="btn" onclick="save(this,'c-0205','0205-scoped-replace')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0205"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0206</span><span class="card-title">rolling window replace</span></div><div><button class="btn" onclick="save(this,'c-0206','0206-rolling-window')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0206"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0207</span><span class="card-title">sparse table density</span></div><div><button class="btn" onclick="save(this,'c-0207','0207-sparse-table')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0207"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0307</span><span class="card-title">open / closed documents</span></div><div><button class="btn" onclick="save(this,'c-0307','0307-open-closed')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0307"></div>
+    </div>
+  </div>
+
+  <!-- ── TIMELINE DIAGRAMS ── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Timeline Diagrams</span>
+      <span class="section-count">4 diagrams</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0302</span><span class="card-title">cursor-based extraction</span></div><div><button class="btn" onclick="save(this,'c-0302','0302-cursor-extraction')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0302"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0303</span><span class="card-title">stateless window extraction</span></div><div><button class="btn" onclick="save(this,'c-0303','0303-stateless-window')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0303"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0309</span><span class="card-title">late-arriving data</span></div><div><button class="btn" onclick="save(this,'c-0309','0309-late-arriving')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0309"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0310</span><span class="card-title">create vs update separation</span></div><div><button class="btn" onclick="save(this,'c-0310','0310-create-vs-update')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0310"></div>
+    </div>
+  </div>
+
+  <!-- ── TABLE STATE DIAGRAMS ── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Table State Diagrams</span>
+      <span class="section-count">2 diagrams</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0306</span><span class="card-title">hard delete detection</span></div><div><button class="btn" onclick="save(this,'c-0306','0306-hard-delete')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0306"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0403</span><span class="card-title">MERGE / upsert</span></div><div><button class="btn" onclick="save(this,'c-0403','0403-merge-upsert')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0403"></div>
+    </div>
+  </div>
+
+  <!-- ── TRADEOFF CHARTS ── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Tradeoff Charts</span>
+      <span class="section-count">1 diagram</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><span class="card-id">0108</span><span class="card-title">purity vs freshness</span></div><div><button class="btn" onclick="save(this,'c-0108','0108-purity-freshness')">Save SVG</button></div></div>
+      <div class="card-body" id="c-0108"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <span class="footer-text">ecl-charts.js — vanilla svg, no dependencies</span>
+  <span class="footer-text" id="render-time"></span>
+</footer>
+
+<script src="./ecl-charts.js"></script>
+<script>
+const t0 = performance.now();
+
+// ── Segment Diagrams ──
+
+ECL.segment(document.getElementById("c-0404"), {
+  title: "orders_log anatomy",
+  segments: [
+    { label: "IMMUTABLE\nHISTORY", width: 4, color: "muted_gray" },
+    { label: "MUTABLE\nBUT STABLE", width: 1.2, color: "steel_blue" },
+    { label: "UPDATED\nRECORDS", width: 1.2, color: "olive" },
+    { label: "NEW\nRECORDS", width: 1, color: "forest" },
+  ],
+  bracesTop: [
+    [0, 0, "Loaded with full replace"],
+    [1, 3, "Reloaded with window"],
+  ],
+  bracesBottom: [
+    [1, 3, "Deduplicated on every READ"],
+    [0, 3, "Altered for consumer on every WRITE"],
+  ],
+});
+
+ECL.segment(document.getElementById("c-0205"), {
+  title: "Scoped full replace",
+  segments: [
+    { label: "FROZEN ZONE\n(before scope_start)", width: 3, color: "muted_gray" },
+    { label: "MANAGED ZONE\n(scope_start → today)", width: 4, color: "steel_blue" },
+  ],
+  bracesTop: [
+    [0, 0, "Loaded once, never touched again"],
+    [1, 1, "Replaced every run via partition swap"],
+  ],
+  bracesBottom: [
+    [0, 1, "Full table from consumer perspective"],
+  ],
+});
+
+ECL.segment(document.getElementById("c-0206"), {
+  title: "Rolling window replace",
+  segments: [
+    { label: "FROZEN\n(outside window)", width: 5, color: "muted_gray" },
+    { label: "WINDOW\n(last N days)", width: 2, color: "olive" },
+  ],
+  bracesTop: [
+    [0, 0, "Never re-extracted — stale if source changed"],
+    [1, 1, "Dropped and reloaded every run"],
+  ],
+  bracesBottom: [
+    [0, 1, "Window advances daily → frozen zone grows"],
+  ],
+});
+
+ECL.segment(document.getElementById("c-0207"), {
+  title: "Sparse table density (SKU × Warehouse)",
+  segments: [
+    { label: "ACTIVE\nCOMBINATIONS", width: 1, color: "forest" },
+    { label: "ZERO ROWS\n(filtered at extraction)", width: 9, color: "muted_gray" },
+  ],
+  bracesTop: [
+    [0, 0, "Extracted: WHERE on_hand <> 0 OR on_order <> 0"],
+  ],
+  bracesBottom: [
+    [1, 1, "~90% of cartesian product — never leaves source"],
+  ],
+});
+
+ECL.segment(document.getElementById("c-0307"), {
+  title: "Open / closed document split",
+  segments: [
+    { label: "OPEN DOCUMENTS\n(mutable, re-extract all)", width: 1.5, color: "amber" },
+    { label: "RECENTLY CLOSED\n(cursor catches transition)", width: 1, color: "olive" },
+    { label: "CLOSED DOCUMENTS\n(immutable, cursor only)", width: 4, color: "muted_gray" },
+  ],
+  bracesTop: [
+    [0, 0, "SELECT * WHERE status = 'open'"],
+    [1, 2, "SELECT * WHERE status = 'closed' AND updated_at >= :cursor"],
+  ],
+  bracesBottom: [
+    [0, 2, "UNION → single load"],
+  ],
+});
+
+// ── Timeline Diagrams ──
+
+ECL.timeline(document.getElementById("c-0302"), {
+  title: "Cursor-based extraction — high-water mark advances",
+  axis: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"],
+  spans: [
+    { start: 0, end: 3, label: "Run 1: extract Day 1–3", color: "steel_blue", row: 0 },
+    { start: 3, end: 5, label: "Run 2: extract Day 3–5", color: "forest", row: 0 },
+    { start: 5, end: 6, label: "Run 3: Day 5–6", color: "purple", row: 0 },
+  ],
+  cursors: [
+    { pos: 3, label: "HWM → Day 3", color: "amber" },
+    { pos: 5, label: "HWM → Day 5", color: "amber" },
+  ],
+});
+
+ECL.timeline(document.getElementById("c-0303"), {
+  title: "Stateless window — fixed trailing window, no cursor",
+  axis: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7", "Day 8"],
+  spans: [
+    { start: 0, end: 3, label: "Run on Day 3 (3-day window)", color: "steel_blue", row: 0 },
+    { start: 1, end: 4, label: "Run on Day 4 (3-day window)", color: "steel_blue", row: 1 },
+    { start: 2, end: 5, label: "Run on Day 5 (3-day window)", color: "steel_blue", row: 2 },
+  ],
+});
+
+ECL.timeline(document.getElementById("c-0309"), {
+  title: "Late-arriving data — row missed by cursor",
+  axis: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00"],
+  spans: [
+    { start: 0, end: 2, label: "Run 1: 08:00–10:00", color: "steel_blue", row: 0 },
+    { start: 2, end: 4, label: "Run 2: 10:00–12:00", color: "forest", row: 0 },
+  ],
+  cursors: [
+    { pos: 2, label: "HWM = 10:00", color: "amber" },
+  ],
+  markers: [
+    { pos: 1.5, label: "updated_at=09:30, committed 10:05 → MISSED", color: "coral" },
+  ],
+});
+
+ECL.timeline(document.getElementById("c-0310"), {
+  title: "Dual cursors — created_at track + updated_at track",
+  axis: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6"],
+  spans: [
+    { start: 0, end: 3, label: "created_at cursor: new inserts", color: "steel_blue", row: 0 },
+    { start: 3, end: 5, label: "created_at: Day 3–5", color: "steel_blue", row: 0 },
+    { start: 0, end: 2, label: "updated_at cursor: modified rows", color: "olive", row: 1 },
+    { start: 2, end: 5, label: "updated_at: Day 2–5", color: "olive", row: 1 },
+  ],
+  cursors: [
+    { pos: 3, label: "created HWM", color: "steel_blue" },
+    { pos: 2, label: "updated HWM", color: "olive" },
+  ],
+});
+
+// ── Table State Diagrams ──
+
+ECL.tableState(document.getElementById("c-0306"), {
+  title: "Hard delete detection — row disappears from source",
+  tables: [
+    {
+      label: "Source (yesterday)",
+      columns: ["id", "name", "status"],
+      rows: [
+        { data: [101, "Alice", "active"] },
+        { data: [102, "Bob", "active"] },
+        { data: [103, "Carol", "closed"], color: "coral", annotation: "hard-deleted" },
+      ],
+    },
+    {
+      label: "Source (today)",
+      columns: ["id", "name", "status"],
+      rows: [
+        { data: [101, "Alice", "active"] },
+        { data: [102, "Bob", "active"] },
+        { data: [null, null, null], color: "coral", annotation: "gone, no trace" },
+      ],
+    },
+  ],
+});
+
+ECL.tableState(document.getElementById("c-0403"), {
+  title: "MERGE / upsert — match on key, update or insert",
+  tables: [
+    {
+      label: "Staging (extracted)",
+      columns: ["id", "name", "status"],
+      rows: [
+        { data: [1, "Alice", "shipped"], color: "olive", annotation: "UPDATE (matched)" },
+        { data: [4, "Dave", "pending"], color: "forest", annotation: "INSERT (not matched)" },
+      ],
+    },
+    {
+      label: "Destination (after MERGE)",
+      columns: ["id", "name", "status"],
+      rows: [
+        { data: [1, "Alice", "shipped"], color: "olive" },
+        { data: [2, "Bob", "active"] },
+        { data: [3, "Carol", "active"] },
+        { data: [4, "Dave", "pending"], color: "forest" },
+      ],
+    },
+  ],
+});
+
+// ── Tradeoff Charts ──
+
+ECL.tradeoff(document.getElementById("c-0108"), {
+  title: "Purity vs freshness",
+  width: 700,
+  height: 440,
+  xLabel: "Freshness →",
+  yLabel: "← Purity",
+  xTicks: ["Daily", "Hourly", "Sub-hourly"],
+  yTicks: ["Low", "Medium", "High"],
+  regions: [
+    { x: 0.7, y: 0.7, w: 0.3, h: 0.3, label: "Ideal zone", color: "forest" },
+  ],
+  points: [
+    { x: 0.12, y: 0.95, label: "Full replace", color: "steel_blue" },
+    { x: 0.85, y: 0.45, label: "Incremental", color: "coral" },
+    { x: 0.55, y: 0.78, label: "Hybrid", color: "amber" },
+    { x: 0.75, y: 0.70, label: "Append + materialize", color: "forest" },
+    { x: 0.30, y: 0.88, label: "Scoped replace", color: "purple" },
+  ],
+});
+
+// ── Save helper ──
+function save(btn, containerId, filename) {
+  ECL.saveSVG(document.getElementById(containerId), filename);
+  btn.textContent = "Saved ✓";
+  btn.classList.add("btn--ok");
+  setTimeout(() => { btn.textContent = "Save SVG"; btn.classList.remove("btn--ok"); }, 2000);
+}
+
+document.getElementById("render-time").textContent =
+  `rendered ${document.querySelectorAll(".card").length} diagrams in ${(performance.now() - t0).toFixed(1)}ms`;
+</script>
+</body>
+</html>

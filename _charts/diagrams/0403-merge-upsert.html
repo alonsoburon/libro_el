@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>0403</title>
+<style>body{margin:0;background:#181825;display:flex;flex-direction:column;align-items:center;padding:40px 20px}button{background:#333;color:#ccc;border:1px solid #555;padding:8px 20px;cursor:pointer;font-size:13px;border-radius:4px;margin-top:12px}button:hover{background:#444}</style>
+</head><body>
+<div id="chart"></div>
+<button onclick="ECL.saveSVG(document.getElementById('chart'),'0403-merge-upsert')">Save SVG</button>
+<script src="../ecl-charts.js"></script>
+<script>
+ECL.tableState(document.getElementById("chart"), {
+  title: "MERGE / upsert — match on key, update or insert",
+  tables: [
+    {
+      label: "Staging (extracted)",
+      columns: ["id", "name", "status"],
+      rows: [
+        { data: [1, "Alice", "shipped"], color: "olive", annotation: "matched → UPDATE" },
+        { data: [4, "Dave", "pending"], color: "forest", annotation: "not matched → INSERT" },
+      ],
+    },
+    {
+      label: "Destination (after MERGE)",
+      columns: ["id", "name", "status"],
+      rows: [
+        { data: [1, "Alice", "shipped"], color: "olive", annotation: "updated" },
+        { data: [2, "Bob", "active"] },
+        { data: [3, "Carol", "active"] },
+        { data: [4, "Dave", "pending"], color: "forest", annotation: "inserted" },
+      ],
+    },
+  ],
+});
+</script></body></html>

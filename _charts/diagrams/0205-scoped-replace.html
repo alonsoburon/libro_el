@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>0205</title>
+<style>body{margin:0;background:#181825;display:flex;flex-direction:column;align-items:center;padding:40px 20px}button{background:#333;color:#ccc;border:1px solid #555;padding:8px 20px;cursor:pointer;font-size:13px;border-radius:4px;margin-top:12px}button:hover{background:#444}</style>
+</head><body>
+<div id="chart"></div>
+<button onclick="ECL.saveSVG(document.getElementById('chart'),'0205-scoped-replace')">Save SVG</button>
+<script src="../ecl-charts.js"></script>
+<script>
+ECL.segment(document.getElementById("chart"), {
+  title: "Scoped full replace",
+  segments: [
+    { label: "FROZEN ZONE\n(before scope_start)", width: 3, color: "muted_gray" },
+    { label: "MANAGED ZONE\n(scope_start → today)", width: 4, color: "steel_blue" },
+  ],
+  bracesTop: [
+    [0, 0, "Loaded once, never touched again"],
+    [1, 1, "Replaced every run via partition swap"],
+  ],
+  bracesBottom: [
+    [0, 1, "Full table from consumer perspective"],
+  ],
+});
+</script></body></html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>0207</title>
+<style>body{margin:0;background:#181825;display:flex;flex-direction:column;align-items:center;padding:40px 20px}button{background:#333;color:#ccc;border:1px solid #555;padding:8px 20px;cursor:pointer;font-size:13px;border-radius:4px;margin-top:12px}button:hover{background:#444}</style>
+</head><body>
+<div id="chart"></div>
+<button onclick="ECL.saveSVG(document.getElementById('chart'),'0207-sparse-table')">Save SVG</button>
+<script src="../ecl-charts.js"></script>
+<script>
+ECL.segment(document.getElementById("chart"), {
+  title: "Sparse table density (SKU × Warehouse)",
+  segments: [
+    { label: "ACTIVE\nCOMBINATIONS", width: 1, color: "forest" },
+    { label: "ZERO ROWS\n(filtered at extraction)", width: 9, color: "muted_gray" },
+  ],
+  bracesTop: [
+    [0, 0, "Extracted: WHERE on_hand <> 0 OR on_order <> 0"],
+  ],
+  bracesBottom: [
+    [1, 1, "~90% of cartesian product — never leaves source"],
+  ],
+});
+</script></body></html>
