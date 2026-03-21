@@ -4,7 +4,7 @@ aliases: []
 tags:
   - pattern/load-strategy
   - chapter/part-4
-status: draft
+status: first_iteration
 created: 2026-03-14
 updated: 2026-03-14
 ---

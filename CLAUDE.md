@@ -1,6 +1,26 @@
-# CLAUDE.md --Instructions for Claude Code
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project: ECL Patterns Book
+
+This is an Obsidian vault containing a technical book about ECL (Extract, Conform, Load) patterns. There is no build system, test suite, or application code -- the repo is structured prose, SQL examples, and diagrams.
+
+### Repository Structure
+
+- `00-front-matter/` through `08-appendix/` -- Book chapters, one file per pattern/section. Numbered `XXYY` where `XX` = chapter, `YY` = pattern within chapter.
+- `INDEX.md` -- Master table of contents with wikilinks to every pattern. This is the outline of the book.
+- `_templates/` -- `pattern-template.md` and `chapter-intro-template.md`. New patterns must follow these structures.
+- `_references/` -- Research notes (mostly dlt docs, ERP timestamp behavior). Not published content; used as source material when writing patterns.
+- `_charts/` -- Custom SVG diagram framework (`ecl-charts.js` + `index.html`). HTML files in `_charts/diagrams/` are rendered via `ECL.segment()`, `ECL.timeline()`, `ECL.tableState()`, and `ECL.tradeoff()` APIs. These are embedded in the book as images, not as inline code.
+- `_assets/` -- Images and static files.
+
+### Frontmatter Status Values
+
+Every content file has a `status` field in YAML frontmatter:
+- `outline` -- Skeleton only, section headers and maybe a one-liner
+- `draft` -- Template filled in but content is placeholder or AI-generated, awaiting author review
+- `first_iteration` -- Author has written or reviewed and edited the content at least once
 
 ### Core Thesis
 Pure EL is a practical myth. The moment data crosses between systems, conforming is unavoidable: type casting, metadata injection, null handling, charset encoding. **ECL (Extract, Conform, Load)** names this reality. The C is everything the data needs to survive the crossing and be usable on the other side: type conforming, metadata injection, key synthesis, null handling. If it changes business logic, it's not conforming, it belongs downstream. This book documents the patterns to do ECL well.

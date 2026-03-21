@@ -22,7 +22,7 @@ updated: 2026-03-15
 
 ### Schema Contract
 - Expected column names and types -- the fingerprint from [[06-operating-the-pipeline/0601-monitoring-observability|0601]]
-- Policy on new columns: accept (evolve), reject (freeze), or warn (log and continue)
+- Policy on new columns: accept (evolve) or reject (freeze)
 - Policy on dropped columns: fail the load, load without them, or backfill with NULLs
 - Policy on type changes: fail, cast, or warn
 
@@ -60,7 +60,8 @@ updated: 2026-03-15
 |---|---|---|
 | **Evolve** | Accept new columns, add them to destination | Default for most tables -- source schemas grow |
 | **Freeze** | Reject any schema change, fail the load | Critical tables where downstream depends on exact schema |
-| **Discard** | Ignore new columns, load only known ones | Tables with noisy schemas (wide ERP tables with hundreds of columns) |
+
+These are the only two valid policies in an ECL context. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are transformation decisions, not conforming ones. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See [[04-load-strategies/0403-merge-upsert|0403]] for the full reasoning.
 
 ## Anti-Pattern
 
@@ -69,6 +70,9 @@ updated: 2026-03-15
 
 > [!danger] Don't freeze schemas on tables that legitimately evolve
 > - `products` gains a new attribute column every quarter. Freezing its schema means a load failure every quarter and a manual intervention to update the contract. Use evolve for tables with expected growth; freeze only for tables with stable, critical schemas.
+
+> [!danger] Don't discard columns that don't match your schema
+> - Silently dropping new or unexpected columns breaks the conforming boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or [[02-full-replace-patterns/0210-partial-column-loading|0210]] (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.
 
 ## Related Patterns
 - [[06-operating-the-pipeline/0601-monitoring-observability|0601-monitoring-observability]] -- schema fingerprinting and null rate tracking feed contracts
@@ -79,6 +83,6 @@ updated: 2026-03-15
 
 ## Notes
 - **Author prompt -- naming convention as contract**: The direct vs snake_case naming convention is essentially a schema contract -- changing it requires full reload of all tables + downstream query updates. Has a client ever requested a convention change mid-production? How painful was it?
-- **Author prompt -- schema evolution in ERPs**: SAP and Softland add columns when modules are activated or updated. Have you had a source table gain columns that broke your pipeline? How does dlt's schema evolution (evolve/freeze/discard_row) work in practice for you?
+- **Author prompt -- schema evolution in ERPs**: SAP and Softland add columns when modules are activated or updated. Have you had a source table gain columns that broke your pipeline? How does the evolve/freeze decision play out in practice?
 - **Author prompt -- type surprises**: The SafeNumericTypeAdapter in warp handles type casting. What kind of type mismatches have you encountered between source and BigQuery? Any that were especially surprising?
 - **Author prompt -- _dlt_version**: DLT tracks schema versions internally. Have you ever used that to diagnose when a schema changed? Or is it mostly invisible infrastructure?
