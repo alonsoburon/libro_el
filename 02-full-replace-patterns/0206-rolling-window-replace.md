@@ -27,7 +27,7 @@ Both patterns maintain a managed zone and a frozen zone. The difference is in ho
 
 Rolling window uses a metadata anchor -- `updated_at` or `created_at` relative to today. The window is always the same width. It advances daily. There's no natural hard boundary like a fiscal year close; N is a judgment call based on how long corrections typically take to arrive in the source.
 
-Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than [[02-full-replace-patterns/0205-scoped-full-replace|0205]]'s "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See [[06-operating-the-pipeline/0607-tiered-freshness|0607-tiered-freshness]].
+Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than [[02-full-replace-patterns/0205-scoped-full-replace|0205]]'s "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]].
 
 ## The Mechanics
 

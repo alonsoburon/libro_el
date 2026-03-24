@@ -89,7 +89,7 @@ The MERGE key determines how the destination identifies "the same row." Two opti
 **Surrogate key** -- a hash or synthetic key generated during extraction (see [[05-conforming-playbook/0502-synthetic-keys|0502]]). Necessary when the source has no stable primary key, when the natural key is compound and unwieldy, or when multiple sources feed the same destination table and keys can collide.
 
 > [!danger] Non-unique keys compound duplicates
-> If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and always bad. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see [[06-operating-the-pipeline/0612-duplicate-detection|0612]].
+> If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and always bad. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see [[06-operating-the-pipeline/0613-duplicate-detection|0613]].
 
 ---
 
@@ -155,7 +155,7 @@ Some loaders offer `discard_row` and `discard_value` modes that drop data silent
 
 3. **Apply** -- if the policy is `evolve`, add the column to the destination (`ALTER TABLE ADD COLUMN`) before the MERGE runs. If it's `freeze`, the pipeline stops and alerts.
 
-The recommended production default is `evolve` for new columns and `freeze` for type changes -- new nullable columns appearing in the destination are harmless (downstream queries that don't reference them are unaffected), while type changes that silently widen a column can break downstream logic. See [[06-operating-the-pipeline/0608-data-contracts|0608]] for formalizing schema policies into enforceable contracts, and [[01-foundations-and-archetypes/0104-columnar-destinations|0104]] for how each engine handles `ALTER TABLE ADD COLUMN`.
+The recommended production default is `evolve` for new columns and `freeze` for type changes -- new nullable columns appearing in the destination are harmless (downstream queries that don't reference them are unaffected), while type changes that silently widen a column can break downstream logic. See [[06-operating-the-pipeline/0609-data-contracts|0609]] for formalizing schema policies into enforceable contracts, and [[01-foundations-and-archetypes/0104-columnar-destinations|0104]] for how each engine handles `ALTER TABLE ADD COLUMN`.
 
 > [!warning] Column-explicit MERGE is a silent schema freeze on the entire table
 > If your MERGE statement lists columns explicitly and you don't have a detection step before it, the destination schema is frozen at whatever columns existed when the MERGE was written. New source columns are silently dropped on every load, type changes are never propagated, and the destination drifts further from the source with every schema change. Either build the MERGE dynamically from the staging schema, or add a schema comparison step that catches drift before the MERGE executes.
@@ -206,5 +206,5 @@ Some loaders deduplicate staging automatically when a primary key is defined on 
 - [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]] -- avoid MERGE entirely by appending every version and deduplicating downstream
 - [[04-load-strategies/0405-hybrid-append-merge|0405-hybrid-append-merge]] -- append for history, MERGE for current state
 - [[05-conforming-playbook/0502-synthetic-keys|0502-synthetic-keys]] -- when the source has no stable primary key for the MERGE
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] -- schema policies that gate the MERGE on schema compatibility
-- [[06-operating-the-pipeline/0612-duplicate-detection|0612-duplicate-detection]] -- when non-unique keys cause duplicates to compound
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] -- schema policies that gate the MERGE on schema compatibility
+- [[06-operating-the-pipeline/0613-duplicate-detection|0613-duplicate-detection]] -- when non-unique keys cause duplicates to compound

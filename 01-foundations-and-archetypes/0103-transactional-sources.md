@@ -145,7 +145,7 @@ WHERE updated_at >= '2026-01-01'
 -- meanwhile 200 users can't save orders
 ```
 
-You need to know the source system's capacity, its busy hours, and its tolerance for your workload. See [[06-operating-the-pipeline/0606-source-system-etiquette|0606-source-system-etiquette]].
+You need to know the source system's capacity, its busy hours, and its tolerance for your workload. See [[06-operating-the-pipeline/0607-source-system-etiquette|0607-source-system-etiquette]].
 
 **Encoding traps.** The `customers` table has a `name` column. It's `VARCHAR(100)` in Latin-1. You didn't know it was Latin-1 because nobody told you and the metadata just says `VARCHAR`.
 

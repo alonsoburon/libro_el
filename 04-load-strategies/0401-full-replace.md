@@ -136,4 +136,4 @@ All three are idempotent -- rerunning the same extraction and load produces the 
 - [[04-load-strategies/0402-append-only|0402-append-only]] -- when the source is immutable and no replace is needed
 - [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] -- when only changed rows should be loaded, not the full table
 - [[04-load-strategies/0406-reliable-loads|0406-reliable-loads]] -- atomicity and failure recovery for loads
-- [[06-operating-the-pipeline/0609-extraction-status-gates|0609-extraction-status-gates]] -- gating the load on extraction status to prevent loading 0 rows
+- [[06-operating-the-pipeline/0610-extraction-status-gates|0610-extraction-status-gates]] -- gating the load on extraction status to prevent loading 0 rows

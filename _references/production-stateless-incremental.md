@@ -8,7 +8,7 @@ relevant_chapters:
   - 0303-stateless-window-extraction
   - 0109-idempotency
   - 0406-reliable-loads
-  - 0611-partial-failure-recovery
+  - 0612-partial-failure-recovery
 ---
 
 # Stateless Incremental Loading in Production

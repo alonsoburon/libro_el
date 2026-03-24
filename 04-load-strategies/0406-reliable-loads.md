@@ -109,7 +109,7 @@ A pipeline that fails silently is worse than one that fails loudly. Your orchest
 
 **Monitor from outside the pipeline.** The destination should be observable independently of the orchestrator. A scheduled query that checks `MAX(_extracted_at)` against the current time and alerts when it exceeds a threshold works regardless of whether the orchestrator is alive. If the orchestrator dies at 2am and the pipeline doesn't run, the freshness check fires at 8am and somebody knows.
 
-**Distinguish "0 rows extracted" from "extraction failed."** A successful run that returns 0 rows is normal for some tables (no changes since last run, empty table) and a red flag for others (a table that always has activity). [[06-operating-the-pipeline/0609-extraction-status-gates|0609]] covers this in detail -- gate the load on extraction status so a silent failure doesn't advance the cursor past a real gap.
+**Distinguish "0 rows extracted" from "extraction failed."** A successful run that returns 0 rows is normal for some tables (no changes since last run, empty table) and a red flag for others (a table that always has activity). [[06-operating-the-pipeline/0610-extraction-status-gates|0610]] covers this in detail -- gate the load on extraction status so a silent failure doesn't advance the cursor past a real gap.
 
 **Push, then alert on absence.** After each successful load, push a heartbeat (a row in a monitoring table, a metric to your observability stack, a timestamp in a health-check endpoint). Alert when the heartbeat stops arriving. This catches every failure mode: orchestrator crash, hung run, infrastructure outage, credential expiration -- anything that prevents the pipeline from completing.
 
@@ -133,5 +133,5 @@ A pipeline that fails silently is worse than one that fails loudly. Your orchest
 - [[04-load-strategies/0403-merge-upsert|0403]] -- upsert makes partial load recovery and retries natural
 - [[04-load-strategies/0404-append-and-materialize|0404]] -- append + dedup view absorbs duplicates from retries
 - [[04-load-strategies/0405-hybrid-append-merge|0405]] -- two destinations means two failure surfaces, making reliable loads doubly important
-- [[06-operating-the-pipeline/0609-extraction-status-gates|0609]] -- gating loads on extraction status to prevent silent failures
+- [[06-operating-the-pipeline/0610-extraction-status-gates|0610]] -- gating loads on extraction status to prevent silent failures
 - [[01-foundations-and-archetypes/0109-idempotency|0109]] -- the foundational property that makes everything in this pattern work

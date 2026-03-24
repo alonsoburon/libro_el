@@ -68,7 +68,7 @@ except Exception as e:
 If the extraction raised an error, the job fails. Staging is never loaded. No partition is replaced. The data in production stays exactly as it was.
 
 > [!warning] The failure to catch is a silent one
-> The dangerous case is an extraction layer that swallows exceptions and returns an empty result set instead of raising. Check your database driver and connection wrapper -- make sure a dropped connection or a query timeout surfaces as an error, not as an empty iterator. If your extraction layer can return 0 rows on failure, you've lost the signal that makes this safe. See [[06-operating-the-pipeline/0609-extraction-status-gates|0609-extraction-status-gates]].
+> The dangerous case is an extraction layer that swallows exceptions and returns an empty result set instead of raising. Check your database driver and connection wrapper -- make sure a dropped connection or a query timeout surfaces as an error, not as an empty iterator. If your extraction layer can return 0 rows on failure, you've lost the signal that makes this safe. See [[06-operating-the-pipeline/0610-extraction-status-gates|0610-extraction-status-gates]].
 
 ## Atomicity Per Engine
 
@@ -179,4 +179,4 @@ Late-arriving data adds another dimension: rows for prior dates arriving today b
 - [[03-incremental-patterns/0309-late-arriving-data|0309-late-arriving-data]]
 - [[05-conforming-playbook/0505-timezone-conforming|0505-timezone-conforming]]
 - [[01-foundations-and-archetypes/0104-columnar-destinations|0104-columnar-destinations]]
-- [[06-operating-the-pipeline/0609-extraction-status-gates|0609-extraction-status-gates]]
+- [[06-operating-the-pipeline/0610-extraction-status-gates|0610-extraction-status-gates]]

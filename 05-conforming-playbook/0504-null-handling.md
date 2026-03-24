@@ -66,7 +66,7 @@ These are real, and you should document them -- but they're not your problem to 
 **Aggregation with NULLs.** `SUM(amount)` ignores NULLs. `AVG(amount)` ignores NULLs in both numerator and denominator. Both of these are correct SQL behavior, but consumers who expect NULLs to be treated as zeros will get different results than they expect. Again: document, don't fix.
 
 > [!tip] Surface NULL rates in your data quality checks
-> A table where `email` is 90% NULL is useful information for consumers. Surface it through [[06-operating-the-pipeline/0608-data-contracts|data contracts]] or quality checks so downstream teams know what they're working with -- but don't change the data to make the numbers look cleaner.
+> A table where `email` is 90% NULL is useful information for consumers. Surface it through [[06-operating-the-pipeline/0609-data-contracts|data contracts]] or quality checks so downstream teams know what they're working with -- but don't change the data to make the numbers look cleaner.
 
 ---
 
@@ -85,4 +85,4 @@ These are real, and you should document them -- but they're not your problem to 
 - [[05-conforming-playbook/0502-synthetic-keys|0502]] -- the one case where COALESCE before hashing is justified
 - [[03-incremental-patterns/0310-create-vs-update-separation|0310]] -- NULL `updated_at` as an extraction problem
 - [[01-foundations-and-archetypes/0102-what-is-conforming|0102]] -- null handling as conforming, not transforming
-- [[06-operating-the-pipeline/0608-data-contracts|0608]] -- surfacing NULL rates through quality checks
+- [[06-operating-the-pipeline/0609-data-contracts|0609]] -- surfacing NULL rates through quality checks

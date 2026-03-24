@@ -78,7 +78,7 @@ Run the source count immediately after the load completes -- the closer in time 
 For partitioned tables, compare counts per partition (`GROUP BY date_partition`) to narrow the scope before running a full ID comparison on only the divergent partitions.
 
 > [!tip] Count reconciliation as a gate
-> Run `COUNT(*)` on every incremental extraction as a cheap health check. It adds seconds to the run and catches drift early -- before it accumulates into a reconciliation problem. See [[06-operating-the-pipeline/0613-reconciliation-patterns|0613-reconciliation-patterns]].
+> Run `COUNT(*)` on every incremental extraction as a cheap health check. It adds seconds to the run and catches drift early -- before it accumulates into a reconciliation problem. See [[06-operating-the-pipeline/0614-reconciliation-patterns|0614-reconciliation-patterns]].
 
 ---
 
@@ -123,4 +123,4 @@ In SAP B1, removing a single `invoice_line` triggers a delete+reinsert of ALL su
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- the cursor that can't see deletes
 - [[03-incremental-patterns/0304-cursor-from-another-table|0304-cursor-from-another-table]] -- blind to detail-level deletes when the header doesn't change
 - [[03-incremental-patterns/0307-open-closed-documents|0307-open-closed-documents]] -- open documents are the ones most likely to get hard-deleted
-- [[06-operating-the-pipeline/0613-reconciliation-patterns|0613-reconciliation-patterns]] -- count and hash reconciliation as ongoing health checks
+- [[06-operating-the-pipeline/0614-reconciliation-patterns|0614-reconciliation-patterns]] -- count and hash reconciliation as ongoing health checks

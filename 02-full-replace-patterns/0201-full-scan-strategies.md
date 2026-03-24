@@ -80,7 +80,7 @@ with engine.connect() as conn:
 > [!warning] Extract everything before replacing at the destination
 > If you chunk the extraction and write each chunk directly to the final table, chunk N replaces chunk N-1. You'll end up with only the last chunk in the destination. Extract all chunks to a staging area first, validate, then swap. Always.
 
-See [[06-operating-the-pipeline/0606-source-system-etiquette|0606-source-system-etiquette]] for connection limits, timeout coordination, and DBA communication.
+See [[06-operating-the-pipeline/0607-source-system-etiquette|0607-source-system-etiquette]] for connection limits, timeout coordination, and DBA communication.
 
 ## At the Destination: Replace Strategies
 
@@ -143,7 +143,7 @@ A full replace that lands zero rows because of a source connection failure is a 
 
 Most orchestrators support post-load validation hooks or checks that run after the staging load and block the swap if any check fails.
 
-See [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] for formalizing these checks into reusable contracts.
+See [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] for formalizing these checks into reusable contracts.
 
 ## What Full Scan Doesn't Solve
 
@@ -159,6 +159,6 @@ See [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] for fo
 - [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]]
 - [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]]
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]]
-- [[06-operating-the-pipeline/0606-source-system-etiquette|0606-source-system-etiquette]]
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]]
+- [[06-operating-the-pipeline/0607-source-system-etiquette|0607-source-system-etiquette]]
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]]
 - [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]]

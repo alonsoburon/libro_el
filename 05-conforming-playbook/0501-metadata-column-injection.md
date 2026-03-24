@@ -62,7 +62,7 @@ Three use cases earn the column:
 
 **Debugging.** "The destination has 11,998 rows but the source had 12,000. Which batch lost them?" With `_batch_id`, you can trace each row to the run that loaded it and compare batch-level counts against source-side logs.
 
-**Reconciliation.** A `_batches` table that tracks batch-level metadata -- source row count, extraction start/end time, status -- gives you an audit trail for every extraction. When [[06-operating-the-pipeline/0613-reconciliation-patterns|0613]] compares source and destination counts, `_batch_id` is the join key.
+**Reconciliation.** A `_batches` table that tracks batch-level metadata -- source row count, extraction start/end time, status -- gives you an audit trail for every extraction. When [[06-operating-the-pipeline/0614-reconciliation-patterns|0614]] compares source and destination counts, `_batch_id` is the join key.
 
 UUID or sequential integer -- consistency matters more than format. If your orchestrator already generates run IDs, reuse those.
 
@@ -144,5 +144,5 @@ For `_extracted_at` and `_batch_id`, the source query is almost always the right
 
 - [[04-load-strategies/0404-append-and-materialize|0404]] -- `_extracted_at` as the dedup ordering key
 - [[02-full-replace-patterns/0209-hash-based-change-detection|0209]] -- `_source_hash` enables hash-based change detection
-- [[06-operating-the-pipeline/0613-reconciliation-patterns|0613]] -- `_batch_id` for source-destination row count reconciliation
+- [[06-operating-the-pipeline/0614-reconciliation-patterns|0614]] -- `_batch_id` for source-destination row count reconciliation
 - [[03-incremental-patterns/0301-timestamp-extraction-foundations|0301]] -- why `updated_at` is unreliable and `_extracted_at` is your safety net

@@ -7,7 +7,7 @@ tags:
   - reference/production
 relevant_chapters:
   - 0406-reliable-loads
-  - 0611-partial-failure-recovery
+  - 0612-partial-failure-recovery
   - 0109-idempotency
 ---
 

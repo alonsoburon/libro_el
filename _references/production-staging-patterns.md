@@ -8,7 +8,7 @@ relevant_chapters:
   - 0204-staging-swap
   - 0403-merge-upsert
   - 0406-reliable-loads
-  - 0611-partial-failure-recovery
+  - 0612-partial-failure-recovery
 ---
 
 # Staging Patterns from Production

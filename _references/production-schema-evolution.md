@@ -5,7 +5,7 @@ tags:
   - reference/production
   - reference/schema
 relevant_chapters:
-  - 0608-data-contracts
+  - 0609-data-contracts
   - 0403-merge-upsert
   - 0503-type-casting-normalization
   - 0708-schema-naming-conventions

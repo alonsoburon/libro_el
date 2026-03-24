@@ -87,7 +87,7 @@ FROM stg_order_lines;
 > [!danger] Silent correction is the worst outcome
 > Fixing soft rule violations in the pipeline hides the root cause. The source system keeps producing bad data, the pipeline keeps silently correcting it, and nobody ever fixes the application. Six months later, someone queries the source directly and finds data that doesn't match the destination. Now you have a trust problem and an archaeology project.
 
-See [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] for how to formalize soft rule monitoring into data contracts with alerting.
+See [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] for how to formalize soft rule monitoring into data contracts with alerting.
 
 ## Soft Rules and Load Strategy
 
@@ -117,4 +117,4 @@ See [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-ext
 - [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]]
 - [[04-load-strategies/0406-reliable-loads|0406-reliable-loads]]
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]]
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]]
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]]

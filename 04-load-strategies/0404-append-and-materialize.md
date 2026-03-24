@@ -136,6 +136,8 @@ Compaction frequency determines how large the log gets between runs and how heav
 > [!tip] Partition the log by `_extracted_at` for cheap retention drops
 > If you use it as a permanent log storage, `orders_log` partitioned by `_extracted_at` turns retention drops into partition drops -- a metadata operation instead of a full-table DELETE. If you compact to latest-only, rebuild `orders_log` partitioned by a business date (`order_date`) so the view's scan benefits from partition pruning on the dimension consumers actually filter on.
 
+Retention doesn't have to be all-or-nothing. For tables where consumers need recent data at high granularity but historical data at lower granularity -- daily stock snapshots for the last 60 days, monthly thereafter -- a tiered compaction job can compress older entries without erasing them entirely. [[02-full-replace-patterns/0202-snapshot-append|0202]] covers the mechanics under "Tiered Retention."
+
 ---
 
 ## By Corridor

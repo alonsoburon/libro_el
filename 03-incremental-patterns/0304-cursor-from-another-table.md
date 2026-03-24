@@ -116,7 +116,7 @@ For detail tables where even these approaches aren't enough, see [[03-incrementa
 ## By Corridor
 
 > [!example]- Transactional → Columnar (e.g. any source → BigQuery)
-> The join runs on the source, so extraction cost is a source-side index scan. Wide detail tables (many columns per line) amplify the load cost even for moderate row counts -- see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] and [[06-operating-the-pipeline/0602-cost-monitoring|0602-cost-monitoring]].
+> The join runs on the source, so extraction cost is a source-side index scan. Wide detail tables (many columns per line) amplify the load cost even for moderate row counts -- see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] and [[06-operating-the-pipeline/0603-cost-monitoring|0603-cost-monitoring]].
 
 > [!example]- Transactional → Transactional (e.g. any source → PostgreSQL)
 > Cheap on both sides. Extraction is the same index scan. The composite key (`order_id, line_num`) must be indexed on the destination for the upsert to perform -- see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]].

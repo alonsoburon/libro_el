@@ -85,4 +85,4 @@ The filter is a contract. If the business changes the definition -- "now we also
 
 - [[02-full-replace-patterns/0208-activity-driven-extraction|0208-activity-driven-extraction]] -- avoid scanning the sparse table entirely
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- if the table is small enough, the filter isn't worth the complexity
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] -- formalize the filter as a documented contract
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] -- formalize the filter as a documented contract

@@ -84,7 +84,7 @@ Three tiers, no cursor state anywhere, each tier sized independently.
 ## By Corridor
 
 > [!example]- Transactional → Columnar (e.g. any source → BigQuery)
-> The source query is cheap (indexed `updated_at` scan). The load cost is where window size and run frequency multiply -- see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] and [[06-operating-the-pipeline/0602-cost-monitoring|0602-cost-monitoring]]. MySQL `DATETIME` second-level precision is a non-issue with a window measured in days.
+> The source query is cheap (indexed `updated_at` scan). The load cost is where window size and run frequency multiply -- see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] and [[06-operating-the-pipeline/0603-cost-monitoring|0603-cost-monitoring]]. MySQL `DATETIME` second-level precision is a non-issue with a window measured in days.
 
 > [!example]- Transactional → Transactional (e.g. any source → PostgreSQL)
 > Cheap on both sides. The source query is the same indexed scan. Load cost scales with batch size, not table size -- high-frequency runs are viable here. See [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] for the upsert mechanics.

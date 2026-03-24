@@ -5,9 +5,9 @@ tags:
   - reference/production
   - reference/operations
 relevant_chapters:
-  - 0606-source-system-etiquette
+  - 0607-source-system-etiquette
   - 0108-purity-vs-freshness
-  - 0603-sla-management
+  - 0604-sla-management
 ---
 
 # Source System Etiquette in Production

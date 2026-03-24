@@ -119,7 +119,7 @@ The ECL layer *can* cast to the destination's native boolean, but only with good
 
 **Where it doesn't hurt:** quantities, counts, percentages, scores. If the column is an integer disguised as a decimal (`quantity = 5.000000`), `FLOAT64` is fine. If the column has meaningful decimal places but nobody aggregates it across millions of rows, `FLOAT64` is probably fine. The damage is proportional to row count × aggregation.
 
-**The pragmatic approach:** explicit `NUMERIC` in the DDL for financial columns, `FLOAT64` for everything else unless proven otherwise. Monitor aggregate differences between source and destination on the critical columns ([[06-operating-the-pipeline/0613-reconciliation-patterns|0613]]) and escalate if the divergence exceeds an acceptable threshold.
+**The pragmatic approach:** explicit `NUMERIC` in the DDL for financial columns, `FLOAT64` for everything else unless proven otherwise. Monitor aggregate differences between source and destination on the critical columns ([[06-operating-the-pipeline/0614-reconciliation-patterns|0614]]) and escalate if the divergence exceeds an acceptable threshold.
 
 ---
 
@@ -151,4 +151,4 @@ A few combinations that produce surprising behavior:
 - [[04-load-strategies/0403-merge-upsert|0403]] -- schema evolution and how new types interact with MERGE
 - [[01-foundations-and-archetypes/0102-what-is-conforming|0102]] -- type casting as a conforming operation, not transformation
 - [[05-conforming-playbook/0505-timezone-conforming|0505]] -- timestamp timezone handling, adjacent to timestamp precision
-- [[06-operating-the-pipeline/0613-reconciliation-patterns|0613]] -- monitoring precision drift on financial columns
+- [[06-operating-the-pipeline/0614-reconciliation-patterns|0614]] -- monitoring precision drift on financial columns

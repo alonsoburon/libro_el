@@ -56,7 +56,7 @@ What the loader does in response to that diff is your schema policy (`evolve`, `
 > [!warning] Schema auto-detection isn't a free pass
 > BigQuery's `LOAD DATA` with schema auto-detection and Snowflake's `VARIANT` both absorb new columns. But auto-detection can mistype a column (a column with only `"1"` and `"0"` values gets inferred as `BOOL`). And absorbing new columns silently means you won't notice when the column name changed and you now have two columns -- one dead and one alive -- both tracking the same concept.
 
-See [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] for schema contract enforcement patterns.
+See [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] for schema contract enforcement patterns.
 
 ## "`updated_at` is reliable"
 
@@ -223,5 +223,5 @@ This is where [[01-foundations-and-archetypes/0106-hard-rules-soft-rules|0106-ha
 - [[03-incremental-patterns/0310-create-vs-update-separation|0310-create-vs-update-separation]]
 - [[05-conforming-playbook/0502-synthetic-keys|0502-synthetic-keys]]
 - [[05-conforming-playbook/0505-timezone-conforming|0505-timezone-conforming]]
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]]
-- [[06-operating-the-pipeline/0612-duplicate-detection|0612-duplicate-detection]]
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]]
+- [[06-operating-the-pipeline/0613-duplicate-detection|0613-duplicate-detection]]

@@ -120,6 +120,42 @@ Compaction runs as a separate scheduled job in your orchestrator -- independent 
 > [!warning] Compaction erases version history
 > After compaction, only the latest snapshot per key survives. If you need a full audit trail of how values changed over time, keep the pre-compaction snapshots in cold storage before swapping. If you only need current state, compaction is safe.
 
+### Tiered Retention: Daily to Monthly
+
+Full compaction works when you only need current state. But some tables have legitimate historical analysis needs that a single latest-per-PK compaction destroys -- and keeping every daily snapshot indefinitely is a storage problem you'll hit sooner than you expect.
+
+We had a client requesting daily `inventory` snapshots for stock-level analysis across warehouses. After three months the table was large and growing linearly, and the client realized they only needed daily granularity for the last 60-90 days -- further back, a single snapshot per month was enough to spot seasonal trends and year-over-year comparisons. The fix: a monthly scheduled job that compresses older snapshots from daily to monthly, keeping only the last snapshot of each month per key.
+
+```sql
+-- destination: columnar
+-- engine: bigquery
+-- Monthly job: keep daily for last 60 days, compress older to monthly.
+CREATE OR REPLACE TABLE inventory_snapshots AS
+
+-- Recent window: keep every daily snapshot as-is
+SELECT * FROM inventory_snapshots
+WHERE _snapshot_at >= DATE_SUB(CURRENT_DATE, INTERVAL 60 DAY)
+
+UNION ALL
+
+-- Older data: keep only the last snapshot per PK per month
+SELECT * EXCEPT (rn) FROM (
+  SELECT *,
+    ROW_NUMBER() OVER (
+      PARTITION BY sku_id, warehouse_id, DATE_TRUNC(_snapshot_at, MONTH)
+      ORDER BY _snapshot_at DESC
+    ) AS rn
+  FROM inventory_snapshots
+  WHERE _snapshot_at < DATE_SUB(CURRENT_DATE, INTERVAL 60 DAY)
+)
+WHERE rn = 1;
+```
+
+The result is three tiers of granularity in a single table: daily snapshots for the recent window (operational analysis), monthly snapshots for older data (trend analysis), and nothing before whatever hard cutoff you enforce. The dedup view works identically -- `MAX(_snapshot_at)` per PK still returns the latest -- and downstream queries that filter by date range naturally hit the appropriate granularity without knowing the compression happened.
+
+> [!tip] Match the compression boundary to the consumer's actual needs
+> The client said "last 2 months" but the real question is: what's the shortest period where daily granularity changes a decision? If nobody looks at daily stock levels older than 30 days, compress at 30. If finance needs daily for quarter-close reconciliation, compress at 90. Ask the consumer before picking the number -- they usually need less history at daily granularity than they think.
+
 ## Relationship to Append-and-Materialize
 
 [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]] uses the same append + deduplicate mechanism, but for transactional sources with cursors: each run appends only the rows that changed since the last extraction.

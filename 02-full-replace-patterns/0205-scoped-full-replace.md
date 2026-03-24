@@ -129,7 +129,7 @@ flowchart LR
 Three pipelines, one table, each running at the cadence that matches the data's volatility. The cold run is cheap and slow. The warm run is the core and the cleanup. The hot run is fast and disposable.
 
 > [!info] Going further
-> The building blocks are this pattern, partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]), and incremental merge ([[04-load-strategies/0403-merge-upsert|0403]]). The hybrid strategy is introduced in [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108]]. For the full architecture -- how to wire the three zones together operationally -- see [[06-operating-the-pipeline/0607-tiered-freshness|0607-tiered-freshness]].
+> The building blocks are this pattern, partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]), and incremental merge ([[04-load-strategies/0403-merge-upsert|0403]]). The hybrid strategy is introduced in [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108]]. For the full architecture -- how to wire the three zones together operationally -- see [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]].
 
 ## By Corridor
 

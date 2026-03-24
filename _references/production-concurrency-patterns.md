@@ -5,9 +5,9 @@ tags:
   - reference/production
   - reference/operations
 relevant_chapters:
-  - 0605-scheduling-and-dependencies
+  - 0606-scheduling-and-dependencies
   - 0406-reliable-loads
-  - 0611-partial-failure-recovery
+  - 0612-partial-failure-recovery
 ---
 
 # Pipeline Concurrency Patterns

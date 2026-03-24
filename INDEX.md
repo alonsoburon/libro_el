@@ -76,21 +76,22 @@ status: outline
 ### Part VI -- Operating the Pipeline
 #### Running
 - [[06-operating-the-pipeline/0601-monitoring-observability|0601-monitoring-observability]] -- What to track beyond row counts
-- [[06-operating-the-pipeline/0602-cost-monitoring|0602-cost-monitoring]] -- Per-table, per-query, per-consumer. Know where the money goes before the invoice arrives
-- [[06-operating-the-pipeline/0603-sla-management|0603-sla-management]] -- "The data must be fresh by 8am." How to define, measure, and alert on freshness
-- [[06-operating-the-pipeline/0604-alerting-and-notifications|0604-alerting-and-notifications]] -- Schema drift, row count drops, partial failures. Calibrate severity so not everything is an incident
-- [[06-operating-the-pipeline/0605-scheduling-and-dependencies|0605-scheduling-and-dependencies]] -- `order_lines` can't land before `orders`. Orchestration patterns for DAGs with real dependencies
-- [[06-operating-the-pipeline/0606-source-system-etiquette|0606-source-system-etiquette]] -- Don't make the DBA want to kill you
-- [[06-operating-the-pipeline/0607-tiered-freshness|0607-tiered-freshness]] -- Cold/warm/hot zones: weekly full for history, daily for current year, intraday incremental for freshness
+- [[06-operating-the-pipeline/0602-health-table|0602-health-table]] -- One row per table per run. The schema, the columns, and how to populate it
+- [[06-operating-the-pipeline/0603-cost-monitoring|0603-cost-monitoring]] -- Per-table, per-query, per-consumer. Know where the money goes before the invoice arrives
+- [[06-operating-the-pipeline/0604-sla-management|0604-sla-management]] -- "The data must be fresh by 8am." How to define, measure, and alert on freshness
+- [[06-operating-the-pipeline/0605-alerting-and-notifications|0605-alerting-and-notifications]] -- Schema drift, row count drops, partial failures. Calibrate severity so not everything is an incident
+- [[06-operating-the-pipeline/0606-scheduling-and-dependencies|0606-scheduling-and-dependencies]] -- `order_lines` can't land before `orders`. Orchestration patterns for DAGs with real dependencies
+- [[06-operating-the-pipeline/0607-source-system-etiquette|0607-source-system-etiquette]] -- Don't make the DBA want to kill you
+- [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]] -- Cold/warm/hot zones: weekly full for history, daily for current year, intraday incremental for freshness
 #### Protecting
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] -- Schema drift, row counts, null rates, freshness. What to enforce and how
-- [[06-operating-the-pipeline/0609-extraction-status-gates|0609-extraction-status-gates]] -- 0 rows returned successfully is not the same as a silent failure. Gate the load on extraction status
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] -- Schema drift, row counts, null rates, freshness. What to enforce and how
+- [[06-operating-the-pipeline/0610-extraction-status-gates|0610-extraction-status-gates]] -- 0 rows returned successfully is not the same as a silent failure. Gate the load on extraction status
 #### Recovering
-- [[06-operating-the-pipeline/0610-backfill-strategies|0610-backfill-strategies]] -- Reloading 6 months without breaking prod
-- [[06-operating-the-pipeline/0611-partial-failure-recovery|0611-partial-failure-recovery]] -- Half the batch loaded, the other half didn't. Now what?
-- [[06-operating-the-pipeline/0612-duplicate-detection|0612-duplicate-detection]] -- Duplicates already landed. How to find them, quantify the damage, and deduplicate without losing data
-- [[06-operating-the-pipeline/0613-reconciliation-patterns|0613-reconciliation-patterns]] -- Source count vs destination count. Row-level, hash-level, and aggregate reconciliation
-- [[06-operating-the-pipeline/0614-recovery-from-corruption|0614-recovery-from-corruption]] -- A bad deploy corrupted 3 months of data. Identifying the blast radius and rebuilding
+- [[06-operating-the-pipeline/0611-backfill-strategies|0611-backfill-strategies]] -- Reloading 6 months without breaking prod
+- [[06-operating-the-pipeline/0612-partial-failure-recovery|0612-partial-failure-recovery]] -- Half the batch loaded, the other half didn't. Now what?
+- [[06-operating-the-pipeline/0613-duplicate-detection|0613-duplicate-detection]] -- Duplicates already landed. How to find them, quantify the damage, and deduplicate without losing data
+- [[06-operating-the-pipeline/0614-reconciliation-patterns|0614-reconciliation-patterns]] -- Source count vs destination count. Row-level, hash-level, and aggregate reconciliation
+- [[06-operating-the-pipeline/0615-recovery-from-corruption|0615-recovery-from-corruption]] -- A bad deploy corrupted 3 months of data. Identifying the blast radius and rebuilding
 
 ### Part VII -- Serving the Destination
 - [[07-serving-the-destination/0701-dont-pre-aggregate|0701-dont-pre-aggregate]] -- Land the movements, build the photo downstream. Resist the pressure to transform at extraction

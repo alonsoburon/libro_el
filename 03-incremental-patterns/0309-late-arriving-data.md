@@ -107,7 +107,7 @@ Late-arriving data is one of the hardest pipeline problems to explain to non-tec
 3. **"Why can't the data just be right?"** Because "right" has a cost. A 7-day overlap window on a table with 100 million rows re-extracts 7 days of data on every run to catch the rare late arrival. A 30-day overlap re-extracts 30 days. At some point, the cost of absolute correctness exceeds the cost of the occasional missing row. The overlap window is where we draw that line, and the full replace is the safety net behind it.
 
 > [!tip] Frame it as a tradeoff, not a limitation
-> Stakeholders respond better to "we chose a 7-day safety margin that catches 99% of late arrivals, with a weekly full reload as a backstop" than to "our pipeline might miss some rows." Both are true, but the first version communicates a deliberate engineering decision. See [[06-operating-the-pipeline/0603-sla-management|0603-sla-management]] for how to formalize these guarantees into measurable SLAs.
+> Stakeholders respond better to "we chose a 7-day safety margin that catches 99% of late arrivals, with a weekly full reload as a backstop" than to "our pipeline might miss some rows." Both are true, but the first version communicates a deliberate engineering decision. See [[06-operating-the-pipeline/0604-sla-management|0604-sla-management]] for how to formalize these guarantees into measurable SLAs.
 
 ---
 

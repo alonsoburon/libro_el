@@ -79,7 +79,7 @@ This holds for most inventory use cases. It breaks when:
 
 ## Solving Blind Spots: Tiered Windows
 
-A single activity window can't cover all cases without growing large enough to approach a full scan. The solution is the same as [[06-operating-the-pipeline/0607-tiered-freshness|0607]]: tier the cadences.
+A single activity window can't cover all cases without growing large enough to approach a full scan. The solution is the same as [[06-operating-the-pipeline/0608-tiered-freshness|0608]]: tier the cadences.
 
 - **Daily**: short window (e.g. 30 days) -- catches everything that moved recently, fast and cheap
 - **Weekly**: wider window (e.g. 180 days) -- catches slow movers, more expensive but still targeted
@@ -114,5 +114,5 @@ The monthly full scan is the safety net. It's expensive but infrequent. The dail
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- periodic reset that catches every blind spot
 - [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]] -- load mechanism for columnar destinations
 - [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]] -- activity window sizing follows the same logic as rolling window N
-- [[06-operating-the-pipeline/0607-tiered-freshness|0607-tiered-freshness]] -- tiered cadences applied to the activity window
+- [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]] -- tiered cadences applied to the activity window
 - [[03-incremental-patterns/0309-late-arriving-data|0309-late-arriving-data]] -- sizing the window for slow movers

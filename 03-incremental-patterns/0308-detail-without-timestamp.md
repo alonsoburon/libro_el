@@ -103,7 +103,7 @@ How often do independent detail mutations happen, and how long can the destinati
 | Occasional (line-level status changes) | Daily | Probably fine -- evaluate per table |
 | Frequent (line repricing, bulk updates) | Any | Need Strategy 1 or 2 |
 
-This maps naturally to the tiered freshness model from [[06-operating-the-pipeline/0607-tiered-freshness|0607]]: the incremental layer handles what the cursor can see, and a slower full replace layer catches everything else -- including detail mutations the cursor missed.
+This maps naturally to the tiered freshness model from [[06-operating-the-pipeline/0608-tiered-freshness|0608]]: the incremental layer handles what the cursor can see, and a slower full replace layer catches everything else -- including detail mutations the cursor missed.
 
 ---
 

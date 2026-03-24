@@ -51,7 +51,7 @@ Two conventions for where staging lives, each with real trade-offs:
 
 The parallel schema convention is worth it at scale -- permission management alone justifies it when you're running hundreds of tables. But go in with eyes open: the swap step is more involved on PostgreSQL and Redshift, and you'll need to handle it explicitly per engine.
 
-**2. Validate.** Run checks against `stg_orders` before touching production. At minimum: row count > 0, % change vs. production is within threshold, required columns have no NULLs. See [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]] for formalizing these as reusable contracts.
+**2. Validate.** Run checks against `stg_orders` before touching production. At minimum: row count > 0, % change vs. production is within threshold, required columns have no NULLs. See [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] for formalizing these as reusable contracts.
 
 **3. Swap.** Atomically replace production with staging. The mechanism varies by engine -- covered below -- but the result is the same: one moment consumers are reading the old data, the next they're reading the new data, with no empty window in between.
 
@@ -191,5 +191,5 @@ If the swap itself fails mid-operation (rare, but possible on non-atomic engines
 
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]]
 - [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]]
-- [[06-operating-the-pipeline/0608-data-contracts|0608-data-contracts]]
-- [[06-operating-the-pipeline/0609-extraction-status-gates|0609-extraction-status-gates]]
+- [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]]
+- [[06-operating-the-pipeline/0610-extraction-status-gates|0610-extraction-status-gates]]
