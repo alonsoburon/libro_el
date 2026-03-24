@@ -111,7 +111,7 @@ Relevant tools to reference by concern:
 ```
 
 #### Comparing Approaches
-- Use two sequential codeblocks with bold titles above each. Side-by-side will be handled in LaTeX at publish time.
+- Use two sequential codeblocks with bold titles above each. Side-by-side will be handled in Typst at publish time.
 - Do NOT use HTML divs, obsidian-columns, or horizontal-blocks for SQL comparisons (nesting codeblocks breaks rendering)
 
 #### Query + Result Tables
@@ -178,6 +178,12 @@ All SQL examples use this shared fictional domain. The goal is always to clone t
 #### Corridors
 - **Transactional → Columnar**: e.g. PostgreSQL → BigQuery (primary)
 - **Transactional → Transactional**: e.g. PostgreSQL → PostgreSQL
+
+### Publishing Toolchain
+- **Typst** for typesetting and page layout. Screen-first design (SQL codeblocks need width), with print as a secondary output.
+- **Custom SVGs** for charts and diagrams. The `_charts/` framework may be redesigned with a new visual style -- the current aesthetic is not final. Charts are authored externally and embedded into Typst as SVGs.
+- **CetZ-plot** (Typst library) is available for simple inline data charts that should inherit book typography and colors.
+- Workflow: write prose in Obsidian → import into Typst source files → design reusable layout components → embed SVG charts → `typst compile` → PDF.
 
 ### Key Terminology
 - **EL**: Extract-Load with zero transformation (theoretical ideal)
