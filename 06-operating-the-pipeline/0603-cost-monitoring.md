@@ -19,15 +19,6 @@ Cloud data warehouses bill by bytes scanned, slots consumed, or storage volume -
 
 Without per-table cost attribution, "costs went up 40%" is a mystery that sends you guessing. With it, you can point at the exact table and the exact operation that caused the spike -- and decide whether to fix the pattern, reduce the schedule frequency, or accept the cost because the freshness justifies it.
 
-## When You'll See This
-
-| Signal                                     | Example                                                                                                    |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Monthly bill spikes with no obvious change | BigQuery bill up 40%, nobody touched the pipeline -- a table grew 10x and its MERGE now scans 50GB per run |
-| One table dominates the pipeline's cost    | A single MERGE costs more per month than the rest of the pipeline combined                                 |
-| Storage grows faster than data does        | Snapshot or append-log tables accumulating without compaction or retention                                 |
-| Pattern change has invisible cost impact   | Switching from full replace to incremental saved extraction time but tripled the MERGE cost                |
-
 ## The Pattern
 
 Cost monitoring extends the health table from [[06-operating-the-pipeline/0602-health-table|0602]]. The health table captures `extraction_seconds`, `load_seconds`, and `bytes_extracted` per run -- time and volume metrics that tell you where the pipeline spends effort. But destination-side cost (bytes scanned, slots consumed, DML pricing) lives in the destination's own audit logs, and the connection between the two is the job label or run ID you attach to each load operation.

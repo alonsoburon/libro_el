@@ -15,21 +15,11 @@ updated: 2026-03-23
 
 ## The Problem
 
-Most pipelines start with a single check: did it succeed? That binary signal covers maybe 40% of what can go wrong. A pipeline can succeed while producing garbage -- a query timed out and returned partial results, a full replace that used to take 3 minutes now takes 45 because the table grew 10x, or the source schema changed and the loader silently dropped columns. Every one of these scenarios reports SUCCESS. Every one of them delivers broken data to consumers.
+Most pipelines start with a single check: did it succeed? That binary signal covers maybe 40% of what can go wrong. A pipeline can succeed while producing garbage -- a query timed out and returned partial results, a full replace that used to take 3 minutes now takes 45 because the table grew 10x, the source schema changed and the loader silently dropped columns, or half the batch loaded while the other half timed out, leaving the destination with rows from two different points in time. Every one of these scenarios reports SUCCESS. Every one of them delivers broken data to consumers.
 
 Without structured **observability**, you discover these problems when a stakeholder asks why the dashboard is wrong -- often days after the data actually broke. By that point the blast radius is wide: downstream models have consumed the bad data, reports have been sent, and the person asking is already frustrated. The monitoring pattern in this chapter is about catching those failures before anyone else does, ideally within minutes of the pipeline run that caused them.
 
 The key insight is that you need to track more than pass/fail, but you also need to resist the urge to track everything. Every metric you record has a storage cost and a cognitive cost -- someone has to look at it, and if the dashboard has 40 numbers, nobody looks at any of them carefully. The goal is a small set of raw measurements that cover the important failure modes, from which you can derive everything else.
-
-## When You'll See This
-
-| Signal                                             | Example                                                                                                       |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Stakeholder reports stale data before you notice   | "The dashboard hasn't updated since yesterday" and your pipeline shows SUCCESS                                |
-| Pipeline succeeds but row counts are wrong         | `orders` usually extracts 450k rows; today it extracted 12k and nobody flagged it                             |
-| Gradual performance degradation goes unnoticed     | A 4-minute extraction creeps to 25 minutes over 3 months, then starts overlapping with the next scheduled run |
-| Schema changes at source break downstream silently | Source adds a column, loader drops it, downstream query references it, consumer sees NULLs                    |
-| Partial failures produce incomplete data           | Half the batch loaded, the other half timed out, destination has rows from two different points in time       |
 
 ## Four Layers of Pipeline Observability
 

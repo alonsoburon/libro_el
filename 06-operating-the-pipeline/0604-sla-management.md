@@ -19,15 +19,6 @@ Stakeholders care about one thing: is the data fresh when they need it? Without 
 
 We had a client who we *told* -- but didn't write down -- that data updated once daily. They built automated collection emails that fired before midday, but most of their customers had already paid by then. The emails were going out with stale receivables data, and the client blamed the pipeline for the embarrassment. The fix wasn't technical -- it was documenting the SLA in the contract so both sides agreed on what "once daily" actually meant: data reflects the previous night's extraction, available by 9 AM, not refreshed throughout the day. **Everything that isn't written down can be reinterpreted against you.** Document the SLA.
 
-## When You'll See This
-
-| Signal                                                  | Example                                                                             |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Stakeholder discovers their own SLA the hard way        | A report scheduled at 8 AM assumes fresh data; nobody told you about the deadline   |
-| "The data is wrong" when the data is just stale         | Client sees yesterday's receivables and thinks the pipeline broke                   |
-| On-demand requests creep into production expectations   | You gave them an extra midday refresh as a favor; now they depend on it             |
-| Source-side delays cascade into your SLA                | The ERP's nightly batch job ran late, your extraction started late, 9 AM data stale |
-
 ## Defining an SLA
 
 ### What an SLA Contains
@@ -47,7 +38,7 @@ The measurement point matters. A run that starts at 7 AM but fails and retries u
 
 Not every table deserves the same freshness. `metrics_daily` refreshed once a day has a different SLA than `orders` refreshed every 15 minutes or a balance sheet refreshed monthly. Group tables by consumer urgency, not by source system -- the tables that most often need more than daily are sales data (especially during Black Friday or seasonal peaks), receivables (for end-of-month collection runs), and inventory stock levels (for in-store availability decisions). Everything else is usually fine at daily.
 
-Daily is the best default. It handles the vast majority of use cases, and the contract should say so explicitly: no more than one scheduled update per day, data reflects the previous night's extraction. When you increase frequency for specific tables -- an extra midday refresh for receivables, intraday incremental for sales -- make it clear in writing that the increased cadence is outside the base SLA and can be adjusted at any time. Give consumers `_extracted_at` in their reports ([[05-conforming-playbook/0501-metadata-column-injection|0501]]) so they always know how fresh the data actually is, rather than assuming.
+Daily is the best default. It handles the vast majority of use cases, and the contract should say so explicitly: no more than one scheduled update per day, data reflects the previous night's extraction. When you increase frequency for specific tables -- an extra midday refresh for receivables, intraday incremental for sales -- make it clear in writing that the increased cadence is outside the base SLA and can be adjusted at any time. This matters because ad-hoc refreshes have a way of becoming expected commitments: you give a consumer an extra midday refresh as a favor, they build a process around it, and now you have an SLA you never agreed to. Give consumers `_extracted_at` in their reports ([[05-conforming-playbook/0501-metadata-column-injection|0501]]) so they always know how fresh the data actually is, rather than assuming.
 
 > [!tip] On-demand refreshes can replace high-frequency schedules
 > If a consumer needs fresh data once or twice a day at unpredictable times, an on-demand refresh button that triggers the pipeline is often better than scheduling loads every 30 minutes "just in case." One triggered run costs far less than 48 idle runs per day, and the consumer gets exactly-when-needed freshness instead of at-most-30-minutes-stale. On-demand *can* be part of the SLA ("consumer may trigger up to N refreshes per day"), but keep it bounded -- without a cap, a trigger-happy user can spam refreshes and compete with scheduled runs for source connections and orchestrator slots. Document the limit, enforce it with a cooldown or queue, and monitor trigger frequency in the health table.
