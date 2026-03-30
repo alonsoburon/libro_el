@@ -182,7 +182,7 @@ flowchart TD
 **Merge / Upsert.** Match on a key, update if exists, insert if new. The most expensive and complex disposition in columnar engines because it requires reading existing data, comparing, and mutating. Every engine implements MERGE differently, but the cost is always higher than a pure append. See [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] for the full pattern.
 
 > [!tip] There are ways to avoid paying full MERGE cost
-> Append + deduplicate, conditional inserts filtered by hash, periodic source consolidation -- columnar engines offer a lot of room to optimize how you land mutable data. These strategies have trade-offs that depend on your data volume, mutation frequency, and engine. We cover them in depth in [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]] and [[07-serving-the-destination/0704-clustering-and-pruning|0704-clustering-and-pruning]].
+> Append + deduplicate, conditional inserts filtered by hash, periodic source consolidation -- columnar engines offer a lot of room to optimize how you land mutable data. These strategies have trade-offs that depend on your data volume, mutation frequency, and engine. We cover them in depth in [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]] and [[07-serving-the-destination/0702-partitioning-for-consumers|0702-partitioning-clustering-and-pruning]].
 
 ## Schema Evolution
 

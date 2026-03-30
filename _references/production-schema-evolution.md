@@ -8,7 +8,7 @@ relevant_chapters:
   - 0609-data-contracts
   - 0403-merge-upsert
   - 0503-type-casting-normalization
-  - 0708-schema-naming-conventions
+  - 0707-schema-naming-conventions
 ---
 
 # Schema Evolution at Load Time

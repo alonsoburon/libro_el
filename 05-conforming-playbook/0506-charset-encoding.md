@@ -104,7 +104,7 @@ Related but distinct concern: the characters in table and column *names*, not in
 
 **What the ECL layer should do.** Normalize identifiers for *safety*: lowercase, replace spaces with underscores, strip characters that require quoting on the destination engine. This isn't semantic renaming (`OACT` → `chart_of_accounts`) -- it's making sure the identifier doesn't break SQL on the other side. `[Order Lines]` → `order_lines`, `@Status` → `status`, `Column Name With Spaces` → `column_name_with_spaces`.
 
-This deserves its own full treatment -- see [[07-serving-the-destination/0708-schema-naming-conventions|0708]] for the complete naming convention discussion, including when to rename vs. preserve, schema prefixes, and how to handle identifiers that are reserved words on the destination.
+This deserves its own full treatment -- see [[07-serving-the-destination/0707-schema-naming-conventions|0707]] for the complete naming convention discussion, including when to rename vs. preserve, schema prefixes, and how to handle identifiers that are reserved words on the destination.
 
 ---
 
@@ -121,5 +121,5 @@ This deserves its own full treatment -- see [[07-serving-the-destination/0708-sc
 ## Related Patterns
 
 - [[01-foundations-and-archetypes/0103-transactional-sources|0103]] -- source encoding as an extraction gotcha
-- [[07-serving-the-destination/0708-schema-naming-conventions|0708]] -- table and column naming conventions at the destination
+- [[07-serving-the-destination/0707-schema-naming-conventions|0707]] -- table and column naming conventions at the destination
 - [[05-conforming-playbook/0503-type-casting-normalization|0503]] -- NVARCHAR vs VARCHAR as a type casting concern

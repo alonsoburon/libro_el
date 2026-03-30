@@ -32,11 +32,11 @@ So, what we're going to be talking about is ECL: **Extract, Conform, and Load**.
 
 ## What About the T?
 
-If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. We cover how to protect them (and your invoice) in [[07-serving-the-destination/0705-query-patterns-for-analysts|Query patterns for analysts]].
+If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. We cover how to protect them (and your invoice) in [[07-serving-the-destination/0704-query-patterns-for-analysts|Query patterns for analysts]].
 
 ## Related Patterns
 
 - [[00-front-matter/0002-domain-model|0002-domain-model]] -- The shared schema used in every SQL example in this book
 - [[01-foundations-and-archetypes/0102-what-is-conforming|0102-what-is-conforming]]
 - [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]]
-- [[07-serving-the-destination/0705-query-patterns-for-analysts|0705-query-patterns-for-analysts]]
+- [[07-serving-the-destination/0704-query-patterns-for-analysts|0704-query-patterns-for-analysts]]

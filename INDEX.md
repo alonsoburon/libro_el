@@ -97,11 +97,11 @@ status: outline
 - [[07-serving-the-destination/0701-dont-pre-aggregate|0701-dont-pre-aggregate]] -- Land the movements, build the photo downstream. Resist the pressure to transform at extraction
 - [[07-serving-the-destination/0702-partitioning-for-consumers|0702-partitioning-for-consumers]] -- Partition landed data so downstream queries don't full-scan
 - [[07-serving-the-destination/0703-pre-built-views|0703-pre-built-views]] -- Materialized views, scheduled queries, and pre-cooked tables for consumers who can't write efficient SQL
-- [[07-serving-the-destination/0704-clustering-and-pruning|0704-clustering-and-pruning]] -- Cluster keys, partition filters, require_partition_filter. Make it physically impossible to accidentally scan 3TB
-- [[07-serving-the-destination/0705-query-patterns-for-analysts|0705-query-patterns-for-analysts]] -- Cheat sheet: how to query append-only tables, how to get latest state, how to not blow up costs
-- [[07-serving-the-destination/0706-cost-optimization-by-engine|0706-cost-optimization-by-engine]] -- Engine-specific strategies for keeping query costs under control
-- [[07-serving-the-destination/0707-point-in-time-from-events|0707-point-in-time-from-events]] -- Reconstruct past state from event tables, not snapshots. Events are cheaper to store and replay than periodic copies of the full state
-- [[07-serving-the-destination/0708-schema-naming-conventions|0708-schema-naming-conventions]] -- Table and column naming at the destination: as-is from source, snake_case, normalized? Pick a convention and apply it consistently
+- [[07-serving-the-destination/0702-partitioning-for-consumers|0702-partitioning-clustering-and-pruning]] -- Cluster keys, partition filters, require_partition_filter. Make it physically impossible to accidentally scan 3TB
+- [[07-serving-the-destination/0704-query-patterns-for-analysts|0704-query-patterns-for-analysts]] -- Cheat sheet: how to query append-only tables, how to get latest state, how to not blow up costs
+- [[07-serving-the-destination/0705-cost-optimization-by-engine|0705-cost-optimization-by-engine]] -- Engine-specific strategies for keeping query costs under control
+- [[07-serving-the-destination/0706-point-in-time-from-events|0706-point-in-time-from-events]] -- Reconstruct past state from event tables, not snapshots. Events are cheaper to store and replay than periodic copies of the full state
+- [[07-serving-the-destination/0707-schema-naming-conventions|0707-schema-naming-conventions]] -- Table and column naming at the destination: as-is from source, snake_case, normalized? Pick a convention and apply it consistently
 
 ### Appendix
 - [[08-appendix/0801-sql-dialect-reference|0801-sql-dialect-reference]] -- Syntax comparison across engines (PostgreSQL, MySQL, SQL Server, BigQuery, Snowflake, ClickHouse)

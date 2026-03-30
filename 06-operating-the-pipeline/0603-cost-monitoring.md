@@ -72,7 +72,7 @@ The practical workflow is top-down: aggregate cost in a dashboard or a weekly sc
 | Pattern                     | Why it's expensive                              | Mitigation                                                                                                                    |
 | --------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | MERGE on large tables       | Full scan of both source and destination sides   | Partition-scoped merge, or switch to [[04-load-strategies/0404-append-and-materialize\|0404]]                                  |
-| Unpartitioned full scan     | Every query reads the entire table              | Partition by date, enforce `require_partition_filter` ([[07-serving-the-destination/0704-clustering-and-pruning\|0704]])        |
+| Unpartitioned full scan     | Every query reads the entire table              | Partition by date, enforce `require_partition_filter` ([[07-serving-the-destination/0702-partitioning-for-consumers\|0704]])        |
 | Staging cleanup missed      | Orphaned staging datasets accumulate storage    | Scheduled cleanup job, weekly or after each run                                                                               |
 | Snapshot append without TTL | Storage grows linearly with schedule frequency  | Retention policy or tiered compaction ([[02-full-replace-patterns/0202-snapshot-append\|0202]])                                |
 

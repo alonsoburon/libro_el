@@ -20,7 +20,7 @@ Pipelines fail silently. Zero rows extracted successfully, schema changed upstre
 The calibration problem has two failure modes.
 1. Too many alerts -- every run sends a notification, every minor discrepancy triggers a warning -- produces alert fatigue, and alert fatigue produces ignored alerts, and ignored alerts produce missed failures.
 2. Too few alerts -- only page on total outages -- means silent data loss accumulates for days before anyone notices.  
-The goal is a narrow band between the two: alert on conditions that require human attention, monitor everything else on the dashboard.
+The goal is a narrow band between the two: alert on conditions that require human attention, monitor everything else on the dashboard. Your pipelines should be loud, so that you can rest comfortably when there is silence.
 
 ## Severity Calibration
 

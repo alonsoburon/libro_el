@@ -91,6 +91,9 @@ The MERGE key determines how the destination identifies "the same row." Two opti
 > [!danger] Non-unique keys compound duplicates
 > If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and always bad. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see [[06-operating-the-pipeline/0613-duplicate-detection|0613]].
 
+> [!warning] Source PKs not enforced = silent data loss
+> If the source has no unique constraint on what you're using as the merge key, two rows can share the same key value. The merge collapses them into one -- the second overwrites the first, and the destination ends up with fewer rows than the source. This is data loss, not duplication, and it's invisible: the pipeline reports success, row counts look close enough, and the missing rows only surface when someone reconciles at the record level. Verify uniqueness on the actual data before committing to a merge key ([[01-foundations-and-archetypes/0105-the-lies-sources-tell|0105]]). If the source genuinely has duplicate PKs, you need a synthetic key ([[05-conforming-playbook/0502-synthetic-keys|0502]]).
+
 ---
 
 ## Full Row Replace vs. Partial Update
