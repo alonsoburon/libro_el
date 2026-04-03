@@ -53,7 +53,7 @@ Full replace always works for current state. The source has the correct data rig
 
 Reload only the corruption window via backfill ([[06-operating-the-pipeline/0611-backfill-strategies|0611]]). Less disruptive than full replace because data outside the window stays untouched, but it requires knowing the exact corruption range. Scope the range slightly wider than the first bad batch -- corruption boundaries are rarely as precise as a single timestamp suggests, and a few extra days of reload is cheap insurance against missing rows at the edges.
 
-Use partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]) for the destination-side replacement so the rebuild is atomic per partition and the rest of the table stays live throughout. For tables too large to full-replace but where the corruption window is bounded, this is the sweet spot.
+Use partition swap ([[02-full-replace-patterns/0202-partition-swap|0202]]) for the destination-side replacement so the rebuild is atomic per partition and the rest of the table stays live throughout. For tables too large to full-replace but where the corruption window is bounded, this is the sweet spot.
 
 ### PK-to-PK Repair
 

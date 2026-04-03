@@ -113,7 +113,7 @@ DO UPDATE SET
   updated_at = EXCLUDED.updated_at;
 ```
 
-Partial updates -- `DO UPDATE SET status = EXCLUDED.status` while leaving other columns untouched -- earn their complexity only when partial column loading ([[02-full-replace-patterns/0210-partial-column-loading|0210]]) forces them. If you're extracting all columns, update all columns. Deciding which columns "matter" is a business decision that breaks the conforming boundary ([[01-foundations-and-archetypes/0102-what-is-conforming|0102]]).
+Partial updates -- `DO UPDATE SET status = EXCLUDED.status` while leaving other columns untouched -- earn their complexity only when partial column loading ([[02-full-replace-patterns/0209-partial-column-loading|0209]]) forces them. If you're extracting all columns, update all columns. Deciding which columns "matter" is a business decision that breaks the conforming boundary ([[01-foundations-and-archetypes/0102-what-is-conforming|0102]]).
 
 ---
 

@@ -32,16 +32,15 @@ status: outline
 
 ### Part II -- Full Replace Patterns
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- When incremental isn't worth it
-- [[02-full-replace-patterns/0202-snapshot-append|0202-snapshot-append]] -- Append full periodic snapshots with `_snapshot_at`, deduplicate downstream. For external sources with no change tracking
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- Drop + reload, atomic and idempotent
-- [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]] -- Stage, validate, swap
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- Drop + reload, atomic and idempotent
+- [[02-full-replace-patterns/0203-staging-swap|0203-staging-swap]] -- Stage, validate, swap
 #### The Gray Middle
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- Full replace but only current + previous year. Bounded full scans for tables too big to reload entirely
-- [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]] -- Drop and reload the last N days/months. Not incremental, not full -- just the hot zone
-- [[02-full-replace-patterns/0207-sparse-table-extraction|0207-sparse-table-extraction]] -- Cross-product tables (SKU x Warehouse) where 90% of rows are zeros. Filter at extraction, but know the risks
-- [[02-full-replace-patterns/0208-activity-driven-extraction|0208-activity-driven-extraction]] -- Use recent transactions to know which dimension combos are active, extract only those
-- [[02-full-replace-patterns/0209-hash-based-change-detection|0209-hash-based-change-detection]] -- No `updated_at`? Hash the row, compare to last extraction. Only pull what changed
-- [[02-full-replace-patterns/0210-partial-column-loading|0210-partial-column-loading]] -- When you can't or shouldn't extract all columns. How to do it explicitly and avoid the trap of consumers assuming the destination is complete
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- Full replace but only current + previous year. Bounded full scans for tables too big to reload entirely
+- [[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]] -- Drop and reload the last N days/months. Not incremental, not full -- just the hot zone
+- [[02-full-replace-patterns/0206-sparse-table-extraction|0206-sparse-table-extraction]] -- Cross-product tables (SKU x Warehouse) where 90% of rows are zeros. Filter at extraction, but know the risks
+- [[02-full-replace-patterns/0207-activity-driven-extraction|0207-activity-driven-extraction]] -- Use recent transactions to know which dimension combos are active, extract only those
+- [[02-full-replace-patterns/0208-hash-based-change-detection|0208-hash-based-change-detection]] -- No `updated_at`? Hash the row, compare to last extraction. Only pull what changed
+- [[02-full-replace-patterns/0209-partial-column-loading|0209-partial-column-loading]] -- When you can't or shouldn't extract all columns. How to do it explicitly and avoid the trap of consumers assuming the destination is complete
 
 ### Part III -- Incremental Extraction Patterns
 - [[03-incremental-patterns/0301-timestamp-extraction-foundations|0301-timestamp-extraction-foundations]] -- When `updated_at` lies, how to validate it, and when to run a periodic full replace

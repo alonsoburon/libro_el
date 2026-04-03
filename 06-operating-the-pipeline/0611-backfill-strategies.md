@@ -25,7 +25,7 @@ We had a client with a massive table on a very slow on-prem database -- too larg
 
 ### Date-Range Backfill
 
-The most common type: reload a specific date range -- last three months, last fiscal quarter, a single bad week -- using partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]) or rolling window replace ([[02-full-replace-patterns/0206-rolling-window-replace|0206]]). Everything outside the range stays untouched. Scope the range slightly wider than the known corruption -- the blast radius of a bad deploy is rarely as precise as the deploy timestamp suggests.
+The most common type: reload a specific date range -- last three months, last fiscal quarter, a single bad week -- using partition swap ([[02-full-replace-patterns/0202-partition-swap|0202]]) or rolling window replace ([[02-full-replace-patterns/0205-rolling-window-replace|0205]]). Everything outside the range stays untouched. Scope the range slightly wider than the known corruption -- the blast radius of a bad deploy is rarely as precise as the deploy timestamp suggests.
 
 ### Full Table Backfill
 
@@ -67,7 +67,7 @@ If your clients actively manage their own source data -- correcting historical r
 
 **`start_date` / `end_date`** -- override the extraction's date boundaries to re-extract a specific range without pulling everything forward to today. Without an `end_date`, a backfill starting three months back also re-extracts all data between then and now -- wasting source load and destination writes on data that's already correct.
 
-Date-range backfills can also clean up hard deletes and orphaned rows within the window if you filter on a stable business date (`order_date`, `invoice_date`) rather than `updated_at`, then swap the destination's partitions for that range with the fresh data ([[02-full-replace-patterns/0203-partition-swap|0203]]). The partition swap fully replaces the slice, so anything that existed in the destination but no longer exists in the source disappears. The business date is the right filter because it's immutable -- an order placed on March 5 always has `order_date = 2026-03-05` regardless of when it was last updated -- which keeps partition boundaries stable and guarantees you capture every row in the range, not just recently changed ones.
+Date-range backfills can also clean up hard deletes and orphaned rows within the window if you filter on a stable business date (`order_date`, `invoice_date`) rather than `updated_at`, then swap the destination's partitions for that range with the fresh data ([[02-full-replace-patterns/0202-partition-swap|0202]]). The partition swap fully replaces the slice, so anything that existed in the destination but no longer exists in the source disappears. The business date is the right filter because it's immutable -- an order placed on March 5 always has `order_date = 2026-03-05` regardless of when it was last updated -- which keeps partition boundaries stable and guarantees you capture every row in the range, not just recently changed ones.
 
 **`full_refresh`** -- ignore all incremental state and reload the entire table using full replace ([[04-load-strategies/0401-full-replace|0401]]) instead of a merge. A merge only updates and inserts, so rows hard-deleted at the source survive in the destination indefinitely; a full replace wipes the slate. Useful when the table is small enough that scoping isn't worth the effort, when the incremental state is corrupt, or when you suspect hard deletes have drifted the destination.
 
@@ -96,8 +96,8 @@ Both should be launchable from your orchestrator's UI without modifying code or 
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- the mechanism for date-range backfills in partitioned tables
-- [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]] -- rolling window as a scoped backfill strategy
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- the mechanism for date-range backfills in partitioned tables
+- [[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]] -- rolling window as a scoped backfill strategy
 - [[04-load-strategies/0401-full-replace|0401-full-replace]] -- full table backfill
 - [[03-incremental-patterns/0303-stateless-window-extraction|0303-stateless-window-extraction]] -- no state to reset after backfill
 - [[06-operating-the-pipeline/0607-source-system-etiquette|0607-source-system-etiquette]] -- safe hours and source protection

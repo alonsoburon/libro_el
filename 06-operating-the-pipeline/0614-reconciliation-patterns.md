@@ -48,7 +48,7 @@ Two asymmetric rules drive threshold configuration:
 
 **Destination has more rows than source** -- interpretation depends on whether hard delete detection is running. If it is, a surplus means duplicates and warrants an immediate alert. If it isn't, the surplus is expected: rows deleted from the source still exist in the destination. Know which case you're in before alerting.
 
-When a deficit above threshold surfaces, the resolution depends on the gap size. A small gap is a candidate for pk-to-pk detection ([[03-incremental-patterns/0306-hard-delete-detection|0306]]) to identify exactly which rows are missing without reloading the whole table. A large gap points to a structural failure -- a missed extraction window, a dropped partition, a load strategy mismatch -- and the right fix is a full reload or partition swap ([[02-full-replace-patterns/0201-full-scan-strategies|0201]], [[02-full-replace-patterns/0203-partition-swap|0203]]).
+When a deficit above threshold surfaces, the resolution depends on the gap size. A small gap is a candidate for pk-to-pk detection ([[03-incremental-patterns/0306-hard-delete-detection|0306]]) to identify exactly which rows are missing without reloading the whole table. A large gap points to a structural failure -- a missed extraction window, a dropped partition, a load strategy mismatch -- and the right fix is a full reload or partition swap ([[02-full-replace-patterns/0201-full-scan-strategies|0201]], [[02-full-replace-patterns/0202-partition-swap|0202]]).
 
 ## Timing Matters
 
@@ -90,4 +90,4 @@ Store the results in the health table ([[06-operating-the-pipeline/0602-health-t
 - [[06-operating-the-pipeline/0613-duplicate-detection|0613-duplicate-detection]] -- count mismatch is often the first signal of duplication
 - [[03-incremental-patterns/0306-hard-delete-detection|0306-hard-delete-detection]] -- pk-to-pk comparison for resolving small discrepancies
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- full reload for resolving large discrepancies
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- partition-scoped reload for resolving discrepancies in a date range
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- partition-scoped reload for resolving discrepancies in a date range

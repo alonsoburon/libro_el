@@ -50,7 +50,13 @@
       "WebFetch(domain:answers.sap.com)",
       "WebFetch(domain:erpref.com)",
       "WebFetch(domain:help.sap.com)",
-      "WebFetch(domain:sapkbs.blogspot.com)"
+      "WebFetch(domain:sapkbs.blogspot.com)",
+      "WebFetch(domain:help.obsidian.md)",
+      "WebFetch(domain:obsidian.md)",
+      "WebFetch(domain:docs.obsidian.md)",
+      "WebFetch(domain:forum.obsidian.md)",
+      "WebFetch(domain:www.obsibrain.com)",
+      "Bash(curl:*)"
     ]
   },
   "outputStyle": "default",

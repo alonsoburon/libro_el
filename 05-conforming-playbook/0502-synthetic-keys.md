@@ -110,6 +110,6 @@ If you're hashing across multiple tables and worry about cross-table collisions,
 ## Related Patterns
 
 - [[04-load-strategies/0403-merge-upsert|0403]] -- the MERGE that needs a reliable key to match on
-- [[02-full-replace-patterns/0209-hash-based-change-detection|0209]] -- hash-based change detection uses similar mechanics but hashes all columns (mutable included) to detect changes, while synthetic keys hash only immutable columns to identify entities
+- [[02-full-replace-patterns/0208-hash-based-change-detection|0208]] -- hash-based change detection uses similar mechanics but hashes all columns (mutable included) to detect changes, while synthetic keys hash only immutable columns to identify entities
 - [[01-foundations-and-archetypes/0106-hard-rules-soft-rules|0106]] -- "PKs are unique and stable" is often a soft rule
 - [[05-conforming-playbook/0501-metadata-column-injection|0501]] -- `_source_hash` hashes the full row for change detection; `_source_key` hashes immutable columns for identity. Different purpose, similar mechanics

@@ -70,7 +70,7 @@ A periodic full replace resets all of it. How often do you see corrections that 
 | Monthly | Occasional retroactive corrections; ERP with formal period closes |
 | Quarterly | Stable source with rare manual edits |
 
-If a full table reload is too expensive, scope the full replace to a rolling window of recent partitions -- see [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]].
+If a full table reload is too expensive, scope the full replace to a rolling window of recent partitions -- see [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]].
 
 ---
 

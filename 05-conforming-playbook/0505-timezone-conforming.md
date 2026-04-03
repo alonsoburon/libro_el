@@ -97,6 +97,6 @@ This matters more than partition alignment. A row in the wrong partition is an i
 
 - [[05-conforming-playbook/0503-type-casting-normalization|0503]] -- DATETIME2 → TIMESTAMP casting and precision truncation
 - [[05-conforming-playbook/0504-null-handling|0504]] -- same principle: reflect the source, don't add information that isn't there
-- [[02-full-replace-patterns/0203-partition-swap|0203]] -- partition boundaries and timezone alignment
+- [[02-full-replace-patterns/0202-partition-swap|0202]] -- partition boundaries and timezone alignment
 - [[01-foundations-and-archetypes/0105-the-lies-sources-tell|0105]] -- "timestamps have timezones" as a common lie
 - [[03-incremental-patterns/0303-stateless-window-extraction|0303]] -- overlap windows help with DST ambiguity

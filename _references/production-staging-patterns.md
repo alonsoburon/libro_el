@@ -5,7 +5,7 @@ tags:
   - reference/production
   - reference/staging
 relevant_chapters:
-  - 0204-staging-swap
+  - 0203-staging-swap
   - 0403-merge-upsert
   - 0406-reliable-loads
   - 0612-partial-failure-recovery

@@ -38,7 +38,7 @@ A window measured in days absorbs any clock skew between source and extractor. N
 
 A cursor-based pipeline can fail in ways that are hard to debug: partial loads that advance the cursor, destination rebuilds that reset the high-water mark, orchestrator metadata that gets out of sync. All of these produce permanent gaps that are invisible until someone notices the counts are off.
 
-A stateless window can't have any of these problems. There's no state to corrupt. Re-run it, get the same result. Retry after failure -- just run again. Backfill a date range -- change the window bounds. Two runs overlap -- upsert handles it. Every property we want from a pipeline (stateless, idempotent, safe to retry, safe to parallelize) comes for free.
+A stateless window can't have any of these problems. There's no state to corrupt. Re-run it, get the same result. Retry after failure -- just run again. Backfill a date range -- change the window bounds. Two runs overlap -- upsert or dedup handles it. Every property we want from a pipeline (stateless, idempotent, safe to retry, safe to parallelize) comes for free.
 
 The tradeoff: you always process the full window even when almost nothing changed. For small-to-moderate tables with indexed `updated_at`, that cost is almost always less than the engineering cost of managing cursor state across thousands of tables.
 
@@ -81,6 +81,29 @@ Three tiers, no cursor state anywhere, each tier sized independently.
 
 ---
 
+## When There's No Timestamp At All
+
+The examples above assume the source has an `updated_at` or similar timestamp to scope the window. Some sources don't -- the data is correct as of whenever you query it, figures get revised and disputes get resolved, but there's no column that tells you when. No `updated_at`, no row version, no mechanism to tell you what changed.
+
+The extraction is still a stateless window, but scoped by a business date instead of a modification timestamp:
+
+```sql
+-- source: transactional
+SELECT *
+FROM invoices
+WHERE invoice_date >= CURRENT_DATE - 90;
+```
+
+Every source that rewrites history has a horizon -- the furthest back a correction can reach. "Sales figures finalize after 60 days." "Invoices can be disputed within 90 days." That horizon defines your window size. If the business says 60 days, extract 90. The stated horizon is a soft rule ([[01-foundations-and-archetypes/0106-hard-rules-soft-rules|0106]]) -- verify it against actual data before trusting it.
+
+Rows outside the mutable window are immutable by definition. They stay in the destination untouched between runs. Only the window gets re-extracted.
+
+The key difference from a timestamp-based window: you're extracting *every* row in the window, not just rows that changed. A 7-day `updated_at` window returns only rows modified in the last 7 days. A 90-day business-date window returns all 90 days of rows regardless of whether they changed. The append volume is higher, but there's no filtering assumption to get wrong -- you're guaranteed to capture every correction within the horizon.
+
+Load with append-and-materialize ([[04-load-strategies/0404-append-and-materialize|0404]]) to keep the per-run cost near zero. At intra-day frequency, this is significantly cheaper than a scoped full replace ([[02-full-replace-patterns/0204-scoped-full-replace|0204]]) which would require a partition rewrite on every run.
+
+---
+
 ## By Corridor
 
 > [!example]- Transactional → Columnar (e.g. any source → BigQuery)
@@ -97,4 +120,4 @@ Three tiers, no cursor state anywhere, each tier sized independently.
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- stateful alternative; earns its overhead on large, high-frequency tables
 - [[03-incremental-patterns/0309-late-arriving-data|0309-late-arriving-data]] -- sizing the overlap for late arrivals
 - [[03-incremental-patterns/0310-create-vs-update-separation|0310-create-vs-update-separation]] -- when the trigger fires on UPDATE only and INSERT rows are invisible
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- combining a full-replace zone with a stateless window layer
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- combining a full-replace zone with a stateless window layer

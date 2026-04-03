@@ -115,4 +115,4 @@ WHERE table_name = 'customers'
 
 - [[05-conforming-playbook/0503-type-casting-normalization|0503-type-casting-normalization]] -- try casting before excluding; partial loading is the fallback
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- column exclusion applies regardless of how you detect changes
-- [[02-full-replace-patterns/0209-hash-based-change-detection|0209-hash-based-change-detection]] -- hash-based detection breaks if the hashed column set doesn't match the extracted column set; align them explicitly
+- [[02-full-replace-patterns/0208-hash-based-change-detection|0208-hash-based-change-detection]] -- hash-based detection breaks if the hashed column set doesn't match the extracted column set; align them explicitly

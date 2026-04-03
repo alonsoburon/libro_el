@@ -175,7 +175,7 @@ Late-arriving data adds another dimension: rows for prior dates arriving today b
 ## Related Patterns
 
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]]
-- [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]]
+- [[02-full-replace-patterns/0203-staging-swap|0203-staging-swap]]
 - [[03-incremental-patterns/0309-late-arriving-data|0309-late-arriving-data]]
 - [[05-conforming-playbook/0505-timezone-conforming|0505-timezone-conforming]]
 - [[01-foundations-and-archetypes/0104-columnar-destinations|0104-columnar-destinations]]

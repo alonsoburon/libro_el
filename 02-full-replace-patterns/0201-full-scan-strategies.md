@@ -97,9 +97,9 @@ flowchart TD
     method --> partition["Partition replace<br>date range only"]
 ```
 
-**Staging swap.** Load into a staging table, validate, then atomically swap staging to production. Zero downtime -- consumers query the production table and see complete data throughout. Rollback is dropping the staging table without touching prod. This is the recommended approach for any table with live consumers. See [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]].
+**Staging swap.** Load into a staging table, validate, then atomically swap staging to production. Zero downtime -- consumers query the production table and see complete data throughout. Rollback is dropping the staging table without touching prod. This is the recommended approach for any table with live consumers. See [[02-full-replace-patterns/0203-staging-swap|0203-staging-swap]].
 
-**Partition-level replace.** When the table is partitioned by date and you're replacing a specific date range, drop and reload only the affected partitions. Still a full replace per partition -- you extract all rows for those dates and reload completely -- but you don't touch partitions outside the range. See [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]].
+**Partition-level replace.** When the table is partitioned by date and you're replacing a specific date range, drop and reload only the affected partitions. Still a full replace per partition -- you extract all rows for those dates and reload completely -- but you don't touch partitions outside the range. See [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]].
 
 **Truncate + reload.** `TRUNCATE` the table and insert fresh. Simple, but it has a window where the table is empty. Acceptable for overnight runs where no dashboards or queries are running against the table. Never acceptable for tables with intraday consumers.
 
@@ -147,7 +147,7 @@ See [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] for fo
 
 ## What Full Scan Doesn't Solve
 
-**Tables too large to scan entirely.** When the full scan takes longer than your schedule window, or when the source can't handle the load at any hour, full scan isn't viable. Options: scope the scan to the current + previous period ([[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]]), or switch to a rolling window ([[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]]).
+**Tables too large to scan entirely.** When the full scan takes longer than your schedule window, or when the source can't handle the load at any hour, full scan isn't viable. Options: scope the scan to the current + previous period ([[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]]), or switch to a rolling window ([[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]]).
 
 **Freshness tighter than scan frequency.** If the business needs data every 15 minutes and a full scan takes 2 hours, you need incremental. Part III covers cursor-based extraction, merge patterns, and append strategies for tables that need sub-hourly freshness.
 
@@ -155,9 +155,9 @@ See [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] for fo
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]]
-- [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]]
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]]
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]]
+- [[02-full-replace-patterns/0203-staging-swap|0203-staging-swap]]
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]]
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]]
 - [[06-operating-the-pipeline/0607-source-system-etiquette|0607-source-system-etiquette]]
 - [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]]

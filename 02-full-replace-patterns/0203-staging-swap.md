@@ -190,6 +190,6 @@ If the swap itself fails mid-operation (rare, but possible on non-atomic engines
 ## Related Patterns
 
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]]
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]]
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]]
 - [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]]
 - [[06-operating-the-pipeline/0610-extraction-status-gates|0610-extraction-status-gates]]

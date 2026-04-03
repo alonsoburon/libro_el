@@ -41,7 +41,7 @@ Materialized views work best when the view has a single base table or a fact tab
 
 The dedup view from [[04-load-strategies/0404-append-and-materialize|0404]] is a SQL view by default, and during development that's fine -- you're the only one querying it. Once analysts start using it daily, the cost shifts: 50 queries per day against a view that scans 90 days of append log means 50 full scans of that log per day. At that point the materialization cost (one refresh per load) is a fraction of the repeated read cost, and the switch is justified.
 
-A view over 90 days of daily snapshots ([[02-full-replace-patterns/0202-snapshot-append|0202]]) is an even clearer case -- every query scans 90x the base table to find the latest snapshot per key. Materialization is almost always worth it here, even at low query frequency.
+A view over 90 days of append log is an even clearer case -- every query scans 90x the base table volume to find the latest version per key. Materialization is almost always worth it here, even at low query frequency.
 
 The rule: don't materialize speculatively. Wait until the query cost shows up in [[06-operating-the-pipeline/0603-cost-monitoring|0603]], then materialize the views that actually get hit. A materialized view for a table queried once a week is wasted storage and refresh compute -- and at 15 views across 70 base tables, most of the serving layer stays as simple SQL views that never need materialization.
 
@@ -105,7 +105,7 @@ When the nested schema mutates -- a new field appears, a field is renamed -- the
 ## Related Patterns
 
 - [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]] -- the dedup view that most commonly needs materialization
-- [[02-full-replace-patterns/0202-snapshot-append|0202-snapshot-append]] -- snapshot tables that benefit most from materialized current-state views
+- [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]] -- append logs that benefit most from materialized current-state views
 - [[05-conforming-playbook/0507-nested-data-and-json|0507-nested-data-and-json]] -- raw JSON landing that needs flattening views
 - [[07-serving-the-destination/0701-dont-pre-aggregate|0701-dont-pre-aggregate]] -- the boundary between serving and conforming
 - [[06-operating-the-pipeline/0603-cost-monitoring|0603-cost-monitoring]] -- the signal that tells you when to materialize

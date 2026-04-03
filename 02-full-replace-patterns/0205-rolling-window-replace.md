@@ -23,11 +23,11 @@ Rolling window replace exploits that clustering. Instead of scanning the full ta
 
 Both patterns maintain a managed zone and a frozen zone. The difference is in how the boundary is defined and what the filter operates on.
 
-[[02-full-replace-patterns/0205-scoped-full-replace|0205]] uses a calendar anchor -- Jan 1 of last year, or a fixed migration date. The boundary is a business date: a fiscal year, a known cutover point. The filter typically operates on `created_at` or `doc_date`. The managed zone grows over the year and resets annually.
+[[02-full-replace-patterns/0204-scoped-full-replace|0204]] uses a calendar anchor -- Jan 1 of last year, or a fixed migration date. The boundary is a business date: a fiscal year, a known cutover point. The filter typically operates on `created_at` or `doc_date`. The managed zone grows over the year and resets annually.
 
 Rolling window uses a metadata anchor -- `updated_at` or `created_at` relative to today. The window is always the same width. It advances daily. There's no natural hard boundary like a fiscal year close; N is a judgment call based on how long corrections typically take to arrive in the source.
 
-Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than [[02-full-replace-patterns/0205-scoped-full-replace|0205]]'s "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]].
+Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than [[02-full-replace-patterns/0204-scoped-full-replace|0204]]'s "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]].
 
 ## The Mechanics
 
@@ -90,10 +90,10 @@ A rough starting point is 2x the maximum expected correction lag -- if correctio
 
 ## The Assumption You're Making
 
-Every row older than N days is either immutable or stale-by-design. The frozen zone grows continuously -- a row that was last updated 31 days ago is frozen forever in a 30-day window. Unlike [[02-full-replace-patterns/0205-scoped-full-replace|0205]], there's no fiscal year close or business invariant backing this up. N is purely a statistical bet on source behavior.
+Every row older than N days is either immutable or stale-by-design. The frozen zone grows continuously -- a row that was last updated 31 days ago is frozen forever in a 30-day window. Unlike [[02-full-replace-patterns/0204-scoped-full-replace|0204]], there's no fiscal year close or business invariant backing this up. N is purely a statistical bet on source behavior.
 
 > [!warning] Document the window for consumers
-> Consumers querying this table should know that data older than N days may not reflect current source state. The destination is not a complete mirror -- it's a rolling-correct-within-window, frozen-outside table. Treat this the same as [[02-full-replace-patterns/0205-scoped-full-replace|0205]]'s scope boundary documentation.
+> Consumers querying this table should know that data older than N days may not reflect current source state. The destination is not a complete mirror -- it's a rolling-correct-within-window, frozen-outside table. Treat this the same as [[02-full-replace-patterns/0204-scoped-full-replace|0204]]'s scope boundary documentation.
 
 ## Validation
 
@@ -112,14 +112,14 @@ Optionally, compare the window row count against the prior run. A large drop in 
 ## By Corridor
 
 > [!example]- Transactional → Columnar (e.g. PostgreSQL → BigQuery)
-> Columnar destinations should partition by a stable (hopefully unchangeable) business date -- `created_at`, `doc_date`, `event_date`. Never by `updated_at`: a row that gets updated moves to a different partition on each edit, creating duplicates across partition boundaries -- deduplication requires a full table scan to resolve. This means the filter field (`updated_at`) and the partition key are misaligned. An order created two years ago that was updated yesterday lives in a two-year-old partition -- to replace it, you'd need to replace that partition too. Without scanning the whole table, you can't know which historical partitions are affected. The pattern becomes expensive and unpredictable in columnar. Prefer [[02-full-replace-patterns/0205-scoped-full-replace|0205]] for columnar destinations.
+> Columnar destinations should partition by a stable (hopefully unchangeable) business date -- `created_at`, `doc_date`, `event_date`. Never by `updated_at`: a row that gets updated moves to a different partition on each edit, creating duplicates across partition boundaries -- deduplication requires a full table scan to resolve. This means the filter field (`updated_at`) and the partition key are misaligned. An order created two years ago that was updated yesterday lives in a two-year-old partition -- to replace it, you'd need to replace that partition too. Without scanning the whole table, you can't know which historical partitions are affected. The pattern becomes expensive and unpredictable in columnar. Prefer [[02-full-replace-patterns/0204-scoped-full-replace|0204]] for columnar destinations.
 
 > [!example]- Transactional → Transactional (e.g. PostgreSQL → PostgreSQL)
 > Natural fit. DELETE by PK from staging, then INSERT -- or upsert with `ON CONFLICT (id) DO UPDATE`. Precise, no partition mismatch, no overshoot. The destination PK constraint is the safety net. See mechanics above for the full SQL.
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- execution mechanism for the columnar replacement
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- calendar anchor variant; harder boundary, less aggressive freezing
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- execution mechanism for the columnar replacement
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- calendar anchor variant; harder boundary, less aggressive freezing
 - [[03-incremental-patterns/0309-late-arriving-data|0309-late-arriving-data]] -- sizing the window for late arrivals
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- cursor-based equivalent; same intuition, different mechanics

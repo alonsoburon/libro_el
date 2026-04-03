@@ -65,7 +65,7 @@ No other columnar engine has an equivalent enforcement mechanism. Snowflake, Cli
 
 The partition scheme and the load strategy interact directly -- a mismatch between them turns a cheap operation into an expensive one.
 
-**Full replace** via partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]) is partition-native: you replace entire partitions atomically, and the partition key determines which slices get swapped. BigQuery partition copies are near-free metadata operations; Snowflake and Redshift use DELETE + INSERT within a transaction scoped to the partition range.
+**Full replace** via partition swap ([[02-full-replace-patterns/0202-partition-swap|0202]]) is partition-native: you replace entire partitions atomically, and the partition key determines which slices get swapped. BigQuery partition copies are near-free metadata operations; Snowflake and Redshift use DELETE + INSERT within a transaction scoped to the partition range.
 
 **Incremental MERGE** cost scales with the number of partitions the batch touches ([[04-load-strategies/0403-merge-upsert|0403]]). A batch aligned to a single day's partition rewrites one partition. A batch scattered across 30 dates rewrites 30. Keep load batches as aligned to partition boundaries as the data allows.
 
@@ -97,7 +97,7 @@ The rebuild is a full table rewrite, so it costs bytes scanned on the read and b
 ## Related Patterns
 
 - [[01-foundations-and-archetypes/0104-columnar-destinations|0104-columnar-destinations]] -- per-engine storage mechanics
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- partition-aligned load operations
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- partition-aligned load operations
 - [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] -- MERGE cost scales with partitions touched
 - [[07-serving-the-destination/0703-pre-built-views|0703-pre-built-views]] -- materialized views as an alternative when partition pruning isn't enough
 - [[06-operating-the-pipeline/0603-cost-monitoring|0603-cost-monitoring]] -- partition misalignment shows up as cost spikes

@@ -38,7 +38,7 @@ flowchart TD
 
 **Extract within scope.** Pull only rows where the scope field falls inside the declared window. The source query is bounded -- no full-table scan.
 
-**Replace the managed zone.** Use partition swap ([[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]]) to replace every partition in `scope_start → today`. The frozen zone is never part of the destination operation.
+**Replace the managed zone.** Use partition swap ([[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]]) to replace every partition in `scope_start → today`. The frozen zone is never part of the destination operation.
 
 ## Defining the Scope
 
@@ -57,7 +57,7 @@ Three ways to anchor `scope_start`:
 | ------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Start of last year | `DATE_TRUNC('year', CURRENT_DATE - INTERVAL '1 year')` | Accounting data with open/closed fiscal years. Year boundaries are natural partition boundaries. Window grows Jan→Dec then resets.  |
 | Fixed date         | `'2025-01-01'`                                         | History before that date is known bad, migrated from another system, or simply not needed. Stable until you change it deliberately. |
-| Rolling offset     | Last N days                                            | Different pattern -- see [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]].                     |
+| Rolling offset     | Last N days                                            | Different pattern -- see [[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]].                     |
 
 The calendar year anchor is particularly useful for transactional systems with formal year-close processes. Once a fiscal year is closed in the source, no document in that year should change. The year boundary is a business invariant backed by a process -- align your scope to it.
 
@@ -129,7 +129,7 @@ flowchart LR
 Three pipelines, one table, each running at the cadence that matches the data's volatility. The cold run is cheap and slow. The warm run is the core and the cleanup. The hot run is fast and disposable.
 
 > [!info] Going further
-> The building blocks are this pattern, partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]), and incremental merge ([[04-load-strategies/0403-merge-upsert|0403]]). The hybrid strategy is introduced in [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108]]. For the full architecture -- how to wire the three zones together operationally -- see [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]].
+> The building blocks are this pattern, partition swap ([[02-full-replace-patterns/0202-partition-swap|0202]]), and incremental merge ([[04-load-strategies/0403-merge-upsert|0403]]). The hybrid strategy is introduced in [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108]]. For the full architecture -- how to wire the three zones together operationally -- see [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]].
 
 ## By Corridor
 
@@ -141,8 +141,8 @@ Three pipelines, one table, each running at the cadence that matches the data's 
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- execution mechanism for the managed zone
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- execution mechanism for the managed zone
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- for dimension tables that don't fit a scope
-- [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]] -- rolling offset instead of calendar anchor
+- [[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]] -- rolling offset instead of calendar anchor
 - [[03-incremental-patterns/0304-cursor-from-another-table|0304-cursor-from-another-table]] -- scoping detail tables without their own timestamp
 - [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]]

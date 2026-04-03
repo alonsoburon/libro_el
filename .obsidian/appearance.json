@@ -1,4 +1,7 @@
 {
-  "cssTheme": "Obsidian gruvbox",
-  "theme": "obsidian"
+  "cssTheme": "Material Gruvbox",
+  "theme": "obsidian",
+  "textFontFamily": "M+1 Nerd Font Propo",
+  "interfaceFontFamily": "Inter",
+  "monospaceFontFamily": "CaskaydiaCove Nerd Font"
 }

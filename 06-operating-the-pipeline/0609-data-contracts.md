@@ -111,7 +111,7 @@ The practical approach is to rely on a type-mapping library (SQLAlchemy, your lo
 > `products` gains a new attribute column every quarter. Freezing its schema means a load failure every quarter and a manual intervention to update the contract. Use evolve for tables with expected growth; freeze only for tables with stable, critical schemas where a column change would genuinely break something important downstream.
 
 > [!danger] Don't discard columns that don't match your schema
-> Silently dropping new or unexpected columns breaks the conforming boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or [[02-full-replace-patterns/0210-partial-column-loading|0210]] (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.
+> Silently dropping new or unexpected columns breaks the conforming boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or [[02-full-replace-patterns/0209-partial-column-loading|0209]] (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.
 
 ## Tradeoffs
 
@@ -130,4 +130,4 @@ The practical approach is to rely on a type-mapping library (SQLAlchemy, your lo
 - [[06-operating-the-pipeline/0604-sla-management|0604-sla-management]] -- freshness contract is the SLA expressed as a checkable rule
 - [[06-operating-the-pipeline/0614-reconciliation-patterns|0614-reconciliation-patterns]] -- volume contract enforcement post-load
 - [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] -- schema evolution policy reasoning (why discard modes break conforming)
-- [[02-full-replace-patterns/0210-partial-column-loading|0210-partial-column-loading]] -- the explicit alternative to silent column discarding
+- [[02-full-replace-patterns/0209-partial-column-loading|0209-partial-column-loading]] -- the explicit alternative to silent column discarding

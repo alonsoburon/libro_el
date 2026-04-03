@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ECL Patterns Book — Framework Graphics Specification
+  Generated: 2026-03-28
+  Purpose: Complete spec for a developer to design all conceptual framework
+           graphics for the book. Each <framework> is one graphic.
+-->
+
+<book>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- CONTEXT                                             -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <meta>
+    <title>ECL Patterns: Extract, Conform, Load</title>
+    <thesis>
+      Pure EL (Extract-Load with zero transformation) is a practical myth.
+      The moment data crosses between systems, conforming is unavoidable:
+      type casting, metadata injection, null handling, charset encoding.
+      ECL (Extract, Conform, Load) names this reality. The C is everything
+      the data needs to survive the crossing and be usable on the other side.
+      If it changes business logic, it belongs downstream — not here.
+    </thesis>
+    <audience>
+      Data engineers building and operating batch extraction pipelines.
+      Senior practitioners, not beginners. They know SQL, they've run pipelines,
+      they've been burned. The book gives them frameworks to stop making
+      the same mistakes.
+    </audience>
+    <voice>
+      Technical but human. Opinionated. Fast to scan. No filler.
+      Like a senior engineer explaining to a peer over coffee.
+    </voice>
+    <scope>Batch processing only. No CDC, no streaming, no event-driven.</scope>
+  </meta>
+
+  <design-notes>
+    <format>SVG output. Screen-first (SQL codeblocks need width), print as secondary.</format>
+    <typesetting>Typst for final layout. Graphics are embedded as SVGs.</typesetting>
+    <existing-framework>
+      _charts/ contains ecl-charts.js with ECL.segment(), ECL.timeline(),
+      ECL.tableState(), and ECL.tradeoff() APIs. The current aesthetic is
+      not final — these graphics may establish a new visual style.
+    </existing-framework>
+    <style>
+      Clean, minimal, monochrome-friendly. The book uses SQL codeblocks
+      heavily so graphics should contrast with code — less text, more
+      spatial relationships. Avoid decorative elements.
+    </style>
+    <punctuation>Use -- (double hyphen) instead of em dash everywhere.</punctuation>
+  </design-notes>
+
+  <domain-model>
+    <description>
+      All examples in the book use these fictional tables. Graphics that
+      reference specific tables should use these names.
+    </description>
+    <table name="orders" note="Has updated_at but it's unreliable" />
+    <table name="order_lines" note="Detail table, no own timestamp" />
+    <table name="customers" note="Soft-delete via is_active" />
+    <table name="products" note="Schema mutates (new columns appear)" />
+    <table name="invoices" note="Open/closed document pattern. Open invoices get hard-deleted" />
+    <table name="invoice_lines" note="Detail table, hard-deleted independently" />
+    <table name="events" note="Append-only, partitioned by date" />
+    <table name="sessions" note="Sessionized clickstream" />
+    <table name="metrics_daily" note="Pre-aggregated, overwritten daily" />
+    <table name="inventory" note="Sparse cross-product (SKU x Warehouse)" />
+    <table name="inventory_movements" note="Append-only log of stock changes" />
+  </domain-model>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FRAMEWORK MAP                                       -->
+  <!-- How the 19 frameworks relate to each other          -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework-map>
+    <description>
+      This is the meta-graphic — how all frameworks connect. Consider designing
+      this as an overview/poster that orients the reader before diving into
+      individual frameworks.
+    </description>
+    <layer name="governing-boundaries" position="top">
+      <contains>conforming-vs-transforming, hard-rules-soft-rules</contains>
+      <role>Constrain what the pipeline is allowed to do</role>
+    </layer>
+    <layer name="fundamental-tradeoff" position="center">
+      <contains>purity-vs-freshness</contains>
+      <role>The axis every decision takes a position on</role>
+    </layer>
+    <layer name="structural-classifier" position="center">
+      <contains>corridors</contains>
+      <role>Bifurcates every implementation into two paths</role>
+    </layer>
+    <layer name="design-philosophy" position="center">
+      <contains>earn-complexity</contains>
+      <role>Orders decisions from simple to complex</role>
+    </layer>
+    <layer name="decision-tools" position="middle">
+      <contains>
+        statelessness-idempotency-matrix,
+        load-strategy-spectrum,
+        schema-evolution-policy,
+        open-closed-documents,
+        managed-frozen-zones,
+        source-sensitivity-tiers
+      </contains>
+      <role>Classification systems for specific decisions</role>
+    </layer>
+    <layer name="operational-models" position="bottom">
+      <contains>
+        hot-warm-cold-freshness,
+        four-layers-observability,
+        reconciliation-escalation,
+        severity-calibration,
+        scheduling-maturity,
+        data-contract-taxonomy,
+        four-execution-points,
+        morning-routine-triage,
+        backfill-type-taxonomy
+      </contains>
+      <role>How to run and monitor the pipeline in production</role>
+    </layer>
+  </framework-map>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- GOVERNING BOUNDARIES                                -->
+  <!-- What the pipeline is allowed to do                  -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="1" name="conforming-vs-transforming">
+    <appears-in>0101, 0102</appears-in>
+    <used-by>0106, 0210, 0308, 0403, 0504, 0505, 0507</used-by>
+    <idea>
+      Every operation during the crossing is either conforming (survive the trip)
+      or transforming (change business meaning). Only conforming belongs in ECL.
+    </idea>
+    <visualization-type>boundary-diagram or decision-flowchart</visualization-type>
+    <dimensions>
+      <side name="conforming" label="Belongs in ECL">
+        <item>Type casting (VARCHAR to TIMESTAMP)</item>
+        <item>Null handling (preserve source nulls)</item>
+        <item>Timezone normalization (tag, don't convert)</item>
+        <item>Charset encoding (UTF-8 normalization)</item>
+        <item>Metadata injection (_extracted_at, _batch_id)</item>
+        <item>Synthetic key generation (source_system + source_id)</item>
+        <item>Cursor-borrowing joins (header.updated_at for detail rows)</item>
+      </side>
+      <side name="transforming" label="Belongs downstream">
+        <item>Business logic (revenue = qty * price)</item>
+        <item>Filtering (exclude inactive customers)</item>
+        <item>Enrichment joins (denormalization)</item>
+        <item>JSON flattening into relational tables</item>
+        <item>Aggregation</item>
+      </side>
+    </dimensions>
+    <decision-test>
+      If a join adds a column the business cares about -- transforming.
+      If it adds a column only the pipeline cares about (_cursor_at) -- conforming.
+    </decision-test>
+  </framework>
+
+  <framework id="2" name="hard-rules-soft-rules">
+    <appears-in>0106</appears-in>
+    <used-by>0002, 0105, 0108, 0202, 0207, 0208, 0305, 0307, 0402, 0608</used-by>
+    <idea>
+      Hard rules are enforced by the database (constraints, indexes).
+      Soft rules are business expectations with no enforcement.
+      Your pipeline must survive soft rules being wrong.
+    </idea>
+    <visualization-type>two-column contrast or iceberg diagram</visualization-type>
+    <dimensions>
+      <side name="hard" label="System enforces">
+        <item>PRIMARY KEY</item>
+        <item>UNIQUE INDEX</item>
+        <item>FOREIGN KEY</item>
+        <item>NOT NULL</item>
+        <item>CHECK constraint</item>
+      </side>
+      <side name="soft" label="Someone told you it's true">
+        <item>"Quantities are always positive"</item>
+        <item>"Status goes pending -> confirmed -> shipped"</item>
+        <item>"Only open invoices get deleted"</item>
+        <item>"updated_at is always set"</item>
+        <item>"Emails are unique"</item>
+        <item>"A line's status matches the header"</item>
+      </side>
+    </dimensions>
+    <discovery>
+      Query information_schema.table_constraints.
+      Everything absent from that output is soft.
+    </discovery>
+    <response>When a soft rule breaks: load the data, surface the violation, don't fix it in the pipeline.</response>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FUNDAMENTAL TRADEOFF                                -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="3" name="purity-vs-freshness">
+    <appears-in>0108</appears-in>
+    <used-by>0106, 0109, 0201, 0205, 0303, 0309, 0404, 0603, 0608</used-by>
+    <idea>
+      Full replace maximizes purity (exact clone, no drift) but caps freshness.
+      Incremental maximizes freshness but accumulates purity debt until the
+      next full reset. Every pipeline decision takes a position on this spectrum.
+    </idea>
+    <visualization-type>spectrum or tradeoff curve</visualization-type>
+    <axes>
+      <axis name="purity">Destination exactly matches source at a point in time. No drift, no missed rows, no accumulated damage.</axis>
+      <axis name="freshness">How recently the destination reflects the source.</axis>
+    </axes>
+    <positions>
+      <position purity="max" freshness="low">Full replace every run</position>
+      <position purity="high" freshness="medium">Scoped full replace</position>
+      <position purity="medium" freshness="medium-high">Stateless window extraction</position>
+      <position purity="medium" freshness="high">Cursor-based incremental</position>
+      <position purity="variable" freshness="max">High-frequency incremental (purity debt accumulates)</position>
+    </positions>
+    <decision-tree>
+      Full scan fits window? -> Reliable cursor? -> Hard deletes? -> Freshness SLA?
+      Each "no" pushes toward incremental and away from purity.
+    </decision-tree>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- STRUCTURAL CLASSIFIER                               -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="4" name="corridors">
+    <appears-in>0107</appears-in>
+    <used-by>Every pattern chapter via "By Corridor" sections</used-by>
+    <idea>
+      The source-destination type pairing changes every implementation decision.
+      Same extraction pattern, different tradeoffs per corridor.
+    </idea>
+    <visualization-type>two-path diagram or split comparison</visualization-type>
+    <corridors>
+      <corridor name="transactional-to-columnar" example="PostgreSQL to BigQuery">
+        <property name="type-system-gap">Wide -- many source types have no direct equivalent</property>
+        <property name="mutation-cost">Expensive -- MERGE is the costliest DML</property>
+        <property name="constraints">None enforced at destination</property>
+        <property name="cost-model">Pay per bytes scanned / slots consumed</property>
+        <property name="default-load">Append, partition swap</property>
+      </corridor>
+      <corridor name="transactional-to-transactional" example="PostgreSQL to PostgreSQL">
+        <property name="type-system-gap">Narrow -- mostly 1:1 mappings</property>
+        <property name="mutation-cost">Cheap -- MERGE / INSERT ON CONFLICT is native</property>
+        <property name="constraints">Enforceable (PK, FK, UNIQUE)</property>
+        <property name="cost-model">Fixed infrastructure cost</property>
+        <property name="default-load">MERGE / upsert</property>
+      </corridor>
+    </corridors>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- DESIGN PHILOSOPHY                                   -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="5" name="earn-complexity">
+    <appears-in>0108, 0201</appears-in>
+    <used-by>0205, 0301, 0308, 0405, 0608</used-by>
+    <idea>
+      Start with the simplest approach (full replace). Add complexity only when
+      a concrete limitation forces it. Every step up requires justification.
+    </idea>
+    <visualization-type>staircase or escalating progression</visualization-type>
+    <progression>
+      <step n="1" label="Full replace every run">
+        Default. Stateless, idempotent, pure. No cursor, no state, no drift.
+      </step>
+      <step n="2" label="Scoped full replace" trigger="Full table too big for the schedule window">
+        Replace a date range (fiscal year, rolling window) instead of the whole table.
+      </step>
+      <step n="3" label="Rolling window replace" trigger="Scope boundary is metadata-driven, not calendar-driven">
+        Replace based on _extracted_at or activity signal rather than a fixed date.
+      </step>
+      <step n="4" label="Cursor-based incremental" trigger="Table genuinely too large to full-replace at required cadence">
+        Track what changed since last run. Requires reliable cursor. Accumulates purity debt.
+      </step>
+      <step n="5" label="Cursor + delete detection + periodic full reset" trigger="Hard deletes exist at source">
+        Maximum complexity. Incremental for changes, separate pass for deletes,
+        periodic full replace to reset drift. "The upper bound of what's reasonable."
+      </step>
+    </progression>
+    <principle>Each step is triggered by a concrete "no" in the 0108 decision tree. If you can't name the trigger, you haven't earned the complexity.</principle>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- DECISION MATRIX                                     -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="6" name="statelessness-idempotency-matrix">
+    <appears-in>0109</appears-in>
+    <used-by>0406, 0401, 0404, 0303</used-by>
+    <idea>
+      Two independent properties of a pipeline run. The goal is stateless AND
+      idempotent. Full replace gets both for free. Every other approach trades
+      one or both away.
+    </idea>
+    <visualization-type>2x2 matrix</visualization-type>
+    <matrix>
+      <quadrant stateless="yes" idempotent="yes" label="Sweet spot">
+        Stateless window + MERGE. Can run on a fresh machine, running twice produces the same result.
+      </quadrant>
+      <quadrant stateless="no" idempotent="yes" label="Common">
+        Cursor-based + MERGE. Needs prior state (last cursor value), but retries are safe.
+      </quadrant>
+      <quadrant stateless="yes" idempotent="no" label="Dangerous">
+        Stateless window + raw INSERT. No state needed, but retries create duplicates.
+      </quadrant>
+      <quadrant stateless="no" idempotent="no" label="Worst case">
+        Cursor-based + raw INSERT. Needs state AND retries create duplicates.
+      </quadrant>
+    </matrix>
+    <note>Full replace is stateless + idempotent by construction -- no matrix needed.</note>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SPATIAL MODELS                                      -->
+  <!-- Partition data by mutability                        -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="7" name="managed-frozen-zones">
+    <appears-in>0205, 0206</appears-in>
+    <used-by>0202, 0209</used-by>
+    <idea>
+      Data in the destination is partitioned into two zones with different
+      replacement semantics. The managed zone gets replaced regularly.
+      The frozen zone was loaded once and is never touched again.
+    </idea>
+    <visualization-type>timeline with a boundary marker</visualization-type>
+    <zones>
+      <zone name="managed" range="scope_start to today">
+        Full-replace semantics apply. Idempotent reloads. Every run rebuilds this zone.
+      </zone>
+      <zone name="frozen" range="before scope_start">
+        Loaded via one-time backfill. Immutable in the destination.
+        Only touched during explicit re-backfill.
+      </zone>
+    </zones>
+    <boundary-types>
+      <type name="calendar-anchor">Fiscal year start, quarter boundary</type>
+      <type name="fixed-date">A specific date chosen at setup time</type>
+      <type name="rolling-offset">Last N days / last N months (boundary moves)</type>
+    </boundary-types>
+  </framework>
+
+  <framework id="8" name="open-closed-documents">
+    <appears-in>0307</appears-in>
+    <used-by>0304, 0308, 0306</used-by>
+    <idea>
+      A document's lifecycle state (mutable draft vs. immutable posted) drives
+      the extraction strategy. Open documents need full re-extraction every run.
+      Closed documents are safe to extract once and ignore.
+    </idea>
+    <visualization-type>lifecycle state diagram or split pipeline flow</visualization-type>
+    <states>
+      <state name="open" mutable="yes">
+        Lines change, statuses shift, amounts adjust. Re-extract the full set every run.
+        Example: draft invoices, pending orders.
+      </state>
+      <state name="closed" mutable="no">
+        Frozen after posting. In many jurisdictions, modifying a closed invoice is illegal --
+        the rare case where a soft rule is backed by a hard rule (the law).
+        Extract only recently closed documents via cursor.
+      </state>
+    </states>
+    <extraction-split>
+      Open documents: full replace (small, bounded set).
+      Closed documents: cursor-based incremental (large, growing set, immutable).
+    </extraction-split>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- TIERED / LAYERED MODELS                             -->
+  <!-- Ordered simple/cheap to complex/expensive           -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="9" name="hot-warm-cold-freshness">
+    <appears-in>0608, 0205</appears-in>
+    <used-by>0206, 0208, 0303, 0308, 0604, 0606</used-by>
+    <idea>
+      Not every row needs the same refresh cadence. Three tiers: hot for freshness
+      (tolerates impurity), warm for catching gaps, cold for purity resets.
+      Tier determines cadence. Method (FR vs incremental) is a separate decision
+      based on table size and frequency.
+    </idea>
+    <visualization-type>three-band horizontal timeline or stacked zones</visualization-type>
+    <tiers>
+      <tier name="hot" cadence="intraday" method="incremental when needed, FR when table is small enough">
+        Actively changing data: today's orders, open invoices, recent events.
+        Tolerates imprecision -- warm catches what hot misses.
+      </tier>
+      <tier name="warm" cadence="daily" method="FR of warm window, or wide-lag incremental">
+        Current month/quarter. Catches late cursor updates, backdated transactions,
+        documents that changed without updating their updated_at.
+      </tier>
+      <tier name="cold" cadence="weekly/monthly/on-demand" method="full replace">
+        Historical data: prior years, closed fiscal periods.
+        The cleanup pass. Resets accumulated drift from hot and warm.
+      </tier>
+    </tiers>
+    <lag-window>
+      Overlap between tiers. 7 days for clean systems, 30 for messy ERPs.
+      Empirical: start at 7, widen if the cold tier catches rows warm missed.
+    </lag-window>
+    <key-insight>
+      Being in the hot tier does not mean incremental. A small table can
+      full-replace every run even at high frequency. Tier = cadence. Method = separate decision.
+    </key-insight>
+  </framework>
+
+  <framework id="10" name="four-layers-observability">
+    <appears-in>0601</appears-in>
+    <used-by>0602, 0603, 0604, 0605</used-by>
+    <idea>
+      Observability breaks into four layers, each covering a different failure mode.
+      You don't need all four on day one -- start with 1 and 2.
+    </idea>
+    <visualization-type>stacked layers or concentric rings (inner = start here)</visualization-type>
+    <layers>
+      <layer n="1" name="run-health" start-here="yes">
+        Did the pipeline run? Did it succeed? How long did it take?
+        Orchestrator-native. Every pipeline has this.
+      </layer>
+      <layer n="2" name="data-health" start-here="yes">
+        What did the pipeline produce? Row counts, freshness, schema fingerprints.
+        The gap the health table (0602) fills.
+      </layer>
+      <layer n="3" name="source-health">
+        Query duration at source, timeout frequency, load impact measurement.
+        Earns its place as pipeline count grows.
+      </layer>
+      <layer n="4" name="load-health">
+        Cost per operation, destination row count, reconciliation delta.
+        The cost monitoring layer (0603).
+      </layer>
+    </layers>
+  </framework>
+
+  <framework id="11" name="reconciliation-escalation">
+    <appears-in>0614</appears-in>
+    <used-by>0306, 0601, 0602</used-by>
+    <idea>
+      Three levels of verification, ordered cheap to expensive.
+      Start cheap, escalate only when the cheaper level signals a problem.
+    </idea>
+    <visualization-type>pyramid or escalation ladder (wide/cheap at bottom, narrow/expensive at top)</visualization-type>
+    <levels>
+      <level n="1" name="row-count" cost="cheap">
+        COUNT(*) source vs destination. Catches missing rows, duplicates, dropped partitions.
+        Misses value drift within rows.
+      </level>
+      <level n="2" name="aggregate" cost="medium">
+        SUM(amount), MAX(updated_at), COUNT(DISTINCT id).
+        Catches value drift that row count alone misses.
+      </level>
+      <level n="3" name="hash" cost="expensive">
+        Hash every row, compare. Catches any difference at any granularity.
+        Nuclear option -- reserve for critical tables or periodic audits.
+      </level>
+    </levels>
+    <escalation-logic>Count mismatch triggers aggregate check. Aggregate mismatch triggers hash or full ID comparison.</escalation-logic>
+  </framework>
+
+  <framework id="12" name="severity-calibration">
+    <appears-in>0605</appears-in>
+    <used-by>0604, 0601</used-by>
+    <idea>
+      Alert severity sits on two independent axes: what broke and how important
+      the table is. The combination determines routing.
+    </idea>
+    <visualization-type>2-axis grid (condition severity x table importance)</visualization-type>
+    <axis-1 name="condition-severity">
+      <level name="critical">Destination data lost or significantly diverged</level>
+      <level name="error">Load failed, destination stale, SLA breach</level>
+      <level name="warning">Anomaly detected but data is present and current</level>
+      <level name="info">Nothing wrong -- log, dashboard, never notify</level>
+    </axis-1>
+    <axis-2 name="table-importance">
+      <example high="true">Sales/receivables during month-end</example>
+      <example high="false">Lookup dimension table being slightly stale</example>
+    </axis-2>
+    <routing>
+      <rule name="always-alert">Critical condition on any table, or error on high-importance table</rule>
+      <rule name="alert-when-unhandled">Warning on high-importance, error on low-importance</rule>
+      <rule name="never-alert">Info on anything, warning on low-importance</rule>
+    </routing>
+  </framework>
+
+  <framework id="13" name="load-strategy-spectrum">
+    <appears-in>0104, 0109, 0401-0405</appears-in>
+    <used-by>0603</used-by>
+    <idea>
+      Load strategies ordered by cost and complexity. The corridor determines
+      where on this spectrum each strategy becomes appropriate.
+    </idea>
+    <visualization-type>horizontal spectrum (cheap/simple left, expensive/complex right)</visualization-type>
+    <spectrum>
+      <position n="1" name="append-only" cost="lowest" complexity="lowest">
+        Pure INSERT. No key matching. Near-zero DML cost.
+        Idempotent at view level, not table level.
+      </position>
+      <position n="2" name="full-replace" cost="low" complexity="low">
+        Rebuild from scratch (staging swap or partition swap).
+        No merge logic. Idempotent by construction.
+      </position>
+      <position n="3" name="append-and-materialize" cost="medium" complexity="medium">
+        Append raw + dedup view. Shifts cost from load-time to read-time.
+        Idempotent at view level.
+      </position>
+      <position n="4" name="merge-upsert" cost="high-in-columnar" complexity="medium-high">
+        Match on key, update or insert. Most expensive DML in columnar engines.
+        Idempotent.
+      </position>
+      <position n="5" name="hybrid-append-merge" cost="highest" complexity="highest">
+        Two destinations (append log + merged current). Maximum complexity.
+        "The upper bound of what's reasonable."
+      </position>
+    </spectrum>
+    <corridor-note>
+      In transactional-to-transactional, MERGE is cheap and native --
+      the spectrum compresses. In transactional-to-columnar, MERGE is
+      the costliest operation and the spread matters.
+    </corridor-note>
+  </framework>
+
+  <framework id="14" name="scheduling-maturity">
+    <appears-in>0606</appears-in>
+    <used-by>0608, 0604</used-by>
+    <idea>
+      Teams evolve through a predictable sequence of scheduling sophistication
+      as pipeline count grows. Each stage is correct at a certain scale.
+    </idea>
+    <visualization-type>maturity progression (three stages, left to right)</visualization-type>
+    <stages>
+      <stage n="1" name="single-cron" scale="few tables">
+        Everything runs together. Simple, works when you have a dozen tables
+        and a daily window. Falls apart past ~4 hours or when intraday is needed.
+      </stage>
+      <stage n="2" name="weight-based-groups" scale="dozens of tables">
+        Tables split by size or duration across time slots.
+        Better throughput, but groupings don't map to business needs.
+      </stage>
+      <stage n="3" name="consumer-driven-groups" scale="hundreds of tables">
+        Tables grouped by downstream report/dashboard, scheduled to meet
+        that consumer's freshness target. The destination.
+      </stage>
+    </stages>
+    <note>Don't over-engineer stage 3 when you have three dashboards.</note>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- PROCESSING LOCATION                                 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="15" name="four-execution-points">
+    <appears-in>0107</appears-in>
+    <used-by>0501, 0209</used-by>
+    <idea>
+      Every conforming operation runs somewhere. The answer depends on
+      who's idle. "Push work to whoever's idle."
+    </idea>
+    <visualization-type>pipeline flow with four labeled processing points</visualization-type>
+    <points>
+      <point n="1" name="source" location="extraction query">
+        Conform inside the SELECT. Free if source is off-hours.
+        Dangerous on busy production OLTP.
+      </point>
+      <point n="2" name="orchestrator" location="between extract and load">
+        Python, Spark, cloud function. Adds infrastructure and a data hop.
+      </point>
+      <point n="3" name="staging" location="destination staging area">
+        Land raw, transform in staging before final table.
+        Processing cost on destination meter.
+      </point>
+      <point n="4" name="destination" location="final load query">
+        Transform inside the MERGE/INSERT. Works when transform is simple.
+      </point>
+    </points>
+    <heuristic>Source at 2am? Let it do the work. Production ERP at 10am? Extract raw, process downstream.</heuristic>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- TAXONOMIES                                          -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="16" name="schema-evolution-policy">
+    <appears-in>0609</appears-in>
+    <used-by>0104, 0105, 0403</used-by>
+    <idea>
+      When a new column arrives from the source, the pipeline responds per a
+      declared policy. Only two policies are valid in ECL.
+    </idea>
+    <visualization-type>decision gate or simple classification table</visualization-type>
+    <policies>
+      <policy name="evolve" valid="yes">
+        Accept new columns, add them to destination. Default for most tables.
+      </policy>
+      <policy name="freeze" valid="yes">
+        Reject any schema change, fail the load. For critical stable-schema tables.
+      </policy>
+      <policy name="discard_row" valid="no">
+        Drops rows with new columns. This is a transformation decision --
+        breaks the conforming boundary.
+      </policy>
+      <policy name="discard_value" valid="no">
+        Drops the new column's values. Also breaks the conforming boundary.
+      </policy>
+    </policies>
+  </framework>
+
+  <framework id="17" name="data-contract-taxonomy">
+    <appears-in>0609</appears-in>
+    <used-by>0610, 0604, 0614</used-by>
+    <idea>
+      A data contract covers four checkable aspects of the data,
+      enforced at specific pipeline points.
+    </idea>
+    <visualization-type>grid (4 contract types x 3 enforcement points)</visualization-type>
+    <contract-types>
+      <type name="schema">Expected column names and types. Evolve/freeze policy.</type>
+      <type name="volume">Expected row count range (min/max from recent history).</type>
+      <type name="null">Expected null rates on key columns.</type>
+      <type name="freshness">Maximum acceptable staleness (SLA).</type>
+    </contract-types>
+    <enforcement-points>
+      <point name="pre-load">Gate -- check before loading, block on violation.</point>
+      <point name="post-load">Validation -- run checks after load completes.</point>
+      <point name="continuous">Monitoring -- schema fingerprint, volume trends.</point>
+    </enforcement-points>
+  </framework>
+
+  <framework id="18" name="source-sensitivity-tiers">
+    <appears-in>0607</appears-in>
+    <used-by>0606, 0608</used-by>
+    <idea>
+      The type of source system determines how carefully you extract.
+      Three tiers with different operational constraints.
+    </idea>
+    <visualization-type>three-tier classification (most restricted to least)</visualization-type>
+    <tiers>
+      <tier name="production-oltp" sensitivity="highest">
+        Live transactional system serving users. Maximum care.
+        Off-peak scheduling, conservative concurrency, explicit query timeouts.
+        You cannot request indexes or schema changes.
+      </tier>
+      <tier name="read-replica" sensitivity="medium">
+        Same data, dedicated read connection. Same extraction patterns,
+        wider tolerances. More concurrent queries, wider safe-hours windows.
+      </tier>
+      <tier name="vendor-controlled-erp" sensitivity="variable">
+        No schema changes possible, limited query optimization,
+        accept slower extractions. Work within vendor constraints.
+        Often has its own backup/batch windows you must avoid.
+      </tier>
+    </tiers>
+    <operational-consequences>
+      <consequence>Scheduling (safe-hours per source type)</consequence>
+      <consequence>Concurrency limits</consequence>
+      <consequence>Timeout configuration</consequence>
+      <consequence>Whether you can request indexes</consequence>
+    </operational-consequences>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- OPERATIONAL ROUTINE                                 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="19" name="morning-routine-triage">
+    <appears-in>0601</appears-in>
+    <used-by>0602, 0603, 0604</used-by>
+    <idea>
+      Four items, fixed order, every morning.
+      Everything else is drill-down from one of these.
+    </idea>
+    <visualization-type>numbered checklist or four-quadrant dashboard mockup</visualization-type>
+    <sequence>
+      <item n="1">How many tables failed overnight</item>
+      <item n="2">Which tables are stale beyond their SLA</item>
+      <item n="3">Any row count anomalies (spikes, drops, reconciliation deltas above threshold)</item>
+      <item n="4">Cost per day</item>
+    </sequence>
+    <principle>If the aggregate doesn't trigger curiosity, the individual tables are fine. Drill down only when something looks off.</principle>
+  </framework>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- TENTATIVE (outline status, may change)              -->
+  <!-- ═══════════════════════════════════════════════════ -->
+
+  <framework id="20" name="backfill-type-taxonomy" status="tentative">
+    <appears-in>0611</appears-in>
+    <idea>
+      Three types of backfill, each with different scope and state-reset implications.
+      Source pattern is in outline status -- taxonomy may evolve.
+    </idea>
+    <visualization-type>three-option classification</visualization-type>
+    <types>
+      <type name="date-range">Reload a specific date range using partition swap or rolling window.</type>
+      <type name="full-table">Reload the entire table. Reset all cursor state.</type>
+      <type name="selective">Reload specific records by primary key. Surgical fix.</type>
+    </types>
+  </framework>
+
+</book>

@@ -55,7 +55,7 @@ flowchart TD
 
 The validation step between load and swap is the key advantage over truncate + insert. If the extraction returned garbage -- zero rows from a silent failure, a schema change that dropped columns, a type mismatch that cast everything to NULL -- you catch it before it reaches production.
 
-The swap mechanism varies by engine: Snowflake has `ALTER TABLE SWAP WITH` (atomic, metadata-only), PostgreSQL uses `ALTER TABLE RENAME` inside a transaction, BigQuery uses `bq cp` or DDL rename. See [[02-full-replace-patterns/0204-staging-swap|0204]] for the per-engine mechanics, including the parallel schema convention for managing staging tables at scale.
+The swap mechanism varies by engine: Snowflake has `ALTER TABLE SWAP WITH` (atomic, metadata-only), PostgreSQL uses `ALTER TABLE RENAME` inside a transaction, BigQuery uses `bq cp` or DDL rename. See [[02-full-replace-patterns/0203-staging-swap|0203]] for the per-engine mechanics, including the parallel schema convention for managing staging tables at scale.
 
 ---
 
@@ -80,7 +80,7 @@ bq cp --write_disposition=WRITE_TRUNCATE \
   project:dataset.events$20260307
 ```
 
-The cost advantage is proportional to the scope: replacing 7 partitions out of 3,000 touches 0.2% of the table, while a full staging swap rewrites the entire thing. See [[02-full-replace-patterns/0203-partition-swap|0203]] for extraction-side mechanics, per-engine atomicity guarantees, and the partition alignment pitfalls.
+The cost advantage is proportional to the scope: replacing 7 partitions out of 3,000 touches 0.2% of the table, while a full staging swap rewrites the entire thing. See [[02-full-replace-patterns/0202-partition-swap|0202]] for extraction-side mechanics, per-engine atomicity guarantees, and the partition alignment pitfalls.
 
 ---
 
@@ -130,8 +130,8 @@ All three are idempotent -- rerunning the same extraction and load produces the 
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]] -- per-engine partition swap mechanics, partition alignment, validation
-- [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]] -- per-engine staging swap mechanics, schema conventions, grant handling
+- [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]] -- per-engine partition swap mechanics, partition alignment, validation
+- [[02-full-replace-patterns/0203-staging-swap|0203-staging-swap]] -- per-engine staging swap mechanics, schema conventions, grant handling
 - [[01-foundations-and-archetypes/0109-idempotency|0109-idempotency]] -- full replace gets idempotency for free
 - [[04-load-strategies/0402-append-only|0402-append-only]] -- when the source is immutable and no replace is needed
 - [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] -- when only changed rows should be loaded, not the full table

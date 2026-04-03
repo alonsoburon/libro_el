@@ -86,7 +86,7 @@ Oracle BI Applications (OBIA) formalized this pattern as `PRUNE_DAYS` -- a confi
 
 ## Cost of Overscanning
 
-A wider overlap re-extracts more rows that haven't changed, increasing both source query cost and destination load cost (see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] for the load side). The tradeoff is correctness vs. cost, framed by [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]]: an hours-long overlap adds negligible cost, a days-long overlap is moderate depending on mutation rate, and a weeks-long overlap starts approaching a full replace -- at which point a scoped full replace ([[02-full-replace-patterns/0205-scoped-full-replace|0205]]) may be simpler than a cursor with a massive overlap.
+A wider overlap re-extracts more rows that haven't changed, increasing both source query cost and destination load cost (see [[04-load-strategies/0403-merge-upsert|0403-merge-upsert]] for the load side). The tradeoff is correctness vs. cost, framed by [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]]: an hours-long overlap adds negligible cost, a days-long overlap is moderate depending on mutation rate, and a weeks-long overlap starts approaching a full replace -- at which point a scoped full replace ([[02-full-replace-patterns/0204-scoped-full-replace|0204]]) may be simpler than a cursor with a massive overlap.
 
 ---
 
@@ -127,4 +127,4 @@ Late-arriving data is one of the hardest pipeline problems to explain to non-tec
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- boundary handling buffer is the same mechanism at small scale
 - [[03-incremental-patterns/0303-stateless-window-extraction|0303-stateless-window-extraction]] -- the stateless window has overlap built in by design
 - [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]] -- the tradeoff between correctness and cost that drives overlap sizing
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- when the overlap grows large enough that a scoped full replace is simpler
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- when the overlap grows large enough that a scoped full replace is simpler

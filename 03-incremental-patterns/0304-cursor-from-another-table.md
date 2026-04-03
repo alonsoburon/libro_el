@@ -73,7 +73,7 @@ JOIN orders o ON s.order_id = o.order_id
 WHERE o.updated_at >= :last_run;
 ```
 
-Each join multiplies the row count and the assumptions. You're trusting two foreign key relationships and two intermediate tables to be correct and up to date. At three hops, the scoped full replace in [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] is almost certainly simpler, cheaper, and more reliable.
+Each join multiplies the row count and the assumptions. You're trusting two foreign key relationships and two intermediate tables to be correct and up to date. At three hops, the scoped full replace in [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] is almost certainly simpler, cheaper, and more reliable.
 
 ---
 
@@ -129,4 +129,4 @@ For detail tables where even these approaches aren't enough, see [[03-incrementa
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- the header-side cursor this pattern depends on
 - [[03-incremental-patterns/0307-open-closed-documents|0307-open-closed-documents]] -- using document lifecycle to scope detail extraction
 - [[03-incremental-patterns/0308-detail-without-timestamp|0308-detail-without-timestamp]] -- when the header cursor can't cover detail changes at all
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- when cascading joins get deep enough that scoped full replace is simpler
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- when cascading joins get deep enough that scoped full replace is simpler

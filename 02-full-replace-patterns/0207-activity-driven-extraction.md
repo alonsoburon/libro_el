@@ -15,7 +15,7 @@ updated: 2026-03-09
 
 ## The Problem
 
-[[02-full-replace-patterns/0207-sparse-table-extraction|0207]] reduces transfer volume by filtering zeros at extraction. The source still scans the full table -- it just drops most rows before sending them. For a 10-million-row inventory table that's 95% zeros, you're still reading 10 million rows on the source every run and discarding 9.5 million of them. On a busy production ERP at peak hours, that scan may be a problem.
+[[02-full-replace-patterns/0206-sparse-table-extraction|0206]] reduces transfer volume by filtering zeros at extraction. The source still scans the full table -- it just drops most rows before sending them. For a 10-million-row inventory table that's 95% zeros, you're still reading 10 million rows on the source every run and discarding 9.5 million of them. On a busy production ERP at peak hours, that scan may be a problem.
 
 Activity-driven extraction skips the scan entirely. Instead of asking the sparse table "which of your rows are non-zero?", it asks the transaction table "which dimension combinations have been active recently?" -- then pulls only those specific rows from the sparse table. The source reads a few thousand rows instead of millions.
 
@@ -94,7 +94,7 @@ The monthly full scan is the safety net. It's expensive but infrequent. The dail
 
 > [!example]- Transactional → Columnar (e.g. any source → BigQuery)
 > Columnar destinations don't enforce PKs or maintain useful indexes for point lookups. MERGE is expensive without them. Inventory tables also rarely have a natural partition key -- a stock snapshot has no obvious business date to partition by.
-> If the filtered set is small enough after activity-driven extraction, the cleanest option is a full staging swap ([[02-full-replace-patterns/0204-staging-swap|0204]]): replace the entire destination table, which is now small. The monthly full scan runs the same way. The destination stays small because the extraction is always activity-filtered -- the staging swap cost scales with active rows, not total rows.
+> If the filtered set is small enough after activity-driven extraction, the cleanest option is a full staging swap ([[02-full-replace-patterns/0203-staging-swap|0203]]): replace the entire destination table, which is now small. The monthly full scan runs the same way. The destination stays small because the extraction is always activity-filtered -- the staging swap cost scales with active rows, not total rows.
 
 > [!example]- Transactional → Transactional (e.g. any source → PostgreSQL)
 > Natural fit. The destination has a composite PK on `(sku_id, warehouse_id)`. Load staging and upsert:
@@ -110,9 +110,9 @@ The monthly full scan is the safety net. It's expensive but infrequent. The dail
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0207-sparse-table-extraction|0207-sparse-table-extraction]] -- simpler variant; still scans the sparse table, just filters it
+- [[02-full-replace-patterns/0206-sparse-table-extraction|0206-sparse-table-extraction]] -- simpler variant; still scans the sparse table, just filters it
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- periodic reset that catches every blind spot
-- [[02-full-replace-patterns/0204-staging-swap|0204-staging-swap]] -- load mechanism for columnar destinations
-- [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]] -- activity window sizing follows the same logic as rolling window N
+- [[02-full-replace-patterns/0203-staging-swap|0203-staging-swap]] -- load mechanism for columnar destinations
+- [[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]] -- activity window sizing follows the same logic as rolling window N
 - [[06-operating-the-pipeline/0608-tiered-freshness|0608-tiered-freshness]] -- tiered cadences applied to the activity window
 - [[03-incremental-patterns/0309-late-arriving-data|0309-late-arriving-data]] -- sizing the window for slow movers

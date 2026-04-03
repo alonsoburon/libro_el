@@ -60,7 +60,7 @@ FROM products;
 
 The naive implementation reads every source row to compute hashes -- the same cost as a full replace at source. The win is on the destination side: fewer writes, less DML cost, smaller staging loads.
 
-Combined with [[02-full-replace-patterns/0205-scoped-full-replace|0205]], the source scan shrinks too. Scope the hash comparison to the managed zone -- rows within `scope_start → today`. Frozen history is never read or compared. You get the source-side savings of scoped replace and the destination-side savings of hash filtering in one pipeline.
+Combined with [[02-full-replace-patterns/0204-scoped-full-replace|0204]], the source scan shrinks too. Scope the hash comparison to the managed zone -- rows within `scope_start → today`. Frozen history is never read or compared. You get the source-side savings of scoped replace and the destination-side savings of hash filtering in one pipeline.
 
 ## Where Hash State Lives
 
@@ -111,7 +111,7 @@ SHA-256 is more collision-resistant and produces 64 characters. Use it if regula
 
 ## Combining With Scoped Replace
 
-Hash detection and [[02-full-replace-patterns/0205-scoped-full-replace|0205]] compose cleanly. Define `scope_start`, scan only the managed zone at source, compute hashes for those rows, compare against stored hashes, load only changed rows within the scope. Frozen history is never touched.
+Hash detection and [[02-full-replace-patterns/0204-scoped-full-replace|0204]] compose cleanly. Define `scope_start`, scan only the managed zone at source, compute hashes for those rows, compare against stored hashes, load only changed rows within the scope. Frozen history is never touched.
 
 The frozen zone's hashes don't need to be maintained -- those rows are immutable by definition. If you ever widen the scope backwards, treat the newly included historical rows as "new" (no stored hash) on the first run and load them fully.
 
@@ -120,7 +120,7 @@ The frozen zone's hashes don't need to be maintained -- those rows are immutable
 > [!example]- Transactional → Columnar (e.g. PostgreSQL → BigQuery)
 > Hash comparison reduces the set of rows you need to write -- but it does not reduce the cost of writing them. On BigQuery, a MERGE that touches 10 rows still rewrites the entire partition containing those rows. On Snowflake, a MERGE still consumes warehouse time proportional to the scan, not the row count. The win from hash detection in columnar is narrowing **which partitions** you touch, not the cost per partition once you do.
 >
-> The practical approach: after hash comparison, identify which partitions contain changed rows, then use partition swap ([[02-full-replace-patterns/0203-partition-swap|0203]]) to replace only those partitions via staging. You avoid the DML concurrency constraints (BigQuery's 2-concurrent MERGE limit) and replace entire partitions cleanly rather than doing in-place mutations. Reach for MERGE only when the changed rows span too many partitions to swap individually, and accept the cost explicitly.
+> The practical approach: after hash comparison, identify which partitions contain changed rows, then use partition swap ([[02-full-replace-patterns/0202-partition-swap|0202]]) to replace only those partitions via staging. You avoid the DML concurrency constraints (BigQuery's 2-concurrent MERGE limit) and replace entire partitions cleanly rather than doing in-place mutations. Reach for MERGE only when the changed rows span too many partitions to swap individually, and accept the cost explicitly.
 >
 > If using `_source_hash` on the destination for comparison, reading that column on BigQuery costs bytes scanned. For large tables, storing hashes in an orchestrator state store is cheaper.
 
@@ -132,4 +132,4 @@ The frozen zone's hashes don't need to be maintained -- those rows are immutable
 - [[01-foundations-and-archetypes/0105-the-lies-sources-tell|0105-the-lies-sources-tell]] -- broken cursors that make this necessary
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- the cursor-based alternative when `updated_at` works
 - [[05-conforming-playbook/0501-metadata-column-injection|0501-metadata-column-injection]] -- `_source_hash` as a standard metadata column
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- scope the hash comparison to avoid scanning frozen history
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- scope the hash comparison to avoid scanning frozen history

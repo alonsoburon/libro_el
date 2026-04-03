@@ -175,7 +175,7 @@ flowchart TD
 
 **Append.** The cheapest and simplest. New rows land at the end of the table. No deduplication, no mutation, no DML quota concerns. Works perfectly for `events` and other immutable sources. **For mutable sources**, you append every version and deduplicate downstream with a view or materialized table. See [[04-load-strategies/0404-append-and-materialize|0404-append-and-materialize]].
 
-**Replace (partition-level).** Drop and reload an entire partition. Atomic in most engines. The go-to for `metrics_daily` and other partition-aligned data that gets overwritten on a schedule. See [[02-full-replace-patterns/0203-partition-swap|0203-partition-swap]].
+**Replace (partition-level).** Drop and reload an entire partition. Atomic in most engines. The go-to for `metrics_daily` and other partition-aligned data that gets overwritten on a schedule. See [[02-full-replace-patterns/0202-partition-swap|0202-partition-swap]].
 
 **Replace (Full).** Use this whenever the data you're loading isn't deserving of upserts or partitioning. Great for dimensions and anything under 10k rows. Resist the temptation to overengineer these kinds of tables. Fully replace it and relax knowing your data is exactly the same on source.
 

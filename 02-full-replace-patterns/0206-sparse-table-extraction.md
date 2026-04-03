@@ -77,12 +77,12 @@ The filter is a contract. If the business changes the definition -- "now we also
 
 ## Relation to Activity-Driven Extraction
 
-[[02-full-replace-patterns/0208-activity-driven-extraction|0208]] solves a related problem differently. Sparse table extraction still scans the full source table -- it just drops most rows before loading. Activity-driven extraction avoids scanning the sparse table at all: it uses recent transaction history to determine which dimension combinations are worth pulling, then queries only those.
+[[02-full-replace-patterns/0207-activity-driven-extraction|0207]] solves a related problem differently. Sparse table extraction still scans the full source table -- it just drops most rows before loading. Activity-driven extraction avoids scanning the sparse table at all: it uses recent transaction history to determine which dimension combinations are worth pulling, then queries only those.
 
-0207 is simpler and works for any sparse table. 0208 is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, [[02-full-replace-patterns/0208-activity-driven-extraction|0208]] is the next step.
+0207 is simpler and works for any sparse table. 0208 is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, [[02-full-replace-patterns/0207-activity-driven-extraction|0207]] is the next step.
 
 ## Related Patterns
 
-- [[02-full-replace-patterns/0208-activity-driven-extraction|0208-activity-driven-extraction]] -- avoid scanning the sparse table entirely
+- [[02-full-replace-patterns/0207-activity-driven-extraction|0207-activity-driven-extraction]] -- avoid scanning the sparse table entirely
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]] -- if the table is small enough, the filter isn't worth the complexity
 - [[06-operating-the-pipeline/0609-data-contracts|0609-data-contracts]] -- formalize the filter as a documented contract

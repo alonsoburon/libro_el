@@ -140,7 +140,7 @@ Closed documents that get hard-deleted -- the soft rule violation from [[01-foun
 
 The cost is relative to the alternative. The ratio of open to total matters more than the absolute number: 50,000 open invoices is 0.05% of a 100-million-row table -- a fraction of a full replace. The same 50,000 against a 60,000-row table is 83% -- at that point, a full replace is simpler.
 
-In systems with long-lived open documents -- consulting invoices open for months, construction contracts open for years -- the open set grows and the cost advantage over a scoped full replace ([[02-full-replace-patterns/0205-scoped-full-replace|0205]]) shrinks. Evaluate case by case.
+In systems with long-lived open documents -- consulting invoices open for months, construction contracts open for years -- the open set grows and the cost advantage over a scoped full replace ([[02-full-replace-patterns/0204-scoped-full-replace|0204]]) shrinks. Evaluate case by case.
 
 ---
 
@@ -162,4 +162,4 @@ In systems with long-lived open documents -- consulting invoices open for months
 - [[03-incremental-patterns/0303-stateless-window-extraction|0303-stateless-window-extraction]] -- absorbs the reopen gap if the window is wide enough
 - [[03-incremental-patterns/0308-detail-without-timestamp|0308-detail-without-timestamp]] -- when even the open/closed split can't cover detail changes
 - [[01-foundations-and-archetypes/0106-hard-rules-soft-rules|0106-hard-rules-soft-rules]] -- "closed invoices are immutable" is backed by law in most jurisdictions
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]] -- the alternative when the open set grows too large
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]] -- the alternative when the open set grows too large

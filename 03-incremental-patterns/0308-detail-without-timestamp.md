@@ -87,7 +87,7 @@ This detects every change at the row level -- mutations, inserts, even columns t
 
 Hash all columns -- the goal is to detect any change, and deciding which columns "matter" is a business decision that breaks the conforming boundary ([[01-foundations-and-archetypes/0102-what-is-conforming|0102]]). If a column changed at the source, the destination should reflect it.
 
-See [[02-full-replace-patterns/0209-hash-based-change-detection|0209]] for the full hash-based pattern, including how to store and compare hashes efficiently.
+See [[02-full-replace-patterns/0208-hash-based-change-detection|0208]] for the full hash-based pattern, including how to store and compare hashes efficiently.
 
 ---
 
@@ -134,5 +134,5 @@ Since the header cursor misses these changes entirely, two responses are worth c
 - [[03-incremental-patterns/0304-cursor-from-another-table|0304-cursor-from-another-table]] -- the simpler case where header cursor is sufficient
 - [[03-incremental-patterns/0306-hard-delete-detection|0306-hard-delete-detection]] -- detail rows can also be hard-deleted independently
 - [[03-incremental-patterns/0307-open-closed-documents|0307-open-closed-documents]] -- document lifecycle split applied to headers; can also apply to detail tables independently
-- [[02-full-replace-patterns/0209-hash-based-change-detection|0209-hash-based-change-detection]] -- the full hash-based pattern
+- [[02-full-replace-patterns/0208-hash-based-change-detection|0208-hash-based-change-detection]] -- the full hash-based pattern
 - [[03-incremental-patterns/0301-timestamp-extraction-foundations|0301-timestamp-extraction-foundations]] -- periodic full replace as the safety net

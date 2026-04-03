@@ -31,7 +31,7 @@ The hot tier tolerates impurity. Slight gaps from late-arriving data or cursor l
 
 ### Warm (Daily)
 
-Current month or current quarter -- data that still receives occasional updates but not at high frequency. Refreshed daily, often overnight when the source is under less load. The extraction method is either a full replace of the warm window ([[02-full-replace-patterns/0206-rolling-window-replace|0206]]) or incremental with a wider lag.
+Current month or current quarter -- data that still receives occasional updates but not at high frequency. Refreshed daily, often overnight when the source is under less load. The extraction method is either a full replace of the warm window ([[02-full-replace-patterns/0205-rolling-window-replace|0205]]) or incremental with a wider lag.
 
 This tier takes advantage of harder business boundaries. A closed month in an ERP is unlikely to change (though "unlikely" is not "impossible" -- see the soft rules in [[0106-hard-rules-soft-rules|0106]]). The warm tier's job is to re-read recent history with enough depth to catch what the hot tier missed: late cursor updates, backdated transactions, documents that changed without updating their `updated_at`. Here purity is a lot more important, and you should expect your destination to be exactly equal to source 99% of the time after loading.
 
@@ -59,7 +59,7 @@ The same logic applies between cold and warm. The cold tier's full replace natur
 | Append-only, partitioned by date | Hot for today's partition, cold for everything else |
 | Open documents (`invoices` with status = draft) | Hot regardless of write frequency |
 
-Tier assignment can be static (configured per table in your orchestrator) or dynamic (based on recent activity signal from [[02-full-replace-patterns/0208-activity-driven-extraction|0208]]). Static is simpler and covers most cases -- you know which tables are transactional and which are archival. Dynamic earns its complexity when you have hundreds of tables and can't manually classify each one, or when the same table's activity profile shifts seasonally.
+Tier assignment can be static (configured per table in your orchestrator) or dynamic (based on recent activity signal from [[02-full-replace-patterns/0207-activity-driven-extraction|0207]]). Static is simpler and covers most cases -- you know which tables are transactional and which are archival. Dynamic earns its complexity when you have hundreds of tables and can't manually classify each one, or when the same table's activity profile shifts seasonally.
 
 Most pipelines don't need all three tiers from day one. About two-thirds of tables in a typical pipeline are lookups and dimensions that full-replace daily and never need anything faster. Incrementalizing everything you can is tempting but generates more errors than it saves time -- or money. The simpler approach is to maximize full replace and reserve incremental for the cases that actually demand it. The tier system matters most for the remaining third.
 
@@ -105,6 +105,6 @@ A table can move between tiers as business cycles shift. Month-end promotes some
 - [[06-operating-the-pipeline/0604-sla-management|0604-sla-management]] -- SLA tiers define freshness requirements; tiered freshness implements them
 - [[06-operating-the-pipeline/0606-scheduling-and-dependencies|0606-scheduling-and-dependencies]] -- schedule structure and safe hours
 - [[06-operating-the-pipeline/0603-cost-monitoring|0603-cost-monitoring]] -- tiered freshness is partly a cost optimization strategy
-- [[02-full-replace-patterns/0206-rolling-window-replace|0206-rolling-window-replace]] -- the warm tier often uses rolling window
+- [[02-full-replace-patterns/0205-rolling-window-replace|0205-rolling-window-replace]] -- the warm tier often uses rolling window
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]] -- the hot tier uses cursor-based incremental
 - [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108-purity-vs-freshness]] -- the fundamental tradeoff that tiered freshness navigates

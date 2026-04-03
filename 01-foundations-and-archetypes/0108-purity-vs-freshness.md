@@ -115,5 +115,5 @@ When the SLA genuinely requires sub-hourly continuous refresh: accept it, build 
 
 - [[01-foundations-and-archetypes/0106-hard-rules-soft-rules|0106-hard-rules-soft-rules]]
 - [[02-full-replace-patterns/0201-full-scan-strategies|0201-full-scan-strategies]]
-- [[02-full-replace-patterns/0205-scoped-full-replace|0205-scoped-full-replace]]
+- [[02-full-replace-patterns/0204-scoped-full-replace|0204-scoped-full-replace]]
 - [[03-incremental-patterns/0302-cursor-based-extraction|0302-cursor-based-extraction]]

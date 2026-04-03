@@ -63,7 +63,7 @@ The [[01-foundations-and-archetypes/0108-purity-vs-freshness|0108]] tradeoff fra
 
 **Higher frequency = less drift.** With near-zero load cost, nothing stops you from extracting every 15 minutes instead of every hour. The shorter the interval between extractions, the smaller the window where the destination can diverge from the source -- missed corrections, late-arriving rows, and cursor gaps have less time to accumulate before the next extraction picks them up.
 
-**The log is a temporary buffer.** The append log holds recent extractions until the next materialization compacts it -- a few days or weeks of overlap, scoped to the retention window. For permanent history, see [[02-full-replace-patterns/0202-snapshot-append|0202]]. Keeping the log short is what makes the pattern affordable: storage stays bounded, and the dedup scan stays fast.
+**The log is a temporary buffer.** The append log holds recent extractions until the next materialization compacts it -- a few days or weeks of overlap, scoped to the compaction cycle. Keeping the log short is what makes the pattern affordable: storage stays bounded, and the dedup scan stays fast.
 
 **The dedup view absorbs duplicates by design.** Regardless of how many redundant copies sit in the log from overlapping windows, pipeline retries, or stateless extractions, `ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1` always returns the latest version. Duplicates cost storage until the next compaction, but they never corrupt the current state.
 
@@ -101,18 +101,11 @@ Compaction (below) is the lever that controls the read-side cost: compact the lo
 
 ## Compaction
 
-The dedup view runs `ROW_NUMBER()` against the full log on every query. Without compaction, the log grows with every run -- a daily pipeline with a 7-day stateless window adds 7× the window volume per week, and the view's scan grows proportionally. Two strategies for keeping the log small, run as a periodic scheduled job:
+The dedup view runs `ROW_NUMBER()` against the full log on every query. Without compaction, the log grows with every run -- a daily pipeline with a 7-day stateless window adds 7× the window volume per week, and the view's scan grows proportionally. Compaction collapses the log to one row per key, run as a periodic scheduled job:
 
 ```sql
 -- destination: columnar
--- Strategy 1: trim by retention window (drops old extractions)
-DELETE FROM orders_log
-WHERE _extracted_at < CURRENT_DATE - INTERVAL '30 days';
-```
-
-```sql
--- destination: columnar
--- Strategy 2: compact to latest-only (one row per key, all extraction history gone)
+-- Compact to latest-only: one row per key, all extraction history gone
 CREATE OR REPLACE TABLE orders_log AS
 SELECT *
 FROM orders_log
@@ -122,21 +115,62 @@ QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 
 ```mermaid
 flowchart TD
     append["INSERT every run"] -->|"cheap append"| log["orders_log<br>(TABLE)"]
-    sched["Scheduled compact"] -->|"DELETE old or<br>replace with deduped"| log
+    sched["Scheduled compact"] -->|"replace with deduped"| log
     log -->|"ROW_NUMBER() dedup<br>on every query"| view["orders<br>(VIEW -- always)"]
     view --> consumers["Consumers"]
 ```
 
-Compaction frequency determines how large the log gets between runs and how heavy the view's dedup scan is at peak -- not how stale the view is. The view always reflects the latest version of every row currently in the log; compaction just controls how much extraction history the log carries.
+Compaction replaces the log with the deduplicated result -- every key retains its latest version, all duplicate extractions and historical versions are gone. Storage reclaims completely and the view's `ROW_NUMBER()` scan drops to near-trivial size. Compaction frequency determines how large the log gets between runs and how heavy the dedup scan is at peak, not how stale the view is -- the view always reflects the latest version of every row in the log.
 
-**Retention window sizing.** The retention window must be longer than the extraction window. A 7-day stateless extraction with a 7-day retention means the oldest batch is dropped just as the next run re-extracts the same rows -- safe, but with zero margin for investigation or replay. A 14-day retention on a 7-day extraction window gives a full week of buffer.
+The tradeoff is that version history disappears after each compaction. If consumers need point-in-time reconstruction from the log, compaction must run less frequently than their lookback window -- or not at all. See [[07-serving-the-destination/0706-point-in-time-from-events|0706]] for strategies that preserve history.
 
-**Compact to latest-only.** Replacing the log with the deduplicated result collapses all versions into the current state, reclaims storage completely, and reduces the view's `ROW_NUMBER()` scan to near-trivial size. The tradeoff is that all extraction history is gone -- for point-in-time reconstruction, see [[02-full-replace-patterns/0202-snapshot-append|0202]].
+> [!tip] Partition the log by business date after compaction
+> After a compact-to-latest, the log holds one row per key -- partition it by a business date (`order_date`) so the view's scan benefits from partition pruning on the dimension consumers actually filter on. Before compaction, partitioning by `_extracted_at` is tempting but doesn't help the dedup view.
 
-> [!tip] Partition the log by `_extracted_at` for cheap retention drops
-> If you use it as a permanent log storage, `orders_log` partitioned by `_extracted_at` turns retention drops into partition drops -- a metadata operation instead of a full-table DELETE. If you compact to latest-only, rebuild `orders_log` partitioned by a business date (`order_date`) so the view's scan benefits from partition pruning on the dimension consumers actually filter on.
+---
 
-Retention doesn't have to be all-or-nothing. For tables where consumers need recent data at high granularity but historical data at lower granularity -- daily stock snapshots for the last 60 days, monthly thereafter -- a tiered compaction job can compress older entries without erasing them entirely. [[02-full-replace-patterns/0202-snapshot-append|0202]] covers the mechanics under "Tiered Retention."
+## Historicizing Non-Historical Data
+
+A less common use case, but valuable when it comes up. Most mutable tables in a transactional source overwrite in place without keeping version history -- the previous state is gone the moment the row is updated. If someone later asks "what was the product price on March 5?" and you loaded with full replace or MERGE, there's nothing to reconstruct from.
+
+With append-and-materialize, the log already contains the answer. Each extraction captures the state of changed rows at that moment, and historical queries are a `WHERE _extracted_at <= target_date` filter over the log. The version history is a side effect of the load strategy, not an additional mechanism.
+
+This works without changing anything about the load -- the mechanism is the same append + dedup view. The only change is the compaction policy: instead of collapsing to latest-only, you either skip compaction entirely (expensive on storage) or use tiered retention to keep recent history at full granularity and compress older history.
+
+### Tiered Retention
+
+Keeping every extraction indefinitely is a storage problem. Tiered retention sits in between full compaction and no compaction: daily granularity for the recent window, monthly snapshots for older data.
+
+We had a client requesting daily `inventory` snapshots for stock-level analysis across warehouses. After three months the log was large and growing linearly. They realized they only needed daily granularity for the last 60-90 days -- further back, a single snapshot per month was enough for seasonal trends and year-over-year comparisons.
+
+```sql
+-- destination: columnar
+-- engine: bigquery
+-- Monthly job: daily for last 60 days, compress older to monthly
+CREATE OR REPLACE TABLE inventory_log AS
+
+-- Recent: keep every daily extraction
+SELECT * FROM inventory_log
+WHERE _extracted_at >= DATE_SUB(CURRENT_DATE, INTERVAL 60 DAY)
+
+UNION ALL
+
+-- Older: last extraction per PK per month
+(SELECT *
+FROM inventory_log
+WHERE _extracted_at < DATE_SUB(CURRENT_DATE, INTERVAL 60 DAY)
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY sku_id, warehouse_id, DATE_TRUNC(_extracted_at, MONTH)
+  ORDER BY _extracted_at DESC
+) = 1);
+```
+
+The result is two tiers in a single table: daily extractions for the recent window (operational analysis), monthly for older data (trend analysis). The dedup view works identically -- `MAX(_extracted_at)` per PK still returns the latest -- and downstream queries that filter by date range naturally hit the appropriate granularity.
+
+> [!tip] Match the compression boundary to actual needs
+> What's the shortest period where daily granularity changes a decision? If nobody looks at daily stock levels older than 30 days, compress at 30. If finance needs daily for quarter-close reconciliation, compress at 90. Ask the consumer before picking the number -- they usually need less daily granularity than they think.
+
+See [[07-serving-the-destination/0706-point-in-time-from-events|0706]] for the full treatment of point-in-time reconstruction from append logs, event tables, and SCD2.
 
 ---
 

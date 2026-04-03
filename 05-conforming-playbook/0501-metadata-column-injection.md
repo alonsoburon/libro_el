@@ -90,7 +90,7 @@ Your pipeline writes a row to `_batches` at the start of each run (`status = 'ru
 
 ## `_source_hash`
 
-A hash of the source row at extraction time. Enables [[02-full-replace-patterns/0209-hash-based-change-detection|0209]] (compare hashes between runs to detect changes without relying on `updated_at`) and post-load reconciliation (compare source-side hash vs destination-side hash to verify the row arrived intact).
+A hash of the source row at extraction time. Enables [[02-full-replace-patterns/0208-hash-based-change-detection|0208]] (compare hashes between runs to detect changes without relying on `updated_at`) and post-load reconciliation (compare source-side hash vs destination-side hash to verify the row arrived intact).
 
 ```sql
 -- source: transactional
@@ -143,6 +143,6 @@ For `_extracted_at` and `_batch_id`, the source query is almost always the right
 ## Related Patterns
 
 - [[04-load-strategies/0404-append-and-materialize|0404]] -- `_extracted_at` as the dedup ordering key
-- [[02-full-replace-patterns/0209-hash-based-change-detection|0209]] -- `_source_hash` enables hash-based change detection
+- [[02-full-replace-patterns/0208-hash-based-change-detection|0208]] -- `_source_hash` enables hash-based change detection
 - [[06-operating-the-pipeline/0614-reconciliation-patterns|0614]] -- `_batch_id` for source-destination row count reconciliation
 - [[03-incremental-patterns/0301-timestamp-extraction-foundations|0301]] -- why `updated_at` is unreliable and `_extracted_at` is your safety net
