@@ -70,7 +70,7 @@ status: outline
 - [[05-conforming-playbook/0504-null-handling|0504-null-handling]] -- NULL means NULL. Reflect the source, don't COALESCE
 - [[05-conforming-playbook/0505-timezone-conforming|0505-timezone-conforming]] -- TZ stays TZ, naive stays naive. Don't make decisions that aren't in the data
 - [[05-conforming-playbook/0506-charset-encoding|0506-charset-encoding]] -- Latin-1 source, UTF-8 destination. Let the library handle it
-- [[0507-nested-data-and-json|0507-nested-data-and-json]] -- JSON columns from source: land as-is. Normalizing is transformation, not conforming
+- [[05-conforming-playbook/0507-nested-data-and-json|0507-nested-data-and-json]] -- JSON columns from source: land as-is. Normalizing is transformation, not conforming
 
 ### Part VI -- Operating the Pipeline
 #### Running
@@ -96,7 +96,6 @@ status: outline
 - [[07-serving-the-destination/0701-dont-pre-aggregate|0701-dont-pre-aggregate]] -- Land the movements, build the photo downstream. Resist the pressure to transform at extraction
 - [[07-serving-the-destination/0702-partitioning-for-consumers|0702-partitioning-for-consumers]] -- Partition landed data so downstream queries don't full-scan
 - [[07-serving-the-destination/0703-pre-built-views|0703-pre-built-views]] -- Materialized views, scheduled queries, and pre-cooked tables for consumers who can't write efficient SQL
-- [[07-serving-the-destination/0702-partitioning-for-consumers|0702-partitioning-clustering-and-pruning]] -- Cluster keys, partition filters, require_partition_filter. Make it physically impossible to accidentally scan 3TB
 - [[07-serving-the-destination/0704-query-patterns-for-analysts|0704-query-patterns-for-analysts]] -- Cheat sheet: how to query append-only tables, how to get latest state, how to not blow up costs
 - [[07-serving-the-destination/0705-cost-optimization-by-engine|0705-cost-optimization-by-engine]] -- Engine-specific strategies for keeping query costs under control
 - [[07-serving-the-destination/0706-point-in-time-from-events|0706-point-in-time-from-events]] -- Reconstruct past state from event tables, not snapshots. Events are cheaper to store and replay than periodic copies of the full state

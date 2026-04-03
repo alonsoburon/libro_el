@@ -179,6 +179,46 @@ All SQL examples use this shared fictional domain. The goal is always to clone t
 - **Transactional → Columnar**: e.g. PostgreSQL → BigQuery (primary)
 - **Transactional → Transactional**: e.g. PostgreSQL → PostgreSQL
 
+### Book Invariants
+
+Decisions made during writing that apply across all chapters. Check these before writing or editing any pattern. If new content contradicts an invariant, the content is wrong -- not the invariant -- unless the author explicitly overrides it.
+
+#### Load strategy decisions
+- **Compaction is always collapse-to-latest.** `CREATE OR REPLACE TABLE ... QUALIFY ROW_NUMBER() ... = 1`. Never trim by date (`DELETE WHERE _extracted_at < X`) -- that destroys current-state rows for keys not recently extracted. Collapse-to-latest preserves one row per key regardless of age.
+- **Date-based retention trimming outside full scans is ETL, not ECL.** Deciding which historical rows to keep based on a business rule is a transformation. On a full-scan table where every source row re-lands every run, date trimming is safe because the next run repopulates. On anything else, it's data loss.
+- **Append-and-materialize is the single append+dedup pattern.** The old "snapshot append" (0202) was merged into 0303 (mutable window extraction) + 0404 (load strategy). There is no separate snapshot append pattern.
+- **Mutable window extraction is a variant of stateless window extraction (0303).** Scoped by business date instead of `updated_at`, for sources with no change tracking. Same mechanism, different filter column.
+
+#### Conforming boundary
+- **Identifier normalization is conforming.** snake_case, stripping special characters, accent removal -- all happen at load time, not downstream.
+- **Semantic renames cross the boundary.** `OACT` → `chart_of_accounts` is transformation. Land the source name; rename downstream (gold layer).
+- **Aggregation crosses the boundary.** `SUM(quantity)` at extraction is transformation. Land the detail; aggregate downstream.
+- **SCD Type 2 is downstream.** The pipeline lands current state or the append log. A scheduled job downstream builds the SCD2 table.
+
+#### Naming and structure
+- **Chapter 02 was renumbered.** Old 0202 (snapshot-append) deleted; 0203-0210 shifted to 0202-0209. All cross-references updated 2026-04-02.
+- **Schema naming convention** uses `connection__schema.table` with double underscore. Always include the schema even with a single schema per connection -- dropping it means a rename when a second schema appears.
+- **Layer prefixes** (`raw_`, `bronze_`, `silver_`, `gold_`) are optional but if used, apply consistently to every schema.
+
+#### Engine behavior (for SQL examples)
+- **Columnar engines don't have indexes.** Never reference "indexed columns" in the context of BigQuery, Snowflake, ClickHouse, or Redshift. Use partitioning and clustering language.
+- **QUALIFY is native on BigQuery, Snowflake, ClickHouse.** Use it in examples targeting those engines. Use the subquery wrapper for PostgreSQL, MySQL, SQL Server, Redshift.
+- **BigQuery TIMESTAMP is always UTC.** Naive timestamps from the source land as UTC. If the source stored local times, every value is wrong. Conform timezone info during load.
+
+### Book Status
+
+| Chapter | Patterns | Status |
+|---|---|---|
+| 00 Front Matter | 0001-0002 | draft |
+| 01 Foundations | 0101-0109 | draft |
+| 02 Full Replace | 0201-0209 | draft |
+| 03 Incremental | 0301-0310 | draft |
+| 04 Load Strategies | 0401-0406 | draft |
+| 05 Conforming | 0501-0507 | draft |
+| 06 Operating | 0601-0615 | draft |
+| 07 Serving | 0701-0707 | draft |
+| 08 Appendix | 0801-0804 | draft (0805-0807 not yet created) |
+
 ### Publishing Toolchain
 - **Typst** for typesetting and page layout. Screen-first design (SQL codeblocks need width), with print as a secondary output.
 - **Custom SVGs** for charts and diagrams. The `_charts/` framework may be redesigned with a new visual style -- the current aesthetic is not final. Charts are authored externally and embedded into Typst as SVGs.

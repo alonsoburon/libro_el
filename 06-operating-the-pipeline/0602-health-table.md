@@ -52,7 +52,7 @@ CREATE TABLE health.runs (
 ```
 
 > [!warning] Watch the storage cost of the last three columns
-> `query_used` and `schema_json` are STRING columns that grow with query complexity and table width. At 6500 tables running 3x daily, that's ~7 million rows per year -- and if each `query_used` averages 2KB, that column alone is 14GB/year before compression. Worth it for debugging, but if cost is really tight, consider storing them in a separate detail table keyed by `run_id` and only joining when you need them. `bytes_extracted` is cheap (INT64) and nearly free to keep.
+> `query_used` and `schema_json` are STRING columns that grow with query complexity and table width. At thousands of tables running 3x daily, the row count adds up fast -- and if each `query_used` averages 2KB, that column alone is 14GB/year before compression. Worth it for debugging, but if cost is really tight, consider storing them in a separate detail table keyed by `run_id` and only joining when you need them. `bytes_extracted` is cheap (INT64) and nearly free to keep.
 
 The guiding principle is **store raw measurements, derive the rest at query time.** Discrepancy percentage, per-row extraction time, average row size, throughput, and total duration are all computable from the columns above and don't need their own storage. A view or a dashboard query handles them.
 
