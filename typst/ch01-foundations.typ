@@ -25,7 +25,7 @@ So, what we're going to be talking about is ECL: #strong[Extract, Conform, and L
 
 == What About the T?
 <what-about-the-t>
-If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. We cover how to protect them (and your invoice) in Query patterns for analysts.
+If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. We cover how to protect them (and your invoice) in @query-patterns-for-analysts.
 
 == Related Patterns
 - @domain-model -- The shared schema used in every SQL example in this book
@@ -59,7 +59,11 @@ But here's where it gets interesting. `order_lines` has no `updated_at`. If you 
   "The join test",
 )[If the join adds a column the business cares about, it's transforming. If it adds a column only your pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(
+  image("diagrams/ecl-conforming-vs-transforming.svg", width: 90%),
+)
+
+#ecl-tip("The join test")[If the join adds a column the business cares about, it's transforming. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
 
 == The Conforming Checklist
 <the-conforming-checklist>
@@ -212,7 +216,7 @@ You'll build your pipeline trusting `updated_at`, and three months later discove
 
 ```sql
 -- yesterday's extraction got 4 invoices:
-SELECT invoice_id FROM invoices WHERE status = 'open';
+SELECT invoice_id FROM invoices;
 ```
 
 #figure(
@@ -231,7 +235,7 @@ SELECT invoice_id FROM invoices WHERE status = 'open';
 
 ```sql
 -- today's extraction gets 3:
-SELECT invoice_id FROM invoices WHERE status = 'open';
+SELECT invoice_id FROM invoices;
 ```
 
 #figure(
@@ -394,7 +398,9 @@ PARTITION BY toYYYYMM(event_date)
 ORDER BY (event_date, event_id);
 ```
 
-#strong[Redshift.] PostgreSQL dialect, columnar storage underneath. Sort keys and dist keys determine how data is physically laid out and how queries perform. Get them right and range queries fly. Get them wrong and every query shuffles data across all nodes.
+=== Redshift
+<foundations-redshift>
+PostgreSQL dialect, columnar storage underneath. Sort keys and dist keys determine how data is physically laid out and how queries perform. Get them right and range queries fly. Get them wrong and every query shuffles data across all nodes.
 
 Loading goes through `COPY` from S3. This is the fast path. Row-by-row `INSERT` is painfully slow compared to `COPY` -- orders of magnitude slower on any meaningful volume. If your pipeline isn't using `COPY`, fix that first.
 
@@ -406,7 +412,7 @@ Column additions are cheap. Type changes require recreating the table. A `VARCHA
 <engine-cheat-sheet>
 #figure(
   align(center)[#table(
-    columns: (6.37%, 22.29%, 21.66%, 15.29%, 34.39%),
+    columns: (14%, 22%, 20%, 14%, 30%),
     align: (auto, auto, auto, auto, auto),
     table.header([Engine], [Load Method], [Partition Mechanism], [Mutation Cost], [Key Gotcha]),
     table.hline(),
@@ -487,7 +493,7 @@ Parquet is the fastest and most type-safe bulk load format. But BigQuery's JSON 
 
 #figure(
   align(center)[#table(
-    columns: (4.52%, 3.87%, 16.77%, 23.87%, 50.97%),
+    columns: (12%, 10%, 18%, 28%, 32%),
     align: (auto, auto, auto, auto, auto),
     table.header([Format], [Speed], [Type Safety], [JSON Support], [Gotcha]),
     table.hline(),
@@ -502,32 +508,32 @@ Parquet is the fastest and most type-safe bulk load format. But BigQuery's JSON 
     [BigQuery: native. Snowflake: VARIANT.],
     [Redshift: 4 MB max block size. ClickHouse needs schema registry or embedded schema.],
     [JSONL], [Medium], [Medium (inferred)], [Full support everywhere], [Slower on large volumes],
-    [CSV], [Varies], [Low (everything is string)], [Must quote/escape], [Type inference can surprise you],
+    [CSV], [Varies], [Low (everything is string)], [Must quote/escape], [Type inference can surprise you. Compressed CSV can't be split for parallel load.],
   )],
   kind: table,
 )
 
 #ecl-warning(
   "Default format recommendation",
-)[BigQuery → Avro. Every other columnar destination with no JSON columns → Parquet. When you hit edge cases (JSON columns on BigQuery, Snowflake DECFLOAT, Redshift Avro block size limit) → JSONL. #strong[Avoid CSV like the plague] unless your destination gives you no other choice.]
+)[BigQuery → Avro. Every other columnar destination with no JSON columns → Parquet (including Redshift, where `COPY` handles Parquet natively with automatic parallel splitting). When you hit edge cases (JSON columns on BigQuery, Snowflake DECFLOAT, Redshift Avro block size limit) → JSONL. #strong[Avoid CSV like the plague] unless your destination gives you no other choice.]
 
 == Loading Strategies
 <loading-strategies>
 Your write disposition determines how data lands. The choice affects cost, complexity, and correctness. When in doubt, append -- it's the cheapest operation on every engine and you can always deduplicate or materialize downstream. Reach for MERGE only when you've confirmed append + deduplicate won't work for your case, or your storage is much more expensive.
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(
+  image("diagrams/ecl-load-strategy-spectrum.svg", width: 100%),
+)
 
-#strong[Append.] The cheapest and simplest. New rows land at the end of the table. No deduplication, no mutation, no DML quota concerns. Works perfectly for `events` and other immutable sources. #strong[For mutable sources];, you append every version and deduplicate downstream with a view or materialized table. See @append-and-materialize.
++ #strong[Append.] New rows land at the end of the table. No deduplication, no mutation, no DML quota concerns. Works perfectly for `events` and other immutable sources. For mutable sources, you append every version and deduplicate downstream with a view or materialized table. See @append-and-materialize.
 
-#strong[Replace (partition-level).] Drop and reload an entire partition. Atomic in most engines. The go-to for `metrics_daily` and other partition-aligned data that gets overwritten on a schedule. See @partition-swap.
++ #strong[Full replace.] Drop and reload the entire table (staging swap) or a single partition (partition swap). No merge logic, idempotent by construction. The go-to for `metrics_daily`, dimensions, and anything under 10k rows -- resist the temptation to overengineer these kinds of tables. See @partition-swap.
 
-#strong[Replace (Full).] Use this whenever the data you're loading isn't deserving of upserts or partitioning. Great for dimensions and anything under 10k rows. Resist the temptation to overengineer these kinds of tables. Fully replace it and relax knowing your data is exactly the same on source.
++ #strong[Append + materialize.] Append raw data, then deduplicate via a view or scheduled compaction. Shifts cost from load-time to read-time -- cheap writes, heavier queries. The sweet spot for mutable sources on columnar engines where MERGE is expensive. See @append-and-materialize.
 
-#strong[Merge / Upsert.] Match on a key, update if exists, insert if new. The most expensive and complex disposition in columnar engines because it requires reading existing data, comparing, and mutating. Every engine implements MERGE differently, but the cost is always higher than a pure append. See @merge-upsert for the full pattern.
++ #strong[Merge / upsert.] Match on a key, update if exists, insert if new. The most expensive disposition in columnar engines because it requires reading existing data, comparing, and mutating. Reach for it only when append + deduplicate won't work. See @merge-upsert.
 
-#ecl-tip(
-  "Avoiding full MERGE cost",
-)[Append + deduplicate, conditional inserts filtered by hash, periodic source consolidation -- columnar engines offer a lot of room to optimize how you land mutable data. These strategies have trade-offs that depend on your data volume, mutation frequency, and engine. We cover them in depth in @append-and-materialize and @partitioning-clustering-and-pruning.]
++ #strong[Hybrid append + merge.] Two destinations: an append log for history and a merged table for current state. Maximum complexity, maximum flexibility. See @hybrid-append-merge.
 
 == Schema Evolution
 <foundations-schema-evolution>
@@ -541,7 +547,7 @@ New columns appear in the source. What happens when they land?
 
 #strong[Redshift.] Adding columns to the end of a table is a metadata operation and cheap. Changing a type requires creating a new table, copying all data, and swapping -- a full rebuild. Sort keys and dist keys are also fixed at creation; changing them means the same full rebuild. There's a hard limit of 1600 columns per table, which makes wide sources with lots of sparse columns less viable.
 
-Every loader needs a #strong[schema policy] for when new columns arrive from the source: add them automatically (`evolve`), reject the load (`freeze`), or drop the affected rows (`discard_row`). This applies regardless of destination. Default to `evolve` -- starting with `freeze` means your pipeline breaks on every new source column, which is more disruptive than a new nullable column appearing in the destination. Tighten the policy once you know which/if tables are stable. See @data-contracts.
+Every loader needs a #strong[schema policy] for when new columns arrive from the source: add them automatically (`evolve`) or reject the load (`freeze`). Default to `evolve` -- starting with `freeze` means your pipeline breaks on every new source column, which is more disruptive than a new nullable column appearing in the destination. Tighten the policy once you know which tables are stable. See @data-contracts.
 
 #ecl-warning(
   "Naming convention lock-in",
@@ -595,9 +601,11 @@ ORDER BY ordinal_position;
 
 Your pipeline should store this result after every successful run. On the next run, compare new vs stored: columns present last run but absent now = deletion or rename -- fail immediately, before any data moves. Columns absent last run but present now = addition -- add to the destination and continue.
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(
+  image("diagrams/schema-drift-detection.svg", width: 85%),
+)
 
-What the loader does in response to that diff is your schema policy (`evolve`, `freeze`, `discard_row`) -- covered in @columnar-destinations. When it fails, alert it -- see @alerting-and-notifications.
+What the loader does in response to that diff is your schema policy (`evolve` or `freeze`) -- covered in @columnar-destinations. When it fails, alert it -- see @alerting-and-notifications.
 
 #ecl-warning(
   "Schema auto-detection isn't free",
@@ -942,7 +950,11 @@ A corridor is the combination of source type and destination type. The extractio
 
 We don't cover Columnar → Columnar or Columnar → Transactional. The first is rare and usually handled by the analytical platform itself (BigQuery cross-region replication, Snowflake data sharing). The second is unusual enough to be its own project.
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(
+  image("diagrams/ecl-corridors.svg", width: 90%),
+)
+
+#ecl-info("Corridor effect on load strategies")[In T→T, MERGE is cheap and native -- the load strategy spectrum compresses. In T→C, MERGE is the costliest DML and the full spread matters.]
 
 == What Changes at the Crossing
 <what-changes-at-the-crossing>
@@ -1085,7 +1097,9 @@ How you classify the table determines everything that follows. Work through thes
 
 #strong[\5. Is the cursor reliable?] Verify it before committing. Query for NULL `updated_at` values. Run EXPLAIN on the cursor query and confirm it hits an index. Create a row and update it and confirm the timestamp changes both times. If any check fails, the cursor is a soft rule and your incremental will accumulate drift.
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(
+  image("diagrams/0108-purity-freshness.svg", width: 80%),
+)
 
 #figure(
   align(center)[#table(

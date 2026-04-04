@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="310" viewBox="0 0 680 310">
+  <rect width="680" height="310" fill="#1d2021" rx="8"/>
+  <!-- Title -->
+  <text x="340" y="28" text-anchor="middle" fill="#928374" font-family="system-ui,sans-serif" font-size="10" letter-spacing="1.5" text-transform="uppercase">CORRIDORS</text>
+  <text x="340" y="50" text-anchor="middle" fill="#fbf1c7" font-family="system-ui,sans-serif" font-size="16" font-weight="500">The source→destination pairing changes every decision</text>
+
+  <!-- Column A: T→C -->
+  <rect x="16" y="70" width="318" height="280" fill="#282828" rx="6" stroke="#d3869b" stroke-width="0" />
+  <rect x="16" y="70" width="318" height="3" fill="#d3869b" rx="6"/>
+  <text x="30" y="94" fill="#d3869b" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Transactional → Columnar</text>
+  <text x="30" y="110" fill="#928374" font-family="system-ui,sans-serif" font-size="10">e.g. PostgreSQL → BigQuery</text>
+  <!-- Rows -->
+  <text x="30" y="140" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Type system gap</text>
+  <text x="320" y="140" text-anchor="end" fill="#d3869b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Wide</text>
+  <line x1="30" y1="150" x2="320" y2="150" stroke="#3c3836" stroke-width="1"/>
+  <text x="30" y="170" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Mutation cost</text>
+  <text x="320" y="170" text-anchor="end" fill="#fb4934" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Expensive</text>
+  <line x1="30" y1="180" x2="320" y2="180" stroke="#3c3836" stroke-width="1"/>
+  <text x="30" y="200" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Constraints</text>
+  <text x="320" y="200" text-anchor="end" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11" font-weight="500">None enforced</text>
+  <line x1="30" y1="210" x2="320" y2="210" stroke="#3c3836" stroke-width="1"/>
+  <text x="30" y="230" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Cost model</text>
+  <text x="320" y="230" text-anchor="end" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11" font-weight="500">Per bytes/slots</text>
+  <line x1="30" y1="240" x2="320" y2="240" stroke="#3c3836" stroke-width="1"/>
+  <text x="30" y="260" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Default load</text>
+  <text x="320" y="260" text-anchor="end" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11" font-weight="500">Append, partition swap</text>
+  <line x1="30" y1="270" x2="320" y2="270" stroke="#3c3836" stroke-width="1"/>
+  <text x="30" y="290" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Deduplication</text>
+  <text x="320" y="290" text-anchor="end" fill="#fabd2f" font-family="system-ui,sans-serif" font-size="11" font-weight="500">Your problem</text>
+
+  <!-- Column B: T→T -->
+  <rect x="346" y="70" width="318" height="280" fill="#282828" rx="6" stroke="#8ec07c" stroke-width="0"/>
+  <rect x="346" y="70" width="318" height="3" fill="#8ec07c" rx="6"/>
+  <text x="360" y="94" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Transactional → Transactional</text>
+  <text x="360" y="110" fill="#928374" font-family="system-ui,sans-serif" font-size="10">e.g. PostgreSQL → PostgreSQL</text>
+  <!-- Rows -->
+  <text x="360" y="140" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Type system gap</text>
+  <text x="650" y="140" text-anchor="end" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Narrow</text>
+  <line x1="360" y1="150" x2="650" y2="150" stroke="#3c3836" stroke-width="1"/>
+  <text x="360" y="170" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Mutation cost</text>
+  <text x="650" y="170" text-anchor="end" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Cheap</text>
+  <line x1="360" y1="180" x2="650" y2="180" stroke="#3c3836" stroke-width="1"/>
+  <text x="360" y="200" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Constraints</text>
+  <text x="650" y="200" text-anchor="end" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11" font-weight="500">PK, FK, UNIQUE</text>
+  <line x1="360" y1="210" x2="650" y2="210" stroke="#3c3836" stroke-width="1"/>
+  <text x="360" y="230" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Cost model</text>
+  <text x="650" y="230" text-anchor="end" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11" font-weight="500">Fixed infra</text>
+  <line x1="360" y1="240" x2="650" y2="240" stroke="#3c3836" stroke-width="1"/>
+  <text x="360" y="260" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Default load</text>
+  <text x="650" y="260" text-anchor="end" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11" font-weight="500">MERGE / upsert</text>
+  <line x1="360" y1="270" x2="650" y2="270" stroke="#3c3836" stroke-width="1"/>
+  <text x="360" y="290" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Deduplication</text>
+  <text x="650" y="290" text-anchor="end" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="11" font-weight="500">Engine enforces</text>
+</svg>

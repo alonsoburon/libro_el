@@ -109,7 +109,11 @@
   show heading.where(level: 2): set text(fill: gruvbox.fg0, size: 16pt)
   show heading.where(level: 3): set text(fill: gruvbox.fg2, size: 13pt)
 
-  // Cross-references: show "1.2 — Name" instead of "Section 1.2"
+  // Prevent orphaned headings -- always keep with the next block
+  show heading: set block(below: 1em, above: 1.4em, sticky: true)
+
+  // Cross-references: show "1.2 -- Name" instead of "Section 1.2"
+  // Front matter headings (part = 0) show just the title.
   show ref: it => {
     let el = it.element
     if el != none and el.func() == heading {
@@ -117,9 +121,11 @@
         let nums = counter(heading).at(el.location())
         let part = ecl-part.at(el.location())
         if part > 0 {
-          numbering("1.1", part, ..nums)
+          [#numbering("1.1", part, ..nums) -- #el.body]
+        } else {
+          el.body
         }
-      } -- #el.body]
+      }]
     } else {
       it
     }

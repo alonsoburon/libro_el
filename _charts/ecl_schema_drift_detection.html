@@ -1,0 +1,93 @@
+<div style="background:#1d2021;border-radius:12px;padding:32px 24px 24px;font-family:'Segoe UI',system-ui,sans-serif;color:#ebdbb2;max-width:720px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 02</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Schema Drift Detection</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Compare before loading -- never let a schema change reach the destination silently</div>
+  </div>
+
+  <!-- Flow: top section -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:16px;">
+    <div style="background:#282828;border:1px solid #504945;border-radius:6px;padding:10px 24px;font-size:12px;color:#ebdbb2;">
+      Extract source schema snapshot
+    </div>
+    <div style="color:#665c54;font-size:16px;">&darr;</div>
+    <div style="background:#282828;border:1px solid #504945;border-radius:6px;padding:10px 24px;font-size:12px;color:#ebdbb2;">
+      Compare to previous run's snapshot
+    </div>
+    <div style="color:#665c54;font-size:16px;">&darr;</div>
+    <div style="background:#282828;border:1px solid #83a598;border-radius:20px;padding:8px 20px;font-size:12px;color:#83a598;font-weight:500;">
+      Changes detected?
+    </div>
+  </div>
+
+  <!-- Branch: No changes -->
+  <div style="display:flex;gap:16px;margin-bottom:16px;">
+    <div style="flex:0 0 120px;display:flex;flex-direction:column;align-items:center;">
+      <div style="font-size:10px;color:#8ec07c;font-weight:600;margin-bottom:6px;">NO</div>
+      <div style="background:#282828;border:1px solid #689d6a;border-radius:6px;padding:10px 14px;font-size:11px;color:#8ec07c;text-align:center;">
+        Continue load
+      </div>
+    </div>
+
+    <!-- Branch: Yes -->
+    <div style="flex:1;">
+      <div style="font-size:10px;color:#d79921;font-weight:600;margin-bottom:8px;text-align:center;">YES &mdash; what changed?</div>
+      <div style="display:flex;gap:8px;">
+        <!-- New columns -->
+        <div style="flex:1;background:#282828;border-radius:8px;padding:12px;border-top:3px solid #8ec07c;">
+          <div style="font-size:12px;font-weight:600;color:#8ec07c;margin-bottom:6px;">New columns</div>
+          <div style="font-size:10px;color:#a89984;margin-bottom:8px;">Column in source, not in destination</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="background:#1d2021;border-radius:4px;padding:6px 8px;font-size:10px;">
+              <span style="color:#8ec07c;">evolve &rarr;</span>
+              <span style="color:#ebdbb2;">ALTER TABLE ADD COLUMN</span>
+            </div>
+            <div style="background:#1d2021;border-radius:4px;padding:6px 8px;font-size:10px;">
+              <span style="color:#fb4934;">freeze &rarr;</span>
+              <span style="color:#ebdbb2;">Fail pipeline, alert</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Type changes -->
+        <div style="flex:1;background:#282828;border-radius:8px;padding:12px;border-top:3px solid #fabd2f;">
+          <div style="font-size:12px;font-weight:600;color:#fabd2f;margin-bottom:6px;">Type changes</div>
+          <div style="font-size:10px;color:#a89984;margin-bottom:8px;">Same column, different type</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="background:#1d2021;border-radius:4px;padding:6px 8px;font-size:10px;">
+              <span style="color:#fabd2f;">evolve &rarr;</span>
+              <span style="color:#ebdbb2;">Widen if compatible</span>
+            </div>
+            <div style="background:#1d2021;border-radius:4px;padding:6px 8px;font-size:10px;">
+              <span style="color:#fb4934;">freeze &rarr;</span>
+              <span style="color:#ebdbb2;">Fail pipeline, alert</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dropped columns -->
+        <div style="flex:1;background:#282828;border-radius:8px;padding:12px;border-top:3px solid #fb4934;">
+          <div style="font-size:12px;font-weight:600;color:#fb4934;margin-bottom:6px;">Dropped columns</div>
+          <div style="font-size:10px;color:#a89984;margin-bottom:8px;">Column in destination, gone from source</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="background:#1d2021;border-radius:4px;padding:6px 8px;font-size:10px;">
+              <span style="color:#fb4934;">always &rarr;</span>
+              <span style="color:#ebdbb2;">Fail pipeline, alert</span>
+            </div>
+            <div style="font-size:9px;color:#928374;font-style:italic;margin-top:2px;padding:0 4px;">No safe default -- investigate manually</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendation -->
+  <div style="background:#282828;border-radius:8px;padding:12px 16px;border-left:3px solid #d79921;">
+    <div style="font-size:10px;letter-spacing:1px;color:#928374;text-transform:uppercase;margin-bottom:4px;">Recommended default</div>
+    <div style="font-size:12px;color:#ebdbb2;">
+      <span style="color:#8ec07c;font-weight:500;">evolve</span> new columns &middot;
+      <span style="color:#fb4934;font-weight:500;">freeze</span> type changes &middot;
+      <span style="color:#fb4934;font-weight:500;">freeze</span> dropped columns
+    </div>
+  </div>
+</div>

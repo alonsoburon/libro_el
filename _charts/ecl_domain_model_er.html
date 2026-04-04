@@ -1,0 +1,147 @@
+<div style="background:#1d2021;border-radius:12px;padding:32px 24px 24px;font-family:'Segoe UI',system-ui,sans-serif;color:#ebdbb2;max-width:880px;">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Domain Model</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Schema</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">11 tables, each representing a distinct extraction challenge</div>
+  </div>
+
+  <!-- Row 1: Header-Detail pairs -->
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <!-- orders + order_lines -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #d3869b;">
+      <div style="font-size:13px;font-weight:600;color:#d3869b;">orders</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Unreliable updated_at</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK<br>
+        <span style="color:#ebdbb2;">customer_id</span> FK<br>
+        <span style="color:#ebdbb2;">updated_at</span> <span style="color:#fabd2f;">unreliable</span><br>
+        <span style="color:#ebdbb2;">status</span>
+      </div>
+    </div>
+    <div style="flex:0.8;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #d3869b;">
+      <div style="font-size:13px;font-weight:600;color:#d3869b;">order_lines</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">No own timestamp</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK<br>
+        <span style="color:#ebdbb2;">order_id</span> FK &rarr; orders<br>
+        <span style="color:#ebdbb2;">product_id</span> FK
+      </div>
+    </div>
+
+    <!-- invoices + invoice_lines -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #d3869b;">
+      <div style="font-size:13px;font-weight:600;color:#d3869b;">invoices</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Open/closed, hard deletes</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK<br>
+        <span style="color:#ebdbb2;">customer_id</span> FK<br>
+        <span style="color:#ebdbb2;">doc_status</span> O/C<br>
+        <span style="color:#ebdbb2;">posted_at</span>
+      </div>
+    </div>
+    <div style="flex:0.8;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #d3869b;">
+      <div style="font-size:13px;font-weight:600;color:#d3869b;">invoice_lines</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Independent hard deletes</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK<br>
+        <span style="color:#ebdbb2;">invoice_id</span> FK &rarr; invoices<br>
+        <span style="color:#ebdbb2;">status</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Reference + Standalone -->
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #83a598;">
+      <div style="font-size:13px;font-weight:600;color:#83a598;">customers</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Soft delete via is_active</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK &middot;
+        <span style="color:#ebdbb2;">is_active</span> &middot;
+        <span style="color:#ebdbb2;">email</span>
+      </div>
+    </div>
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #83a598;">
+      <div style="font-size:13px;font-weight:600;color:#83a598;">products</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Schema mutates (new columns)</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK &middot;
+        <span style="color:#ebdbb2;">name</span> &middot;
+        <span style="color:#ebdbb2;">...</span> <span style="color:#fabd2f;">columns appear</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Append-only -->
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #8ec07c;">
+      <div style="font-size:13px;font-weight:600;color:#8ec07c;">events</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Append-only, partitioned by date</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK &middot;
+        <span style="color:#ebdbb2;">event_date</span> &middot;
+        <span style="color:#ebdbb2;">payload</span>
+      </div>
+    </div>
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #8ec07c;">
+      <div style="font-size:13px;font-weight:600;color:#8ec07c;">sessions</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Sessionized clickstream</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK &middot;
+        <span style="color:#ebdbb2;">started_at</span>
+      </div>
+    </div>
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #8ec07c;">
+      <div style="font-size:13px;font-weight:600;color:#8ec07c;">metrics_daily</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Pre-aggregated, overwritten daily</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">date</span> &middot;
+        <span style="color:#ebdbb2;">metric</span> &middot;
+        <span style="color:#ebdbb2;">value</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: Inventory -->
+  <div style="display:flex;gap:10px;margin-bottom:16px;">
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #fe8019;">
+      <div style="font-size:13px;font-weight:600;color:#fe8019;">inventory</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Sparse cross-product (SKU x Warehouse)</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">sku_id</span> FK &rarr; products &middot;
+        <span style="color:#ebdbb2;">warehouse_id</span> &middot;
+        <span style="color:#ebdbb2;">qty</span>
+      </div>
+    </div>
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-top:3px solid #fe8019;">
+      <div style="font-size:13px;font-weight:600;color:#fe8019;">inventory_movements</div>
+      <div style="font-size:10px;color:#928374;margin-bottom:8px;">Append-only stock changes</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.6;">
+        <span style="color:#ebdbb2;">id</span> PK &middot;
+        <span style="color:#ebdbb2;">sku_id</span> FK &rarr; products &middot;
+        <span style="color:#ebdbb2;">type</span> &middot;
+        <span style="color:#ebdbb2;">qty</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div style="display:flex;gap:16px;justify-content:center;padding:10px 0;border-top:1px solid #3c3836;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:3px;background:#d3869b;border-radius:2px;"></div>
+      <span style="font-size:10px;color:#928374;">Header-detail pairs</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:3px;background:#83a598;border-radius:2px;"></div>
+      <span style="font-size:10px;color:#928374;">Reference tables</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:3px;background:#8ec07c;border-radius:2px;"></div>
+      <span style="font-size:10px;color:#928374;">Append-only</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:12px;height:3px;background:#fe8019;border-radius:2px;"></div>
+      <span style="font-size:10px;color:#928374;">Inventory group</span>
+    </div>
+  </div>
+</div>

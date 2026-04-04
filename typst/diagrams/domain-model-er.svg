@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500">
+  <rect width="900" height="500" fill="#1d2021" rx="8"/>
+  <!-- Row 1: header-detail (purple), centered -->
+  <rect x="30" y="16" width="190" height="110" fill="#282828" rx="5"/>
+  <rect x="30" y="16" width="190" height="4" fill="#d3869b" rx="5"/>
+  <text x="40" y="38" fill="#d3869b" font-family="system-ui,sans-serif" font-size="13" font-weight="600">orders</text>
+  <text x="40" y="54" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Unreliable updated_at</text>
+  <text x="40" y="72" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK</text>
+  <text x="40" y="86" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">customer_id FK</text>
+  <text x="40" y="100" fill="#fabd2f" font-family="system-ui,sans-serif" font-size="10">updated_at unreliable</text>
+  <text x="40" y="114" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">status</text>
+
+  <rect x="250" y="16" width="190" height="96" fill="#282828" rx="5"/>
+  <rect x="250" y="16" width="190" height="4" fill="#d3869b" rx="5"/>
+  <text x="260" y="38" fill="#d3869b" font-family="system-ui,sans-serif" font-size="13" font-weight="600">order_lines</text>
+  <text x="260" y="54" fill="#928374" font-family="system-ui,sans-serif" font-size="9">No own timestamp</text>
+  <text x="260" y="72" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK</text>
+  <text x="260" y="86" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">order_id FK</text>
+  <text x="260" y="100" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">product_id FK</text>
+
+  <rect x="470" y="16" width="190" height="110" fill="#282828" rx="5"/>
+  <rect x="470" y="16" width="190" height="4" fill="#d3869b" rx="5"/>
+  <text x="480" y="38" fill="#d3869b" font-family="system-ui,sans-serif" font-size="13" font-weight="600">invoices</text>
+  <text x="480" y="54" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Open/closed, hard deletes</text>
+  <text x="480" y="72" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK</text>
+  <text x="480" y="86" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">customer_id FK</text>
+  <text x="480" y="100" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">doc_status O/C</text>
+  <text x="480" y="114" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">posted_at</text>
+
+  <rect x="690" y="16" width="180" height="96" fill="#282828" rx="5"/>
+  <rect x="690" y="16" width="180" height="4" fill="#d3869b" rx="5"/>
+  <text x="700" y="38" fill="#d3869b" font-family="system-ui,sans-serif" font-size="13" font-weight="600">invoice_lines</text>
+  <text x="700" y="54" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Independent hard deletes</text>
+  <text x="700" y="72" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK</text>
+  <text x="700" y="86" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">invoice_id FK</text>
+  <text x="700" y="100" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">status</text>
+
+  <!-- 1:N lines -->
+  <line x1="220" y1="60" x2="250" y2="60" stroke="#665c54" stroke-width="1.5"/>
+  <text x="235" y="54" text-anchor="middle" fill="#665c54" font-family="system-ui,sans-serif" font-size="9">1:N</text>
+  <line x1="660" y1="60" x2="690" y2="60" stroke="#665c54" stroke-width="1.5"/>
+  <text x="675" y="54" text-anchor="middle" fill="#665c54" font-family="system-ui,sans-serif" font-size="9">1:N</text>
+
+  <!-- Row 2: reference (blue), centered -->
+  <rect x="230" y="150" width="200" height="82" fill="#282828" rx="5"/>
+  <rect x="230" y="150" width="200" height="4" fill="#83a598" rx="5"/>
+  <text x="240" y="172" fill="#83a598" font-family="system-ui,sans-serif" font-size="13" font-weight="600">customers</text>
+  <text x="240" y="188" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Soft delete via is_active</text>
+  <text x="240" y="206" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK  ·  is_active  ·  email</text>
+
+  <rect x="470" y="150" width="200" height="82" fill="#282828" rx="5"/>
+  <rect x="470" y="150" width="200" height="4" fill="#83a598" rx="5"/>
+  <text x="480" y="172" fill="#83a598" font-family="system-ui,sans-serif" font-size="13" font-weight="600">products</text>
+  <text x="480" y="188" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Schema mutates (new columns appear)</text>
+  <text x="480" y="206" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK  ·  name  ·  ...</text>
+
+  <!-- FK lines: customers -> orders, customers -> invoices -->
+  <path d="M 310 150 L 310 140 L 125 140 L 125 126" stroke="#665c54" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+  <path d="M 370 150 L 370 140 L 565 140 L 565 126" stroke="#665c54" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+  <!-- products -> order_lines -->
+  <path d="M 520 150 L 520 140 L 345 140 L 345 112" stroke="#665c54" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+
+  <!-- Row 3: inventory (orange), centered -->
+  <rect x="155" y="258" width="280" height="72" fill="#282828" rx="5"/>
+  <rect x="155" y="258" width="280" height="4" fill="#fe8019" rx="5"/>
+  <text x="165" y="280" fill="#fe8019" font-family="system-ui,sans-serif" font-size="13" font-weight="600">inventory</text>
+  <text x="165" y="296" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Sparse cross-product (SKU x Warehouse)</text>
+  <text x="165" y="314" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">sku_id FK  ·  warehouse_id  ·  qty</text>
+
+  <rect x="465" y="258" width="280" height="72" fill="#282828" rx="5"/>
+  <rect x="465" y="258" width="280" height="4" fill="#fe8019" rx="5"/>
+  <text x="475" y="280" fill="#fe8019" font-family="system-ui,sans-serif" font-size="13" font-weight="600">inventory_movements</text>
+  <text x="475" y="296" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Append-only stock changes</text>
+  <text x="475" y="314" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK  ·  sku_id FK  ·  type  ·  qty</text>
+
+  <!-- products -> inventory FKs -->
+  <path d="M 540 232 L 540 248 L 295 248 L 295 258" stroke="#665c54" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+  <path d="M 570 232 L 570 248 L 605 248 L 605 258" stroke="#665c54" stroke-width="1" fill="none" stroke-dasharray="4,3"/>
+
+  <!-- Row 4: append-only (green), centered -->
+  <rect x="130" y="356" width="200" height="72" fill="#282828" rx="5"/>
+  <rect x="130" y="356" width="200" height="4" fill="#8ec07c" rx="5"/>
+  <text x="140" y="378" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="13" font-weight="600">events</text>
+  <text x="140" y="394" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Append-only, partitioned by date</text>
+  <text x="140" y="412" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK  ·  event_date  ·  payload</text>
+
+  <rect x="360" y="356" width="180" height="72" fill="#282828" rx="5"/>
+  <rect x="360" y="356" width="180" height="4" fill="#8ec07c" rx="5"/>
+  <text x="370" y="378" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="13" font-weight="600">sessions</text>
+  <text x="370" y="394" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Sessionized clickstream</text>
+  <text x="370" y="412" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">id PK  ·  started_at</text>
+
+  <rect x="570" y="356" width="200" height="72" fill="#282828" rx="5"/>
+  <rect x="570" y="356" width="200" height="4" fill="#8ec07c" rx="5"/>
+  <text x="580" y="378" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="13" font-weight="600">metrics_daily</text>
+  <text x="580" y="394" fill="#928374" font-family="system-ui,sans-serif" font-size="9">Pre-aggregated, overwritten daily</text>
+  <text x="580" y="412" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="10">date  ·  metric  ·  value</text>
+
+  <!-- Legend -->
+  <line x1="20" y1="448" x2="880" y2="448" stroke="#3c3836" stroke-width="1"/>
+  <rect x="160" y="466" width="14" height="3" fill="#d3869b" rx="1"/>
+  <text x="180" y="472" fill="#928374" font-family="system-ui,sans-serif" font-size="10">Header-detail</text>
+  <rect x="290" y="466" width="14" height="3" fill="#83a598" rx="1"/>
+  <text x="310" y="472" fill="#928374" font-family="system-ui,sans-serif" font-size="10">Reference</text>
+  <rect x="400" y="466" width="14" height="3" fill="#fe8019" rx="1"/>
+  <text x="420" y="472" fill="#928374" font-family="system-ui,sans-serif" font-size="10">Inventory</text>
+  <rect x="510" y="466" width="14" height="3" fill="#8ec07c" rx="1"/>
+  <text x="530" y="472" fill="#928374" font-family="system-ui,sans-serif" font-size="10">Append-only</text>
+  <line x1="630" y1="468" x2="660" y2="468" stroke="#665c54" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="668" y="472" fill="#928374" font-family="system-ui,sans-serif" font-size="10">FK</text>
+</svg>

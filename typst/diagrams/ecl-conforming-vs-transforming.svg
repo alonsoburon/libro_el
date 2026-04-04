@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="360" viewBox="0 0 680 360">
+  <rect width="680" height="360" fill="#1d2021" rx="8"/>
+  <!-- Title -->
+  <!-- <text x="340" y="28" ...>FRAMEWORK 01</text> -->
+  <text x="340" y="50" text-anchor="middle" fill="#fbf1c7" font-family="system-ui,sans-serif" font-size="16" font-weight="500">Conforming vs Transforming</text>
+  <text x="340" y="68" text-anchor="middle" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Every operation during the crossing is one or the other</text>
+
+  <!-- Conforming column -->
+  <rect x="16" y="84" width="318" height="260" fill="#282828" rx="6"/>
+  <circle cx="32" cy="104" r="5" fill="#8ec07c"/>
+  <text x="44" y="108" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Conforming</text>
+  <text x="30" y="124" fill="#689d6a" font-family="system-ui,sans-serif" font-size="10">Belongs in ECL -- survive the crossing</text>
+
+  <rect x="30" y="138" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="154" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Type casting (VARCHAR → TIMESTAMP)</text>
+  <rect x="30" y="168" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="184" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Null handling (preserve source nulls)</text>
+  <rect x="30" y="198" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="214" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Timezone normalization (tag, don't convert)</text>
+  <rect x="30" y="228" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="244" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Charset encoding (UTF-8)</text>
+  <rect x="30" y="258" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="274" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Metadata injection (_extracted_at)</text>
+  <rect x="30" y="288" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="304" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Synthetic key generation</text>
+  <rect x="30" y="318" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="40" y="334" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Cursor-borrowing joins</text>
+
+  <!-- Transforming column -->
+  <rect x="346" y="84" width="318" height="260" fill="#282828" rx="6"/>
+  <circle cx="362" cy="104" r="5" fill="#fe8019"/>
+  <text x="374" y="108" fill="#fe8019" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Transforming</text>
+  <text x="360" y="124" fill="#d65d0e" font-family="system-ui,sans-serif" font-size="10">Belongs downstream -- changes business meaning</text>
+
+  <rect x="360" y="138" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="370" y="154" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Business logic (revenue = qty × price)</text>
+  <rect x="360" y="168" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="370" y="184" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Filtering (exclude inactive customers)</text>
+  <rect x="360" y="198" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="370" y="214" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Enrichment joins (denormalization)</text>
+  <rect x="360" y="228" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="370" y="244" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">JSON flattening into relational tables</text>
+  <rect x="360" y="258" width="290" height="24" fill="#1d2021" rx="4"/>
+  <text x="370" y="274" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Aggregation (SUM, COUNT, AVG)</text>
+</svg>
