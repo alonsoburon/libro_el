@@ -1,4 +1,4 @@
-#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
+#import "theme.typ": ecl-danger, ecl-info, ecl-tip, ecl-warning, gruvbox
 = The EL Myth
 <the-el-myth>
 #quote(block: true)[
@@ -28,7 +28,7 @@ So, what we're going to be talking about is ECL: #strong[Extract, Conform, and L
 If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. We cover how to protect them (and your invoice) in @query-patterns-for-analysts.
 
 == Related Patterns
-- @domain-model -- The shared schema used in every SQL example in this book
+- #link(<domain-model>)[Domain Model] -- The shared schema used in every SQL example in this book
 - @what-is-conforming
 - @purity-vs-freshness
 - @query-patterns-for-analysts
@@ -63,7 +63,9 @@ But here's where it gets interesting. `order_lines` has no `updated_at`. If you 
   image("diagrams/ecl-conforming-vs-transforming.svg", width: 90%),
 )
 
-#ecl-tip("The join test")[If the join adds a column the business cares about, it's transforming. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
+#ecl-tip(
+  "The join test",
+)[If the join adds a column the business cares about, it's transforming. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
 
 == The Conforming Checklist
 <the-conforming-checklist>
@@ -408,38 +410,6 @@ VACUUM is still a thing. Deleted rows don't free space until VACUUM runs. If you
 
 Column additions are cheap. Type changes require recreating the table. A `VARCHAR(100)` that should have been `VARCHAR(500)` means a full table rebuild later. Plan your types carefully on initial load.
 
-=== Engine Cheat Sheet
-<engine-cheat-sheet>
-#figure(
-  align(center)[#table(
-    columns: (14%, 22%, 20%, 14%, 30%),
-    align: (auto, auto, auto, auto, auto),
-    table.header([Engine], [Load Method], [Partition Mechanism], [Mutation Cost], [Key Gotcha]),
-    table.hline(),
-    [BigQuery],
-    [`bq load` / `LOAD DATA` / streaming],
-    [Date/integer/ingestion-time],
-    [Entire partition rewrite],
-    [DML quotas; JSON + Parquet = failure],
-    [Snowflake],
-    [`COPY INTO` from stage],
-    [Micro-partitions + clustering keys],
-    [Warehouse time per merge],
-    [`VARIANT` -\> string in Parquet; PK/unique not enforced],
-    [ClickHouse],
-    [`INSERT INTO` (batch)],
-    [Partition by expression],
-    [Async, no ACID],
-    [Duplicates until merge; `FINAL` is expensive],
-    [Redshift],
-    [`COPY` from S3],
-    [Sort key + dist key],
-    [Delete + VACUUM cycle],
-    [Row-by-row INSERT is orders of magnitude slower],
-  )],
-  kind: table,
-)
-
 == Type Mapping: Where Conforming Happens
 <type-mapping-where-conforming-happens>
 When data crosses from a transactional source to a columnar destination, types don't translate cleanly. This is the core of the C in ECL -- and every engine has its own version of the problem.
@@ -508,7 +478,11 @@ Parquet is the fastest and most type-safe bulk load format. But BigQuery's JSON 
     [BigQuery: native. Snowflake: VARIANT.],
     [Redshift: 4 MB max block size. ClickHouse needs schema registry or embedded schema.],
     [JSONL], [Medium], [Medium (inferred)], [Full support everywhere], [Slower on large volumes],
-    [CSV], [Varies], [Low (everything is string)], [Must quote/escape], [Type inference can surprise you. Compressed CSV can't be split for parallel load.],
+    [CSV],
+    [Varies],
+    [Low (everything is string)],
+    [Must quote/escape],
+    [Type inference can surprise you. Compressed CSV can't be split for parallel load.],
   )],
   kind: table,
 )
@@ -519,35 +493,11 @@ Parquet is the fastest and most type-safe bulk load format. But BigQuery's JSON 
 
 == Loading Strategies
 <loading-strategies>
-Your write disposition determines how data lands. The choice affects cost, complexity, and correctness. When in doubt, append -- it's the cheapest operation on every engine and you can always deduplicate or materialize downstream. Reach for MERGE only when you've confirmed append + deduplicate won't work for your case, or your storage is much more expensive.
-
-#figure(
-  image("diagrams/ecl-load-strategy-spectrum.svg", width: 100%),
-)
-
-+ #strong[Append.] New rows land at the end of the table. No deduplication, no mutation, no DML quota concerns. Works perfectly for `events` and other immutable sources. For mutable sources, you append every version and deduplicate downstream with a view or materialized table. See @append-and-materialize.
-
-+ #strong[Full replace.] Drop and reload the entire table (staging swap) or a single partition (partition swap). No merge logic, idempotent by construction. The go-to for `metrics_daily`, dimensions, and anything under 10k rows -- resist the temptation to overengineer these kinds of tables. See @partition-swap.
-
-+ #strong[Append + materialize.] Append raw data, then deduplicate via a view or scheduled compaction. Shifts cost from load-time to read-time -- cheap writes, heavier queries. The sweet spot for mutable sources on columnar engines where MERGE is expensive. See @append-and-materialize.
-
-+ #strong[Merge / upsert.] Match on a key, update if exists, insert if new. The most expensive disposition in columnar engines because it requires reading existing data, comparing, and mutating. Reach for it only when append + deduplicate won't work. See @merge-upsert.
-
-+ #strong[Hybrid append + merge.] Two destinations: an append log for history and a merged table for current state. Maximum complexity, maximum flexibility. See @hybrid-append-merge.
+Your write disposition -- replace, append, merge -- determines cost, complexity, and correctness. The full spectrum is in Part IV (@full-replace-load through @hybrid-append-merge). When in doubt, full replace: it resets state, eliminates drift, and makes every run idempotent by construction. Earn the complexity of incremental only when the table justifies it.
 
 == Schema Evolution
 <foundations-schema-evolution>
-New columns appear in the source. What happens when they land?
-
-#strong[BigQuery.] Column additions via `ALTER TABLE ADD COLUMN` are instant. If you're loading Avro or Parquet, schema auto-detection can add new columns automatically. Type widening is allowed for compatible pairs (`INT64` → `NUMERIC`, `DATE` → `TIMESTAMP`). Incompatible changes require recreating the table. `DROP COLUMN` exists but is destructive -- any downstream `SELECT *` query will silently return fewer columns after the drop.
-
-#strong[Snowflake.] `ALTER TABLE ADD COLUMN` is a fast metadata operation. VARCHAR width increases work (`VARCHAR(100)` → `VARCHAR(500)`). Incompatible type changes -- anything that requires rewriting data -- require a full table recreation. The CLONE-based replace pattern picks up new columns automatically if your staging query produces them.
-
-#strong[ClickHouse.] `ALTER TABLE ADD COLUMN` is metadata-only for MergeTree -- existing parts don't change physically, the column just gets its default value when read. Fast. `MODIFY COLUMN` supports some widening but heavy type changes require table recreation. The `ORDER BY` key is fixed at creation and cannot be changed without recreating the table.
-
-#strong[Redshift.] Adding columns to the end of a table is a metadata operation and cheap. Changing a type requires creating a new table, copying all data, and swapping -- a full rebuild. Sort keys and dist keys are also fixed at creation; changing them means the same full rebuild. There's a hard limit of 1600 columns per table, which makes wide sources with lots of sparse columns less viable.
-
-Every loader needs a #strong[schema policy] for when new columns arrive from the source: add them automatically (`evolve`) or reject the load (`freeze`). Default to `evolve` -- starting with `freeze` means your pipeline breaks on every new source column, which is more disruptive than a new nullable column appearing in the destination. Tighten the policy once you know which tables are stable. See @data-contracts.
+New columns will appear in the source. Your loader needs a schema policy: `evolve` (add new columns automatically) or `freeze` (reject the load). Per-engine behavior for `ALTER TABLE ADD COLUMN`, type widening, and the gotchas of each engine are covered in @sql-dialect-reference. Schema policies as enforceable contracts are in @data-contracts.
 
 #ecl-warning(
   "Naming convention lock-in",
@@ -643,7 +593,7 @@ See @create-vs-update-separation for the pattern when `updated_at` only fires on
 <primary-keys-are-unique-and-stable>
 Three different lies bundled into one: that the PK uniquely identifies a row, that the PK stays the same across the row's lifetime, and that every table even has a PK.
 
-#strong[The business doesn't understand unicity.] This is the most common one. You ask "what's the primary key?" and get "order\_id." You build your merge on `order_id`. A week later you start seeing duplicates. Turns out the table stores one row per `(order_id, line_number)` -- the person you asked thinks about orders, not about how the table is structured. Or it's `(product_id, warehouse_id)` for inventory, but they only ever query their own warehouse so they genuinely never noticed. The people closest to the application rarely think in terms of relational keys. Never trust a verbal description of the PK. Run the duplicate check yourself on the actual data.
+#strong[The business doesn't understand unicity.] This is the most common one. You ask "what's the primary key?" and get "order\_id." You build your merge on `order_id`. A week later you start seeing duplicates or losing data. Turns out the table stores one row per `(order_id, line_number)` -- the person you asked thinks about orders, not about how the table is structured. Or it's `(product_id, warehouse_id)` for inventory, but they only ever query their own warehouse so they genuinely never noticed. The people closest to the application rarely think in terms of relational keys. Never trust a verbal description of the PK. Run the duplicate check yourself on the actual data.
 
 ```sql
 -- source: transactional
@@ -671,8 +621,8 @@ If it returns rows, go back and ask which #emph[combination] of columns is actua
 Run this before you commit to an extraction strategy. If the duplicate check returns rows on a column that was supposed to be unique, your merge key is broken.
 
 #ecl-danger(
-  "Don't trust the DDL",
-)[A `PRIMARY KEY` constraint in the DDL means the database enforces uniqueness. But many tables get their PKs dropped for performance during bulk loads and never re-added. `information_schema.table_constraints` tells you what the DDL says. A query for duplicates tells you what the data is. Check both -- they won't always agree.]
+  "DDL says PK exists -- does the engine enforce it?",
+)[On transactional sources, a `PRIMARY KEY` constraint is enforced -- the engine rejects duplicates. The risk is a DBA who drops it temporarily for a bulk load and forgets to recreate it. `information_schema.table_constraints` tells you what the DDL says. A query for duplicates tells you what the data does. Check both before trusting a PK as your merge key.]
 
 See @synthetic-keys for building stable merge keys when the source can't be trusted.
 
@@ -954,7 +904,9 @@ We don't cover Columnar → Columnar or Columnar → Transactional. The first is
   image("diagrams/ecl-corridors.svg", width: 90%),
 )
 
-#ecl-info("Corridor effect on load strategies")[In T→T, MERGE is cheap and native -- the load strategy spectrum compresses. In T→C, MERGE is the costliest DML and the full spread matters.]
+#ecl-info(
+  "Corridor effect on load strategies",
+)[In T→T, MERGE is cheap and native -- the load strategy spectrum compresses. In T→C, MERGE is the costliest DML and the full spread matters.]
 
 == What Changes at the Crossing
 <what-changes-at-the-crossing>
@@ -1103,26 +1055,26 @@ How you classify the table determines everything that follows. Work through thes
 
 #figure(
   align(center)[#table(
-    columns: (30.48%, 15.24%, 12.38%, 41.9%),
+    columns: (28%, 16%, 16%, 40%),
     align: (auto, auto, auto, auto),
-    table.header([Table type], [Hard deletes?], [Freshness SLA], [Recommendation]),
+    table.header([Table type], [Full scan fits window?], [Reliable cursor?], [Recommendation]),
     table.hline(),
-    [Dimension / config], [Rare], [Daily], [Full replace every run],
+    [Dimension / config (`products`)], [Yes], [--], [Full replace every run],
+    [Pre-aggregated (`metrics_daily`)], [Yes], [--], [Partition-level replace],
+    [Append-only (`events`)], [No], [Yes (immutable)], [Append],
     [Large mutable (`orders`)],
-    [Soft-delete only],
-    [Daily],
-    [Full replace (if scan fits window); else incremental + nightly full],
-    [Large mutable (`orders`)], [Hard deletes], [Hourly], [Incremental + delete detection + weekly full],
-    [Append-only (`events`)], [Never], [Sub-hourly], [Incremental append],
-    [Pre-aggregated (`metrics_daily`)], [N/A], [Daily], [Partition-level replace],
-    [History-rewriting source], [Frequent], [Daily], [Full replace always],
+    [No],
+    [Yes],
+    [Scoped replace (if changes cluster); else A+M or merge by read/write profile],
+    [Large mutable, hard deletes (`invoices`)], [No], [Yes], [Scoped replace + delete detection + periodic full],
+    [Large mutable, unreliable cursor], [No], [No], [Scoped replace + periodic full],
   )],
   kind: table,
 )
 
 == The Hybrid: Periodic Full + Intraday Incremental
 <the-hybrid-periodic-full-intraday-incremental>
-For tables where you need both purity and freshness -- mutable, large, sub-daily SLA -- the hybrid is the answer. Run a full replace nightly to reset purity. Run incremental extractions intraday to deliver freshness.
+For tables where you need both purity and freshness -- mutable, large, sub-daily SLA -- the hybrid is the answer. Run a full or scoped replace nightly to reset purity. Run incremental extractions intraday to deliver freshness.
 
 #ecl-warning(
   "The incremental doesn't need perfection",
@@ -1242,12 +1194,11 @@ The table reveals the pattern: full replace and MERGE are unconditionally idempo
 <statelessness-and-idempotency>
 These two properties are related but distinct. A pipeline is #strong[stateless] if it can run on a fresh machine with no prior context. A pipeline is #strong[idempotent] if running it multiple times produces the same result. You can have one without the other:
 
-- #strong[Stateless + idempotent:] Stateless window with a MERGE load. No state to manage, safe to retry. The sweet spot.
-- #strong[Stateful + idempotent:] Cursor-based extraction with a MERGE load. Needs the cursor from a prior run, but retries are safe because MERGE absorbs duplicates.
-- #strong[Stateless + not idempotent:] Stateless window with a raw INSERT (no dedup). No state to manage, but retries create duplicates.
-- #strong[Stateful + not idempotent:] Cursor-based extraction with a raw INSERT. Needs prior state #emph[and] retries break things. The worst quadrant.
+#figure(
+  image("diagrams/0109-stateless-idempotent.svg", width: 95%),
+)
 
-The goal is the top-left quadrant: stateless and idempotent. Full replace lives there naturally. Everything else requires deliberate design to get there -- and 0406 covers the mechanics.
+The goal is the top-left quadrant: stateless and idempotent. Full replace lives there naturally. Everything else requires deliberate design to get there -- and @reliable-loads covers the mechanics.
 
 // ---
 

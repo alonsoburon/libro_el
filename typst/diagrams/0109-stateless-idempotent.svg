@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="380" viewBox="0 0 680 380">
+  <rect width="680" height="380" fill="#1d2021" rx="8"/>
+
+  <!-- Title -->
+  <text x="340" y="28" text-anchor="middle" fill="#fbf1c7" font-family="system-ui,sans-serif" font-size="16" font-weight="500">Statelessness × Idempotency</text>
+
+  <!-- Axis labels -->
+  <text x="340" y="56" text-anchor="middle" fill="#a89984" font-family="system-ui,sans-serif" font-size="10">IDEMPOTENT</text>
+  <text x="340" y="368" text-anchor="middle" fill="#a89984" font-family="system-ui,sans-serif" font-size="10">NOT IDEMPOTENT</text>
+  <text x="24" y="200" text-anchor="middle" fill="#a89984" font-family="system-ui,sans-serif" font-size="10" transform="rotate(-90, 24, 200)">STATELESS</text>
+  <text x="656" y="200" text-anchor="middle" fill="#a89984" font-family="system-ui,sans-serif" font-size="10" transform="rotate(90, 656, 200)">STATEFUL</text>
+
+  <!-- Quadrant dividers -->
+  <line x1="340" y1="66" x2="340" y2="350" stroke="#504945" stroke-width="1"/>
+  <line x1="40" y1="200" x2="640" y2="200" stroke="#504945" stroke-width="1"/>
+
+  <!-- Q1: Stateless + Idempotent (top-left) — THE GOAL -->
+  <rect x="44" y="68" width="292" height="128" fill="#689d6a" opacity="0.10" rx="6"/>
+  <circle cx="70" cy="94" r="8" fill="#8ec07c"/>
+  <circle cx="70" cy="94" r="12" fill="#8ec07c" opacity="0.15"/>
+  <text x="86" y="98" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="13" font-weight="600">The goal</text>
+  <text x="60" y="122" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Stateless window + replace/merge</text>
+  <text x="60" y="138" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Full replace lives here naturally</text>
+  <text x="60" y="158" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">No state to manage, safe to retry.</text>
+  <text x="60" y="172" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">Fresh machine, same result.</text>
+
+  <!-- Q2: Stateful + Idempotent (top-right) -->
+  <rect x="344" y="68" width="292" height="128" fill="#d79921" opacity="0.08" rx="6"/>
+  <circle cx="370" cy="94" r="8" fill="#fabd2f"/>
+  <circle cx="370" cy="94" r="12" fill="#fabd2f" opacity="0.15"/>
+  <text x="386" y="98" fill="#fabd2f" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Acceptable</text>
+  <text x="360" y="122" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Cursor-based + merge</text>
+  <text x="360" y="142" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">Needs cursor from prior run,</text>
+  <text x="360" y="156" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">but retries are safe.</text>
+  <text x="360" y="176" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">MERGE absorbs duplicates.</text>
+
+  <!-- Q3: Stateless + Not Idempotent (bottom-left) -->
+  <rect x="44" y="204" width="292" height="142" fill="#d65d0e" opacity="0.08" rx="6"/>
+  <circle cx="70" cy="230" r="8" fill="#fe8019"/>
+  <circle cx="70" cy="230" r="12" fill="#fe8019" opacity="0.15"/>
+  <text x="86" y="234" fill="#fe8019" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Fragile</text>
+  <text x="60" y="258" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Stateless window + raw INSERT</text>
+  <text x="60" y="278" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">No state to manage, but retries</text>
+  <text x="60" y="292" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">create duplicates.</text>
+  <text x="60" y="312" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">Needs dedup view or compaction</text>
+  <text x="60" y="326" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">to recover idempotency downstream.</text>
+
+  <!-- Q4: Stateful + Not Idempotent (bottom-right) — WORST -->
+  <rect x="344" y="204" width="292" height="142" fill="#cc241d" opacity="0.10" rx="6"/>
+  <circle cx="370" cy="230" r="8" fill="#fb4934"/>
+  <circle cx="370" cy="230" r="12" fill="#fb4934" opacity="0.15"/>
+  <text x="386" y="234" fill="#fb4934" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Avoid</text>
+  <text x="360" y="258" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="11">Cursor-based + raw INSERT</text>
+  <text x="360" y="278" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">Needs prior state AND retries</text>
+  <text x="360" y="292" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">break things. Lost cursor =</text>
+  <text x="360" y="306" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">duplicates or gaps.</text>
+  <text x="360" y="326" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">The worst quadrant.</text>
+</svg>

@@ -563,7 +563,37 @@ See 0103 for the full terrain.
 
 #strong[Redshift] - `COPY` from S3 is the only performant bulk load. Row-by-row `INSERT` is orders of magnitude slower - `VACUUM` is required after heavy deletes -- dead rows inflate scan time and storage until cleaned up - Sort keys and dist keys are fixed at creation. Changing them requires a full table rebuild - Hard limit of 1,600 columns per table
 
-See 0104 for full engine profiles and 0705 for cost levers.
+== Engine Cheat Sheet
+<engine-cheat-sheet>
+#figure(
+  align(center)[#table(
+    columns: (14%, 22%, 20%, 14%, 30%),
+    align: (auto, auto, auto, auto, auto),
+    table.header([Engine], [Load Method], [Partition Mechanism], [Mutation Cost], [Key Gotcha]),
+    table.hline(),
+    [BigQuery],
+    [`bq load` / `LOAD DATA` / streaming],
+    [Date/integer/ingestion-time],
+    [Entire partition rewrite],
+    [DML quotas; JSON + Parquet = failure],
+    [Snowflake],
+    [`COPY INTO` from stage],
+    [Micro-partitions + clustering keys],
+    [Warehouse time per merge],
+    [`VARIANT` -\> string in Parquet; PK/unique not enforced],
+    [ClickHouse],
+    [`INSERT INTO` (batch)],
+    [Partition by expression],
+    [Async, no ACID],
+    [Duplicates until merge; `FINAL` is expensive],
+    [Redshift],
+    [`COPY` from S3],
+    [Sort key + dist key],
+    [Delete + VACUUM cycle],
+    [Row-by-row INSERT is orders of magnitude slower],
+  )],
+  kind: table,
+)
 
 // ---
 

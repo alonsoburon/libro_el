@@ -1,1 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420"><rect x="0" y="0" width="640" height="420" fill="#181825" rx="6"></rect><text x="320" y="26" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" letter-spacing="0.3">Purity vs freshness</text><rect x="441" y="44" width="159" height="97.2" fill="#5aab7b" opacity="0.1" rx="6"></rect><text x="520.5" y="60" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">Ideal zone</text><line x1="70" y1="368" x2="600" y2="368" stroke="#313244" stroke-width="0.5"></line><line x1="70" y1="368" x2="70" y2="44" stroke="#313244" stroke-width="0.5"></line><line x1="70" y1="287" x2="600" y2="287" stroke="#313244" stroke-width="0.5"></line><line x1="202.5" y1="368" x2="202.5" y2="44" stroke="#313244" stroke-width="0.5"></line><line x1="70" y1="206" x2="600" y2="206" stroke="#313244" stroke-width="0.5"></line><line x1="335" y1="368" x2="335" y2="44" stroke="#313244" stroke-width="0.5"></line><line x1="70" y1="125" x2="600" y2="125" stroke="#313244" stroke-width="0.5"></line><line x1="467.5" y1="368" x2="467.5" y2="44" stroke="#313244" stroke-width="0.5"></line><line x1="70" y1="44" x2="600" y2="44" stroke="#313244" stroke-width="0.5"></line><line x1="600" y1="368" x2="600" y2="44" stroke="#313244" stroke-width="0.5"></line><line x1="70" y1="368" x2="600" y2="368" stroke="#585b70" stroke-width="1"></line><line x1="70" y1="368" x2="70" y2="44" stroke="#585b70" stroke-width="1"></line><text x="335" y="412" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="12">Freshness →</text><text x="18" y="206" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" transform="rotate(-90, 18, 206)">← Purity</text><text x="70" y="386" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Daily</text><text x="335" y="386" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Hourly</text><text x="600" y="386" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Sub-hourly</text><text x="60" y="372" text-anchor="end" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Low</text><text x="60" y="210" text-anchor="end" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Medium</text><text x="60" y="48" text-anchor="end" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">High</text><circle cx="133.6" cy="60.20000000000002" r="11" fill="#6c8ebf" opacity="0.12"></circle><circle cx="133.6" cy="60.20000000000002" r="7" fill="#6c8ebf"></circle><text x="148.6" y="64.20000000000002" text-anchor="start" fill="#6c8ebf" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Full replace</text><circle cx="520.5" cy="222.20000000000002" r="11" fill="#d46a6a" opacity="0.12"></circle><circle cx="520.5" cy="222.20000000000002" r="7" fill="#d46a6a"></circle><text x="535.5" y="226.20000000000002" text-anchor="start" fill="#d46a6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Incremental</text><circle cx="361.5" cy="115.27999999999999" r="11" fill="#d4a040" opacity="0.12"></circle><circle cx="361.5" cy="115.27999999999999" r="7" fill="#d4a040"></circle><text x="376.5" y="119.27999999999999" text-anchor="start" fill="#d4a040" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Hybrid</text><circle cx="467.5" cy="141.20000000000002" r="11" fill="#5aab7b" opacity="0.12"></circle><circle cx="467.5" cy="141.20000000000002" r="7" fill="#5aab7b"></circle><text x="482.5" y="145.20000000000002" text-anchor="start" fill="#5aab7b" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Append + materialize</text><circle cx="229" cy="82.88" r="11" fill="#8878b8" opacity="0.12"></circle><circle cx="229" cy="82.88" r="7" fill="#8878b8"></circle><text x="244" y="86.88" text-anchor="start" fill="#8878b8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Scoped replace</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="440" viewBox="0 0 760 440">
+  <rect width="760" height="440" fill="#1d2021" rx="8"/>
+
+  <!-- Title -->
+  <text x="380" y="28" text-anchor="middle" fill="#fbf1c7" font-family="system-ui,sans-serif" font-size="16" font-weight="500">Earning Complexity</text>
+  <text x="380" y="46" text-anchor="middle" fill="#a89984" font-family="system-ui,sans-serif" font-size="11">Start at full replace. Move only when your table forces you to.</text>
+
+  <!-- Node 1: Full scan fits schedule? -->
+  <rect x="260" y="70" width="240" height="36" fill="#282828" rx="18" stroke="#504945" stroke-width="1"/>
+  <text x="380" y="93" text-anchor="middle" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="12">Full scan fits schedule window?</text>
+
+  <!-- Yes → Full replace -->
+  <line x1="500" y1="88" x2="620" y2="88" stroke="#665c54" stroke-width="1"/>
+  <text x="550" y="82" text-anchor="middle" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="10">Yes</text>
+  <rect x="620" y="72" width="120" height="32" fill="#689d6a" rx="4" opacity="0.25"/>
+  <rect x="620" y="72" width="4" height="32" fill="#8ec07c" rx="2"/>
+  <text x="684" y="93" text-anchor="middle" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Full replace</text>
+
+  <!-- No ↓ -->
+  <line x1="380" y1="106" x2="380" y2="158" stroke="#665c54" stroke-width="1"/>
+  <text x="392" y="136" fill="#fb4934" font-family="system-ui,sans-serif" font-size="10">No</text>
+
+  <!-- Node 2: Changes cluster in recent window? -->
+  <rect x="240" y="158" width="280" height="36" fill="#282828" rx="18" stroke="#504945" stroke-width="1"/>
+  <text x="380" y="181" text-anchor="middle" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="12">Changes cluster in a recent window?</text>
+
+  <!-- Yes → Scoped replace -->
+  <line x1="520" y1="176" x2="620" y2="176" stroke="#665c54" stroke-width="1"/>
+  <text x="560" y="170" text-anchor="middle" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="10">Yes</text>
+  <rect x="620" y="160" width="120" height="32" fill="#98971a" rx="4" opacity="0.25"/>
+  <rect x="620" y="160" width="4" height="32" fill="#b8bb26" rx="2"/>
+  <text x="684" y="181" text-anchor="middle" fill="#b8bb26" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Scoped replace</text>
+
+  <!-- No ↓ -->
+  <line x1="380" y1="194" x2="380" y2="246" stroke="#665c54" stroke-width="1"/>
+  <text x="392" y="224" fill="#fb4934" font-family="system-ui,sans-serif" font-size="10">No</text>
+
+  <!-- Node 3: Has reliable cursor? -->
+  <rect x="260" y="246" width="240" height="36" fill="#282828" rx="18" stroke="#504945" stroke-width="1"/>
+  <text x="380" y="269" text-anchor="middle" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="12">Has reliable cursor?</text>
+
+  <!-- No → Scoped + periodic full -->
+  <line x1="260" y1="264" x2="140" y2="264" stroke="#665c54" stroke-width="1"/>
+  <text x="210" y="258" text-anchor="middle" fill="#fb4934" font-family="system-ui,sans-serif" font-size="10">No</text>
+  <rect x="16" y="248" width="124" height="44" fill="#d65d0e" rx="4" opacity="0.2"/>
+  <rect x="16" y="248" width="4" height="44" fill="#fe8019" rx="2"/>
+  <text x="82" y="266" text-anchor="middle" fill="#fe8019" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Scoped replace</text>
+  <text x="82" y="280" text-anchor="middle" fill="#fe8019" font-family="system-ui,sans-serif" font-size="11" font-weight="600">+ periodic full</text>
+
+  <!-- Yes ↓ -->
+  <line x1="380" y1="282" x2="380" y2="334" stroke="#665c54" stroke-width="1"/>
+  <text x="392" y="312" fill="#8ec07c" font-family="system-ui,sans-serif" font-size="10">Yes</text>
+
+  <!-- Node 4: Destination profile? -->
+  <rect x="260" y="334" width="240" height="36" fill="#282828" rx="18" stroke="#504945" stroke-width="1"/>
+  <text x="380" y="357" text-anchor="middle" fill="#ebdbb2" font-family="system-ui,sans-serif" font-size="12">Destination profile?</text>
+
+  <!-- High write → A+M -->
+  <line x1="260" y1="352" x2="140" y2="352" stroke="#665c54" stroke-width="1"/>
+  <text x="200" y="346" text-anchor="middle" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">writes >> reads</text>
+  <rect x="16" y="336" width="124" height="44" fill="#d79921" rx="4" opacity="0.2"/>
+  <rect x="16" y="336" width="4" height="44" fill="#fabd2f" rx="2"/>
+  <text x="82" y="354" text-anchor="middle" fill="#fabd2f" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Append +</text>
+  <text x="82" y="368" text-anchor="middle" fill="#fabd2f" font-family="system-ui,sans-serif" font-size="11" font-weight="600">materialize</text>
+
+  <!-- High read → Merge -->
+  <line x1="500" y1="352" x2="620" y2="352" stroke="#665c54" stroke-width="1"/>
+  <text x="560" y="346" text-anchor="middle" fill="#665c54" font-family="system-ui,sans-serif" font-size="10">reads >> writes</text>
+  <rect x="620" y="336" width="120" height="32" fill="#cc241d" rx="4" opacity="0.2"/>
+  <rect x="620" y="336" width="4" height="32" fill="#fb4934" rx="2"/>
+  <text x="684" y="357" text-anchor="middle" fill="#fb4934" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Merge</text>
+
+  <!-- Cost gradient legend -->
+  <rect x="230" y="410" width="12" height="8" fill="#689d6a" opacity="0.5" rx="2"/>
+  <text x="246" y="418" fill="#665c54" font-family="system-ui,sans-serif" font-size="9">Low complexity</text>
+  <rect x="340" y="410" width="12" height="8" fill="#b8bb26" opacity="0.5" rx="2"/>
+  <rect x="380" y="410" width="12" height="8" fill="#d79921" opacity="0.5" rx="2"/>
+  <text x="396" y="418" fill="#665c54" font-family="system-ui,sans-serif" font-size="9">Medium</text>
+  <rect x="450" y="410" width="12" height="8" fill="#d65d0e" opacity="0.5" rx="2"/>
+  <rect x="490" y="410" width="12" height="8" fill="#cc241d" opacity="0.5" rx="2"/>
+  <text x="506" y="418" fill="#665c54" font-family="system-ui,sans-serif" font-size="9">High</text>
+</svg>

@@ -5,6 +5,22 @@
 #strong[One-liner:] Row counts tell you the pipeline ran. They don't tell you it ran #emph[well];, or that the data it produced is worth trusting.
 ]
 
+This chapter covers 15 patterns in four clusters:
+
+#figure(
+  align(center)[#table(
+    columns: (22%, 78%),
+    align: (auto, auto),
+    table.header([Cluster], [Patterns]),
+    table.hline(),
+    [*Observability*], [Monitoring (6.1), Health Table (6.2), Cost Monitoring (6.3), SLA Management (6.4)],
+    [*Scheduling*], [Alerting (6.5), Scheduling & Dependencies (6.6), Source Etiquette (6.7), Tiered Freshness (6.8)],
+    [*Contracts*], [Data Contracts (6.9), Extraction Status Gates (6.10)],
+    [*Recovery*], [Backfill (6.11), Partial Failure (6.12), Duplicates (6.13), Reconciliation (6.14), Corruption Recovery (6.15)],
+  )],
+  kind: table,
+)
+
 == The Problem
 Most pipelines start with a single check: did it succeed? That binary signal covers maybe 40% of what can go wrong. A pipeline can succeed while producing garbage -- a query timed out and returned partial results, a full replace that used to take 3 minutes now takes 45 because the table grew 10x, the source schema changed and the loader silently dropped columns, or half the batch loaded while the other half timed out, leaving the destination with rows from two different points in time. Every one of these scenarios reports SUCCESS. Every one of them delivers broken data to consumers.
 
