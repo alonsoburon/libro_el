@@ -1,4 +1,4 @@
-#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
+#import "theme.typ": palette, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Full Scan Strategies
 <full-scan-strategies>
 #quote(block: true)[

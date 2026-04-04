@@ -1,4 +1,4 @@
-#import "theme.typ": ecl-danger, ecl-info, ecl-tip, ecl-warning, gruvbox
+#import "theme.typ": palette, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = The EL Myth
 <the-el-myth>
 #quote(block: true)[

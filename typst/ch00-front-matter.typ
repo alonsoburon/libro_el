@@ -1,8 +1,69 @@
-#import "theme.typ": ecl-danger, ecl-info, ecl-tip, ecl-warning, gruvbox
-= ECL Patterns
-<ecl-patterns>
-=== A practical guide to moving data between systems without losing your mind
-<a-practical-guide-to-moving-data-between-systems-without-losing-your-mind>
+#import "theme.typ": palette, ecl-tip, ecl-warning, ecl-danger, ecl-info
+#let p = palette
+
+// ============================================================
+// TITLE PAGE
+// ============================================================
+#page(header: none, footer: none)[
+  #v(1fr)
+  #align(center)[
+    #text(fill: p.fg-bright, size: 36pt, weight: "bold")[ECL Patterns]
+    #v(8pt)
+    #text(fill: p.fg-dim, size: 14pt)[A practical guide to moving data between systems\ without losing your mind]
+    #v(40pt)
+    #text(fill: p.fg-subtle, size: 14pt)[Alonso Burón]
+  ]
+  #v(1fr)
+]
+
+// ============================================================
+// COPYRIGHT PAGE
+// ============================================================
+#page(header: none, footer: none)[
+  #v(1fr)
+  #set text(size: 9pt, fill: p.fg-dim)
+  *ECL Patterns*\
+  A practical guide to moving data between systems without losing your mind
+
+  Copyright © 2026 Alonso Burón. All rights reserved.
+
+  No part of this publication may be reproduced, distributed, or transmitted in any form or by any means without the prior written permission of the author.
+
+  // ISBN placeholder
+  // ISBN: 978-X-XXXX-XXXX-X
+
+  First edition, 2026.
+
+  Typeset with Typst. Diagrams by the author.
+]
+
+// ============================================================
+// DEDICATION
+// ============================================================
+#page(header: none, footer: none)[
+  #v(2fr)
+  #align(right)[
+    #text(fill: p.fg-quote, size: 12pt, style: "italic")[
+      // Placeholder -- replace with your dedication
+      To everyone who has inherited a pipeline\ and wondered what the previous engineer was thinking.
+    ]
+  ]
+  #v(3fr)
+]
+
+// ============================================================
+// TABLE OF CONTENTS
+// ============================================================
+#page(header: none, footer: none)[
+  #outline(indent: auto, depth: 2)
+]
+
+// ============================================================
+// PREFACE
+// ============================================================
+= Preface
+<preface>
+
 War stories and patterns to simplify your life when you (or your boss) decide to clone data from a transactional source to an analytical destination -- or between transactional systems. The patterns are about getting the data there correctly, efficiently, and without losing your mind.
 
 == What This Book Covers

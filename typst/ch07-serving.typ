@@ -1,4 +1,4 @@
-#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
+#import "theme.typ": palette, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Don't Pre-Aggregate
 <dont-pre-aggregate>
 #quote(block: true)[
