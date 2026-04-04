@@ -1,0 +1,45 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
+      <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;">Framework 20</div>
+      <div style="font-size:9px;color:#d79921;background:#282828;border:1px solid #504945;border-radius:3px;padding:1px 6px;">TENTATIVE</div>
+    </div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Backfill type taxonomy</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Three types, each with different scope and state-reset implications</div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+
+    <!-- Date-range -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px 12px;border-top:3px solid #83a598;">
+      <div style="font-size:13px;font-weight:500;color:#83a598;margin-bottom:8px;">Date-range</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;margin-bottom:10px;">Reload a specific date range using partition swap or rolling window.</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:10px;color:#665c54;">Scope: <span style="color:#a89984;">bounded time window</span></div>
+        <div style="font-size:10px;color:#665c54;">State reset: <span style="color:#a89984;">cursor for that range only</span></div>
+      </div>
+    </div>
+
+    <!-- Full-table -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px 12px;border-top:3px solid #fabd2f;">
+      <div style="font-size:13px;font-weight:500;color:#fabd2f;margin-bottom:8px;">Full-table</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;margin-bottom:10px;">Reload the entire table. Reset all cursor state. Start from scratch.</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:10px;color:#665c54;">Scope: <span style="color:#a89984;">everything</span></div>
+        <div style="font-size:10px;color:#665c54;">State reset: <span style="color:#a89984;">all cursors cleared</span></div>
+      </div>
+    </div>
+
+    <!-- Selective -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px 12px;border-top:3px solid #d3869b;">
+      <div style="font-size:13px;font-weight:500;color:#d3869b;margin-bottom:8px;">Selective</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;margin-bottom:10px;">Reload specific records by primary key. Surgical fix for known bad rows.</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:10px;color:#665c54;">Scope: <span style="color:#a89984;">explicit PK list</span></div>
+        <div style="font-size:10px;color:#665c54;">State reset: <span style="color:#a89984;">none</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>

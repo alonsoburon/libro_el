@@ -1,0 +1,70 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 18</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Source sensitivity tiers</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">The type of source system determines how carefully you extract</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+
+    <!-- Tier 1: Production OLTP -->
+    <div style="background:#282828;border-radius:8px;padding:16px;border-left:4px solid #fb4934;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:500;color:#fb4934;">Production OLTP</div>
+        </div>
+        <div style="font-size:10px;color:#cc241d;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">HIGHEST SENSITIVITY</div>
+      </div>
+      <div style="font-size:11px;color:#d5c4a1;line-height:1.4;margin-bottom:10px;">Live transactional system serving users. Maximum care.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Off-peak scheduling</div>
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Conservative concurrency</div>
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Explicit query timeouts</div>
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Cannot request indexes</div>
+      </div>
+    </div>
+
+    <!-- Tier 2: Read replica -->
+    <div style="background:#282828;border-radius:8px;padding:16px;border-left:4px solid #fabd2f;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:500;color:#fabd2f;">Read replica</div>
+        </div>
+        <div style="font-size:10px;color:#d79921;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">MEDIUM SENSITIVITY</div>
+      </div>
+      <div style="font-size:11px;color:#d5c4a1;line-height:1.4;margin-bottom:10px;">Same data, dedicated read connection. Same patterns, wider tolerances.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">More concurrent queries</div>
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Wider safe-hours windows</div>
+      </div>
+    </div>
+
+    <!-- Tier 3: Vendor-controlled ERP -->
+    <div style="background:#282828;border-radius:8px;padding:16px;border-left:4px solid #83a598;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:500;color:#83a598;">Vendor-controlled ERP</div>
+        </div>
+        <div style="font-size:10px;color:#458588;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">VARIABLE SENSITIVITY</div>
+      </div>
+      <div style="font-size:11px;color:#d5c4a1;line-height:1.4;margin-bottom:10px;">No schema changes possible, limited query optimization. Work within vendor constraints.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Accept slower extractions</div>
+        <div style="font-size:10px;color:#a89984;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 8px;">Avoid vendor batch windows</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Operational consequences -->
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Operational consequences per tier</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <div style="font-size:11px;color:#d5c4a1;background:#1d2021;border:1px solid #504945;border-radius:3px;padding:3px 10px;">Scheduling (safe-hours)</div>
+      <div style="font-size:11px;color:#d5c4a1;background:#1d2021;border:1px solid #504945;border-radius:3px;padding:3px 10px;">Concurrency limits</div>
+      <div style="font-size:11px;color:#d5c4a1;background:#1d2021;border:1px solid #504945;border-radius:3px;padding:3px 10px;">Timeout configuration</div>
+      <div style="font-size:11px;color:#d5c4a1;background:#1d2021;border:1px solid #504945;border-radius:3px;padding:3px 10px;">Index requests</div>
+    </div>
+  </div>
+</div>

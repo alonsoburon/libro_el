@@ -1,0 +1,58 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 08</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Open / closed documents</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Lifecycle state drives extraction strategy</div>
+  </div>
+
+  <!-- Lifecycle flow -->
+  <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:24px;">
+    <div style="background:#282828;border:1px solid #d79921;border-radius:6px;padding:8px 20px;text-align:center;">
+      <div style="font-size:12px;font-weight:500;color:#fabd2f;">Open</div>
+      <div style="font-size:10px;color:#928374;">mutable</div>
+    </div>
+    <div style="width:48px;height:1px;background:#504945;position:relative;">
+      <div style="position:absolute;right:-2px;top:-4px;font-size:10px;color:#504945;">→</div>
+      <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:#665c54;white-space:nowrap;">posting</div>
+    </div>
+    <div style="background:#282828;border:1px solid #458588;border-radius:6px;padding:8px 20px;text-align:center;">
+      <div style="font-size:12px;font-weight:500;color:#83a598;">Closed</div>
+      <div style="font-size:10px;color:#928374;">immutable</div>
+    </div>
+  </div>
+
+  <!-- Two extraction cards -->
+  <div style="display:flex;gap:12px;margin-bottom:16px;">
+
+    <!-- Open -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-left:3px solid #d79921;">
+      <div style="font-size:13px;font-weight:500;color:#fabd2f;margin-bottom:8px;">Open documents</div>
+      <div style="font-size:11px;color:#d5c4a1;line-height:1.5;margin-bottom:10px;">Lines change, statuses shift, amounts adjust. Can be hard-deleted before posting.</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:11px;color:#a89984;">Strategy:</div>
+        <div style="font-size:12px;color:#fabd2f;background:#1d2021;border-radius:4px;padding:4px 10px;display:inline-block;">Full replace every run</div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:#665c54;">Small, bounded set</div>
+      <div style="margin-top:8px;font-size:10px;color:#a89984;">e.g. draft invoices, pending orders</div>
+    </div>
+
+    <!-- Closed -->
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border-left:3px solid #458588;">
+      <div style="font-size:13px;font-weight:500;color:#83a598;margin-bottom:8px;">Closed documents</div>
+      <div style="font-size:11px;color:#d5c4a1;line-height:1.5;margin-bottom:10px;">Frozen after posting. In many jurisdictions, modifying a closed invoice is illegal.</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:11px;color:#a89984;">Strategy:</div>
+        <div style="font-size:12px;color:#83a598;background:#1d2021;border-radius:4px;padding:4px 10px;display:inline-block;">Cursor-based incremental</div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:#665c54;">Large, growing set, immutable</div>
+      <div style="margin-top:8px;font-size:10px;color:#a89984;">The rare case where a soft rule is backed by a hard rule (the law)</div>
+    </div>
+
+  </div>
+
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Extraction split</div>
+    <div style="font-size:12px;color:#bdae93;">Run both strategies in the same pipeline. <span style="color:#fabd2f;">Open</span> = full replace (small set). <span style="color:#83a598;">Closed</span> = incremental (growing set).</div>
+  </div>
+</div>

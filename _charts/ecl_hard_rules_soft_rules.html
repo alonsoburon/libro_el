@@ -1,0 +1,53 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 02</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Hard rules vs soft rules</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Your pipeline must survive soft rules being wrong</div>
+  </div>
+
+  <!-- Hard rules - visible, small -->
+  <div style="background:#282828;border:1px solid #458588;border-radius:8px 8px 0 0;padding:14px 16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <div style="width:10px;height:10px;border-radius:2px;background:#83a598;flex-shrink:0;"></div>
+      <div style="font-size:13px;font-weight:500;color:#83a598;">Hard rules</div>
+      <div style="font-size:10px;color:#665c54;margin-left:auto;">System enforces</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <div style="font-size:11px;color:#83a598;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 10px;font-family:'Anthropic Sans',monospace;">PRIMARY KEY</div>
+      <div style="font-size:11px;color:#83a598;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 10px;font-family:'Anthropic Sans',monospace;">UNIQUE INDEX</div>
+      <div style="font-size:11px;color:#83a598;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 10px;font-family:'Anthropic Sans',monospace;">FOREIGN KEY</div>
+      <div style="font-size:11px;color:#83a598;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 10px;font-family:'Anthropic Sans',monospace;">NOT NULL</div>
+      <div style="font-size:11px;color:#83a598;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:3px 10px;font-family:'Anthropic Sans',monospace;">CHECK</div>
+    </div>
+  </div>
+
+  <!-- Waterline -->
+  <div style="position:relative;height:28px;background:linear-gradient(to bottom,#282828,#1d2021);display:flex;align-items:center;justify-content:center;">
+    <div style="position:absolute;left:0;right:0;top:50%;height:1px;background:#504945;"></div>
+    <div style="position:relative;font-size:10px;color:#928374;background:#1d2021;padding:0 12px;letter-spacing:1px;">WATERLINE — query information_schema to find it</div>
+  </div>
+
+  <!-- Soft rules - dangerous, large -->
+  <div style="background:#282828;border:1px solid #d65d0e;border-radius:0 0 8px 8px;padding:14px 16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <div style="width:10px;height:10px;border-radius:2px;background:#fe8019;flex-shrink:0;"></div>
+      <div style="font-size:13px;font-weight:500;color:#fe8019;">Soft rules</div>
+      <div style="font-size:10px;color:#665c54;margin-left:auto;">Someone told you it's true</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:12px;color:#d5c4a1;padding:5px 10px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;font-style:italic;">"Quantities are always positive"</div>
+      <div style="font-size:12px;color:#d5c4a1;padding:5px 10px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;font-style:italic;">"Status goes pending → confirmed → shipped"</div>
+      <div style="font-size:12px;color:#d5c4a1;padding:5px 10px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;font-style:italic;">"Only open invoices get deleted"</div>
+      <div style="font-size:12px;color:#d5c4a1;padding:5px 10px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;font-style:italic;">"updated_at is always set"</div>
+      <div style="font-size:12px;color:#d5c4a1;padding:5px 10px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;font-style:italic;">"Emails are unique"</div>
+      <div style="font-size:12px;color:#d5c4a1;padding:5px 10px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;font-style:italic;">"A line's status matches the header"</div>
+    </div>
+  </div>
+
+  <!-- Response -->
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;margin-top:16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">When a soft rule breaks</div>
+    <div style="font-size:12px;color:#bdae93;">Load the data. Surface the violation. <span style="color:#fe8019;">Don't fix it in the pipeline.</span></div>
+  </div>
+</div>

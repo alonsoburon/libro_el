@@ -1,0 +1,62 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 16</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Schema evolution policy</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">When a new column arrives from the source, the pipeline responds per a declared policy</div>
+  </div>
+
+  <!-- Signal -->
+  <div style="text-align:center;margin-bottom:16px;">
+    <div style="display:inline-block;background:#282828;border:1px solid #504945;border-radius:6px;padding:8px 20px;">
+      <div style="font-size:11px;color:#665c54;">Event</div>
+      <div style="font-size:13px;font-weight:500;color:#fbf1c7;margin-top:2px;">New column arrives from source</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:12px;color:#504945;margin-bottom:12px;">↓</div>
+
+  <!-- Valid policies -->
+  <div style="margin-bottom:6px;font-size:10px;color:#689d6a;text-transform:uppercase;letter-spacing:1px;">Valid in ECL</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border:1px solid #689d6a;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#8ec07c;"></div>
+        <div style="font-size:13px;font-weight:500;color:#8ec07c;">Evolve</div>
+      </div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;">Accept new columns, add them to destination.</div>
+      <div style="margin-top:8px;font-size:10px;color:#665c54;">Default for most tables</div>
+    </div>
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border:1px solid #689d6a;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#83a598;"></div>
+        <div style="font-size:13px;font-weight:500;color:#83a598;">Freeze</div>
+      </div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;">Reject any schema change, fail the load.</div>
+      <div style="margin-top:8px;font-size:10px;color:#665c54;">For critical stable-schema tables</div>
+    </div>
+  </div>
+
+  <!-- Invalid policies -->
+  <div style="margin-bottom:6px;font-size:10px;color:#fb4934;text-transform:uppercase;letter-spacing:1px;">Breaks conforming boundary</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border:1px solid #504945;opacity:0.6;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#504945;position:relative;">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg);width:10px;height:1px;background:#fb4934;"></div>
+        </div>
+        <div style="font-size:13px;font-weight:500;color:#928374;text-decoration:line-through;">Discard row</div>
+      </div>
+      <div style="font-size:11px;color:#665c54;line-height:1.4;">Drops rows with new columns. This is a transformation decision.</div>
+    </div>
+    <div style="flex:1;background:#282828;border-radius:8px;padding:14px;border:1px solid #504945;opacity:0.6;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#504945;position:relative;">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg);width:10px;height:1px;background:#fb4934;"></div>
+        </div>
+        <div style="font-size:13px;font-weight:500;color:#928374;text-decoration:line-through;">Discard value</div>
+      </div>
+      <div style="font-size:11px;color:#665c54;line-height:1.4;">Drops the new column's values. Also breaks the conforming boundary.</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,54 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 01</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Conforming vs transforming</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Every operation during the crossing is one or the other</div>
+  </div>
+
+  <div style="display:flex;gap:1px;margin-bottom:20px;">
+    <!-- Conforming side -->
+    <div style="flex:1;background:#282828;border-radius:8px 0 0 8px;padding:16px 14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#8ec07c;flex-shrink:0;"></div>
+        <div style="font-size:14px;font-weight:500;color:#8ec07c;">Conforming</div>
+      </div>
+      <div style="font-size:11px;color:#689d6a;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #3c3836;">Belongs in ECL -- survive the crossing</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Type casting (VARCHAR → TIMESTAMP)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Null handling (preserve source nulls)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Timezone normalization (tag, don't convert)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Charset encoding (UTF-8)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Metadata injection (_extracted_at)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Synthetic key generation</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #689d6a;">Cursor-borrowing joins</div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div style="width:2px;background:linear-gradient(to bottom,#504945,#928374,#504945);flex-shrink:0;"></div>
+
+    <!-- Transforming side -->
+    <div style="flex:1;background:#282828;border-radius:0 8px 8px 0;padding:16px 14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#fe8019;flex-shrink:0;"></div>
+        <div style="font-size:14px;font-weight:500;color:#fe8019;">Transforming</div>
+      </div>
+      <div style="font-size:11px;color:#d65d0e;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #3c3836;">Belongs downstream -- changes business meaning</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;">Business logic (revenue = qty × price)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;">Filtering (exclude inactive customers)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;">Enrichment joins (denormalization)</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;">JSON flattening into relational tables</div>
+        <div style="font-size:12px;color:#d5c4a1;padding:5px 8px;background:#1d2021;border-radius:4px;border-left:2px solid #d65d0e;">Aggregation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decision test -->
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Decision test</div>
+    <div style="font-size:12px;color:#bdae93;">If a join adds a column <span style="color:#fe8019;">the business</span> cares about → <span style="color:#fe8019;">transforming</span></div>
+    <div style="font-size:12px;color:#bdae93;margin-top:3px;">If it adds a column <span style="color:#8ec07c;">only the pipeline</span> cares about → <span style="color:#8ec07c;">conforming</span></div>
+  </div>
+</div>

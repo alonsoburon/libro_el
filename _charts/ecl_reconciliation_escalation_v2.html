@@ -1,0 +1,60 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 11</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Reconciliation escalation</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Start cheap. Escalate only when the cheaper level signals a problem.</div>
+  </div>
+
+  <!-- Inverted pyramid / funnel -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:20px;">
+
+    <!-- Level 1 - top, wide -->
+    <div style="width:100%;background:#282828;border-radius:6px;padding:14px 16px;border:1px solid #689d6a;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#689d6a;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">1</div>
+          <div style="font-size:13px;font-weight:500;color:#8ec07c;">Row count</div>
+        </div>
+        <div style="font-size:10px;color:#689d6a;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">CHEAP</div>
+      </div>
+      <div style="font-size:11px;color:#a89984;">COUNT(*) source vs destination. Catches missing rows, duplicates, dropped partitions. Misses value drift.</div>
+    </div>
+
+    <!-- Escalation arrow -->
+    <div style="font-size:10px;color:#665c54;padding:2px 0;">↓ count mismatch triggers aggregate</div>
+
+    <!-- Level 2 - middle -->
+    <div style="width:77%;background:#282828;border-radius:6px;padding:14px 16px;border:1px solid #d79921;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#d79921;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">2</div>
+          <div style="font-size:13px;font-weight:500;color:#fabd2f;">Aggregate checks</div>
+        </div>
+        <div style="font-size:10px;color:#d79921;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">MEDIUM</div>
+      </div>
+      <div style="font-size:11px;color:#a89984;">SUM(amount), MAX(updated_at), COUNT(DISTINCT id). Catches value drift row count misses.</div>
+    </div>
+
+    <!-- Escalation arrow -->
+    <div style="font-size:10px;color:#665c54;padding:2px 0;">↓ aggregate mismatch triggers hash</div>
+
+    <!-- Level 3 - bottom, narrow -->
+    <div style="width:55%;background:#282828;border-radius:6px;padding:14px 16px;border:1px solid #cc241d;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:#cc241d;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">3</div>
+          <div style="font-size:13px;font-weight:500;color:#fb4934;">Hash comparison</div>
+        </div>
+        <div style="font-size:10px;color:#cc241d;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">EXPENSIVE</div>
+      </div>
+      <div style="font-size:11px;color:#a89984;">Hash every row, compare. Catches any difference at any granularity. Nuclear option.</div>
+    </div>
+
+  </div>
+
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Escalation logic</div>
+    <div style="font-size:12px;color:#bdae93;">Count mismatch → aggregate check. Aggregate mismatch → hash or full ID comparison. Reserve level 3 for critical tables or periodic audits.</div>
+  </div>
+</div>

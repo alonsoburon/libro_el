@@ -1,0 +1,78 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 09</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Hot / warm / cold freshness</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Not every row needs the same refresh cadence</div>
+  </div>
+
+  <!-- Three tiers stacked -->
+  <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px;">
+
+    <!-- Hot -->
+    <div style="background:#282828;border-radius:8px;padding:14px 16px;border-left:4px solid #fb4934;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:500;color:#fb4934;">Hot</div>
+          <div style="font-size:10px;color:#cc241d;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">INTRADAY</div>
+        </div>
+        <div style="font-size:10px;color:#928374;">Tolerates imprecision</div>
+      </div>
+      <div style="font-size:11px;color:#d5c4a1;margin-bottom:6px;">Actively changing data: today's orders, open invoices, recent events.</div>
+      <div style="font-size:11px;color:#a89984;">Method: incremental when needed, FR when table is small enough.</div>
+    </div>
+
+    <!-- Overlap indicator -->
+    <div style="display:flex;align-items:center;padding:2px 20px;">
+      <div style="flex:1;height:1px;background:repeating-linear-gradient(to right,#504945 0px,#504945 4px,transparent 4px,transparent 8px);"></div>
+      <div style="font-size:9px;color:#665c54;padding:0 8px;white-space:nowrap;">overlap: lag window</div>
+      <div style="flex:1;height:1px;background:repeating-linear-gradient(to right,#504945 0px,#504945 4px,transparent 4px,transparent 8px);"></div>
+    </div>
+
+    <!-- Warm -->
+    <div style="background:#282828;border-radius:8px;padding:14px 16px;border-left:4px solid #d79921;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:500;color:#fabd2f;">Warm</div>
+          <div style="font-size:10px;color:#d79921;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">DAILY</div>
+        </div>
+        <div style="font-size:10px;color:#928374;">Catches what hot misses</div>
+      </div>
+      <div style="font-size:11px;color:#d5c4a1;margin-bottom:6px;">Current month/quarter. Late cursor updates, backdated transactions, silent changes.</div>
+      <div style="font-size:11px;color:#a89984;">Method: FR of warm window, or wide-lag incremental.</div>
+    </div>
+
+    <!-- Overlap indicator -->
+    <div style="display:flex;align-items:center;padding:2px 20px;">
+      <div style="flex:1;height:1px;background:repeating-linear-gradient(to right,#504945 0px,#504945 4px,transparent 4px,transparent 8px);"></div>
+      <div style="font-size:9px;color:#665c54;padding:0 8px;white-space:nowrap;">overlap: lag window</div>
+      <div style="flex:1;height:1px;background:repeating-linear-gradient(to right,#504945 0px,#504945 4px,transparent 4px,transparent 8px);"></div>
+    </div>
+
+    <!-- Cold -->
+    <div style="background:#282828;border-radius:8px;padding:14px 16px;border-left:4px solid #458588;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:14px;font-weight:500;color:#83a598;">Cold</div>
+          <div style="font-size:10px;color:#458588;background:#1d2021;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">WEEKLY / MONTHLY</div>
+        </div>
+        <div style="font-size:10px;color:#928374;">The cleanup pass</div>
+      </div>
+      <div style="font-size:11px;color:#d5c4a1;margin-bottom:6px;">Historical data: prior years, closed fiscal periods. Resets accumulated drift.</div>
+      <div style="font-size:11px;color:#a89984;">Method: full replace.</div>
+    </div>
+
+  </div>
+
+  <!-- Key insight + lag window -->
+  <div style="display:flex;gap:8px;">
+    <div style="flex:1;background:#3c3836;border-radius:6px;padding:12px 14px;border:1px dashed #665c54;">
+      <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Key insight</div>
+      <div style="font-size:12px;color:#bdae93;">Tier = <span style="color:#fbf1c7;">cadence</span>. Method = separate decision. A small table can full-replace even at hot frequency.</div>
+    </div>
+    <div style="flex:1;background:#3c3836;border-radius:6px;padding:12px 14px;border:1px dashed #665c54;">
+      <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Lag window</div>
+      <div style="font-size:12px;color:#bdae93;">7 days for clean systems. 30 for messy ERPs. Start at 7, widen if cold catches rows warm missed.</div>
+    </div>
+  </div>
+</div>

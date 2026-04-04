@@ -1,0 +1,130 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 13</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Load strategy spectrum</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Ordered by cost and complexity. The corridor determines where each fits.</div>
+  </div>
+
+  <!-- Spectrum bar -->
+  <div style="display:flex;justify-content:space-between;margin-bottom:4px;padding:0 2px;">
+    <div style="font-size:10px;color:#665c54;">CHEAP · SIMPLE</div>
+    <div style="font-size:10px;color:#665c54;">EXPENSIVE · COMPLEX</div>
+  </div>
+  <div style="height:4px;border-radius:2px;background:linear-gradient(to right,#689d6a,#98971a,#d79921,#d65d0e,#cc241d);margin-bottom:20px;"></div>
+
+  <!-- Strategy cards -->
+  <div style="display:flex;flex-direction:column;gap:4px;">
+
+    <!-- 1 Append-only -->
+    <div style="display:flex;gap:12px;align-items:stretch;background:#282828;border-radius:6px;padding:12px 14px;">
+      <div style="width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="width:20px;height:20px;border-radius:50%;background:#689d6a;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">1</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#8ec07c;">Append-only</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Pure INSERT. No key matching. Idempotent at view level, not table level.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;">
+        <div style="font-size:9px;color:#665c54;">COST</div>
+        <div style="display:flex;gap:2px;margin-top:2px;">
+          <div style="width:8px;height:4px;border-radius:1px;background:#689d6a;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 Full replace -->
+    <div style="display:flex;gap:12px;align-items:stretch;background:#282828;border-radius:6px;padding:12px 14px;">
+      <div style="width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="width:20px;height:20px;border-radius:50%;background:#98971a;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">2</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#b8bb26;">Full replace</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Staging swap or partition swap. No merge logic. Idempotent by construction.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;">
+        <div style="font-size:9px;color:#665c54;">COST</div>
+        <div style="display:flex;gap:2px;margin-top:2px;">
+          <div style="width:8px;height:4px;border-radius:1px;background:#98971a;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#98971a;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 Append + materialize -->
+    <div style="display:flex;gap:12px;align-items:stretch;background:#282828;border-radius:6px;padding:12px 14px;">
+      <div style="width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="width:20px;height:20px;border-radius:50%;background:#d79921;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">3</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#fabd2f;">Append + materialize</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Append raw + dedup view. Shifts cost from load-time to read-time.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;">
+        <div style="font-size:9px;color:#665c54;">COST</div>
+        <div style="display:flex;gap:2px;margin-top:2px;">
+          <div style="width:8px;height:4px;border-radius:1px;background:#d79921;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#d79921;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#d79921;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Merge/upsert -->
+    <div style="display:flex;gap:12px;align-items:stretch;background:#282828;border-radius:6px;padding:12px 14px;">
+      <div style="width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="width:20px;height:20px;border-radius:50%;background:#d65d0e;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">4</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#fe8019;">Merge / upsert</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Match on key, update or insert. Most expensive DML in columnar engines.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;">
+        <div style="font-size:9px;color:#665c54;">COST</div>
+        <div style="display:flex;gap:2px;margin-top:2px;">
+          <div style="width:8px;height:4px;border-radius:1px;background:#d65d0e;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#d65d0e;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#d65d0e;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#d65d0e;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#3c3836;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Hybrid -->
+    <div style="display:flex;gap:12px;align-items:stretch;background:#282828;border-radius:6px;padding:12px 14px;">
+      <div style="width:28px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="width:20px;height:20px;border-radius:50%;background:#cc241d;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">5</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#fb4934;">Hybrid append + merge</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Two destinations (append log + merged current). Maximum complexity.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;">
+        <div style="font-size:9px;color:#665c54;">COST</div>
+        <div style="display:flex;gap:2px;margin-top:2px;">
+          <div style="width:8px;height:4px;border-radius:1px;background:#cc241d;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#cc241d;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#cc241d;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#cc241d;"></div>
+          <div style="width:8px;height:4px;border-radius:1px;background:#cc241d;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;margin-top:16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Corridor effect</div>
+    <div style="font-size:12px;color:#bdae93;">In <span style="color:#83a598;">T→T</span>, MERGE is cheap -- the spectrum compresses to positions 1-2-4. In <span style="color:#d3869b;">T→C</span>, the full spread matters and position 3 earns its place.</div>
+  </div>
+</div>

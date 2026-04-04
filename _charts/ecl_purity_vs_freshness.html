@@ -1,0 +1,126 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 03</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Purity vs freshness</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Every pipeline decision takes a position on this spectrum</div>
+  </div>
+
+  <!-- Axis labels -->
+  <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:0 4px;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:#83a598;"></div>
+      <span style="font-size:12px;color:#83a598;font-weight:500;">Purity</span>
+      <span style="font-size:11px;color:#665c54;">MAX →</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;color:#665c54;">← MAX</span>
+      <span style="font-size:12px;color:#fabd2f;font-weight:500;">Freshness</span>
+      <div style="width:8px;height:8px;border-radius:50%;background:#fabd2f;"></div>
+    </div>
+  </div>
+
+  <!-- Spectrum bar -->
+  <div style="position:relative;height:6px;border-radius:3px;background:linear-gradient(to right,#458588,#689d6a,#98971a,#d79921,#d65d0e);margin-bottom:0;"></div>
+
+  <!-- Positions -->
+  <div style="display:flex;flex-direction:column;gap:0;margin-top:0;">
+
+    <!-- Position 1 -->
+    <div style="display:flex;align-items:flex-start;padding:14px 0;border-bottom:1px solid #3c3836;">
+      <div style="width:36px;flex-shrink:0;text-align:center;">
+        <div style="width:18px;height:18px;border-radius:50%;background:#458588;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">1</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#83a598;">Full replace every run</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Purity max · Freshness low</div>
+      </div>
+      <div style="display:flex;gap:3px;align-items:center;flex-shrink:0;">
+        <div style="width:20px;height:4px;border-radius:2px;background:#83a598;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#83a598;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#83a598;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#83a598;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+      </div>
+    </div>
+
+    <!-- Position 2 -->
+    <div style="display:flex;align-items:flex-start;padding:14px 0;border-bottom:1px solid #3c3836;">
+      <div style="width:36px;flex-shrink:0;text-align:center;">
+        <div style="width:18px;height:18px;border-radius:50%;background:#689d6a;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">2</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#8ec07c;">Scoped full replace</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Purity high · Freshness medium</div>
+      </div>
+      <div style="display:flex;gap:3px;align-items:center;flex-shrink:0;">
+        <div style="width:20px;height:4px;border-radius:2px;background:#8ec07c;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#8ec07c;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#8ec07c;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+      </div>
+    </div>
+
+    <!-- Position 3 -->
+    <div style="display:flex;align-items:flex-start;padding:14px 0;border-bottom:1px solid #3c3836;">
+      <div style="width:36px;flex-shrink:0;text-align:center;">
+        <div style="width:18px;height:18px;border-radius:50%;background:#98971a;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">3</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#b8bb26;">Stateless window extraction</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Purity medium · Freshness medium-high</div>
+      </div>
+      <div style="display:flex;gap:3px;align-items:center;flex-shrink:0;">
+        <div style="width:20px;height:4px;border-radius:2px;background:#b8bb26;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#b8bb26;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+      </div>
+    </div>
+
+    <!-- Position 4 -->
+    <div style="display:flex;align-items:flex-start;padding:14px 0;border-bottom:1px solid #3c3836;">
+      <div style="width:36px;flex-shrink:0;text-align:center;">
+        <div style="width:18px;height:18px;border-radius:50%;background:#d79921;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">4</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#fabd2f;">Cursor-based incremental</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Purity medium · Freshness high</div>
+      </div>
+      <div style="display:flex;gap:3px;align-items:center;flex-shrink:0;">
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#fabd2f;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#fabd2f;"></div>
+      </div>
+    </div>
+
+    <!-- Position 5 -->
+    <div style="display:flex;align-items:flex-start;padding:14px 0;">
+      <div style="width:36px;flex-shrink:0;text-align:center;">
+        <div style="width:18px;height:18px;border-radius:50%;background:#d65d0e;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">5</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:#fe8019;">High-frequency incremental</div>
+        <div style="font-size:11px;color:#a89984;margin-top:2px;">Purity variable · Freshness max -- purity debt accumulates</div>
+      </div>
+      <div style="display:flex;gap:3px;align-items:center;flex-shrink:0;">
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#3c3836;"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:#fe8019;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decision tree hint -->
+  <div style="background:#282828;border-radius:6px;padding:12px 16px;margin-top:16px;border:1px solid #3c3836;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Decision chain</div>
+    <div style="font-size:12px;color:#bdae93;">Full scan fits window? → Reliable cursor? → Hard deletes? → Freshness SLA?</div>
+    <div style="font-size:11px;color:#665c54;margin-top:4px;">Each "no" pushes right -- away from purity, toward freshness</div>
+  </div>
+</div>

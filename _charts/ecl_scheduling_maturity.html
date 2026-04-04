@@ -1,0 +1,83 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 14</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Scheduling maturity</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Predictable progression as pipeline count grows. Each stage is correct at its scale.</div>
+  </div>
+
+  <!-- Three stages as progression -->
+  <div style="display:flex;flex-direction:column;gap:0;">
+
+    <!-- Stage 1 -->
+    <div style="display:flex;gap:14px;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;">
+        <div style="width:22px;height:22px;border-radius:50%;background:#689d6a;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">1</div>
+        <div style="flex:1;width:2px;background:#689d6a;opacity:0.4;"></div>
+      </div>
+      <div style="flex:1;padding-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:13px;font-weight:500;color:#8ec07c;">Single cron</div>
+          <div style="font-size:10px;color:#665c54;background:#282828;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">few tables</div>
+        </div>
+        <div style="font-size:11px;color:#a89984;margin-top:4px;line-height:1.4;">Everything runs together. Simple, works when you have a dozen tables and a daily window. Falls apart past ~4 hours or when intraday is needed.</div>
+      </div>
+    </div>
+
+    <!-- Trigger 1→2 -->
+    <div style="display:flex;gap:14px;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;">
+        <div style="flex:1;width:2px;background:#504945;"></div>
+      </div>
+      <div style="flex:1;padding:6px 0;">
+        <div style="font-size:11px;color:#665c54;padding-left:12px;border-left:2px solid #504945;">Window exceeded or intraday needed</div>
+      </div>
+    </div>
+
+    <!-- Stage 2 -->
+    <div style="display:flex;gap:14px;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;">
+        <div style="width:22px;height:22px;border-radius:50%;background:#d79921;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">2</div>
+        <div style="flex:1;width:2px;background:#d79921;opacity:0.4;"></div>
+      </div>
+      <div style="flex:1;padding-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:13px;font-weight:500;color:#fabd2f;">Weight-based groups</div>
+          <div style="font-size:10px;color:#665c54;background:#282828;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">dozens of tables</div>
+        </div>
+        <div style="font-size:11px;color:#a89984;margin-top:4px;line-height:1.4;">Tables split by size or duration across time slots. Better throughput, but groupings don't map to business needs.</div>
+      </div>
+    </div>
+
+    <!-- Trigger 2→3 -->
+    <div style="display:flex;gap:14px;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;">
+        <div style="flex:1;width:2px;background:#504945;"></div>
+      </div>
+      <div style="flex:1;padding:6px 0;">
+        <div style="font-size:11px;color:#665c54;padding-left:12px;border-left:2px solid #504945;">Business freshness SLAs diverge across consumers</div>
+      </div>
+    </div>
+
+    <!-- Stage 3 -->
+    <div style="display:flex;gap:14px;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;">
+        <div style="width:22px;height:22px;border-radius:50%;background:#d65d0e;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#1d2021;">3</div>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:13px;font-weight:500;color:#fe8019;">Consumer-driven groups</div>
+          <div style="font-size:10px;color:#665c54;background:#282828;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">hundreds of tables</div>
+        </div>
+        <div style="font-size:11px;color:#a89984;margin-top:4px;line-height:1.4;">Tables grouped by downstream report/dashboard, scheduled to meet that consumer's freshness target. The destination.</div>
+        <div style="display:inline-block;margin-top:6px;font-size:10px;color:#d65d0e;background:#282828;border:1px solid #3c3836;border-radius:3px;padding:2px 8px;">DESTINATION</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;margin-top:20px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Warning</div>
+    <div style="font-size:12px;color:#bdae93;">Don't over-engineer stage 3 when you have three dashboards.</div>
+  </div>
+</div>

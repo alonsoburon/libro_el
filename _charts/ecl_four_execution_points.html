@@ -1,0 +1,76 @@
+
+<div style="background:#1d2021;border-radius:12px;padding:32px 28px 24px;font-family:'Anthropic Sans',sans-serif;color:#ebdbb2;max-width:680px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:11px;letter-spacing:1.5px;color:#928374;text-transform:uppercase;margin-bottom:6px;">Framework 15</div>
+    <div style="font-size:18px;font-weight:500;color:#fbf1c7;">Four execution points</div>
+    <div style="font-size:12px;color:#a89984;margin-top:4px;">Every conforming operation runs somewhere. Push work to whoever's idle.</div>
+  </div>
+
+  <!-- Pipeline flow -->
+  <div style="display:flex;align-items:center;gap:0;margin-bottom:24px;overflow-x:auto;">
+
+    <!-- Point 1: Source -->
+    <div style="flex:1;min-width:0;">
+      <div style="background:#282828;border-radius:6px;padding:10px 8px;border-top:3px solid #83a598;text-align:center;">
+        <div style="font-size:11px;font-weight:500;color:#83a598;">1 · Source</div>
+        <div style="font-size:9px;color:#665c54;margin-top:2px;">extraction query</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:#504945;padding:0 2px;flex-shrink:0;">→</div>
+
+    <!-- Point 2: Orchestrator -->
+    <div style="flex:1;min-width:0;">
+      <div style="background:#282828;border-radius:6px;padding:10px 8px;border-top:3px solid #d3869b;text-align:center;">
+        <div style="font-size:11px;font-weight:500;color:#d3869b;">2 · Orchestrator</div>
+        <div style="font-size:9px;color:#665c54;margin-top:2px;">between E and L</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:#504945;padding:0 2px;flex-shrink:0;">→</div>
+
+    <!-- Point 3: Staging -->
+    <div style="flex:1;min-width:0;">
+      <div style="background:#282828;border-radius:6px;padding:10px 8px;border-top:3px solid #fabd2f;text-align:center;">
+        <div style="font-size:11px;font-weight:500;color:#fabd2f;">3 · Staging</div>
+        <div style="font-size:9px;color:#665c54;margin-top:2px;">dest staging area</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:#504945;padding:0 2px;flex-shrink:0;">→</div>
+
+    <!-- Point 4: Destination -->
+    <div style="flex:1;min-width:0;">
+      <div style="background:#282828;border-radius:6px;padding:10px 8px;border-top:3px solid #fe8019;text-align:center;">
+        <div style="font-size:11px;font-weight:500;color:#fe8019;">4 · Destination</div>
+        <div style="font-size:9px;color:#665c54;margin-top:2px;">final load query</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Detail cards -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;">
+    <div style="background:#282828;border-radius:6px;padding:10px 12px;border-left:2px solid #83a598;">
+      <div style="font-size:11px;font-weight:500;color:#83a598;margin-bottom:4px;">1 · Source</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;">Conform inside the SELECT. Free if source is off-hours. Dangerous on busy OLTP.</div>
+    </div>
+    <div style="background:#282828;border-radius:6px;padding:10px 12px;border-left:2px solid #d3869b;">
+      <div style="font-size:11px;font-weight:500;color:#d3869b;margin-bottom:4px;">2 · Orchestrator</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;">Python, Spark, cloud function. Adds infrastructure and a data hop.</div>
+    </div>
+    <div style="background:#282828;border-radius:6px;padding:10px 12px;border-left:2px solid #fabd2f;">
+      <div style="font-size:11px;font-weight:500;color:#fabd2f;margin-bottom:4px;">3 · Staging</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;">Land raw, conform in staging before final table. Processing cost on destination meter.</div>
+    </div>
+    <div style="background:#282828;border-radius:6px;padding:10px 12px;border-left:2px solid #fe8019;">
+      <div style="font-size:11px;font-weight:500;color:#fe8019;margin-bottom:4px;">4 · Destination</div>
+      <div style="font-size:11px;color:#a89984;line-height:1.4;">Conform inside the MERGE/INSERT. Works when transform is simple.</div>
+    </div>
+  </div>
+
+  <div style="background:#3c3836;border-radius:6px;padding:12px 16px;border:1px dashed #665c54;">
+    <div style="font-size:11px;color:#928374;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Heuristic</div>
+    <div style="font-size:12px;color:#bdae93;">Source at 2am? Let it do the work. Production ERP at 10am? Extract raw, process downstream.</div>
+  </div>
+</div>
