@@ -210,7 +210,7 @@
   <the-reality>
   Pure EL doesn't exist. The moment you move data between systems, something has to give. Types need casting, nulls need handling, timestamps need timezones. I call it #strong[conforming];, and it's unavoidable.
 
-  So, what we're going to be talking about is ECL: #strong[Extract, Conform, and Load];. The C covers type casting, null handling, timezone normalization, metadata injection, key synthesis. Everything the data needs to land correctly on the other side. If it changes what the data #emph[means];, it belongs downstream.
+  So, what this book covers is ECL: #strong[Extract, Conform, and Load];. The C covers type casting, null handling, timezone normalization, metadata injection, key synthesis. Everything the data needs to land correctly on the other side. If it changes what the data #emph[means];, it belongs downstream.
 
   == What About the T?
   <what-about-the-t>
@@ -232,23 +232,23 @@
   - Replacing `NULL` with `''` because BigQuery handles them differently in `GROUP BY`? Conforming.
   - Converting `BIT` to `BOOLEAN`? Conforming.
 
-  None of these change the business meaning of the data. They just make it survive the crossing, and in counter example: - Calculating `revenue = qty * price`? That's transforming. - Filtering out inactive customers? Transforming. - Joining `orders` with `customers` to denormalize a name? Transforming.
+  None of these change the business meaning of the data. They just make it survive the crossing. The counter examples do:
+
+  - Calculating `revenue = qty * price`? That's transforming.
+  - Filtering out inactive customers? Transforming.
+  - Joining `orders` with `customers` to denormalize a name? Transforming.
 
   You're adding business meaning that wasn't in the original row.
 
   But here's where it gets interesting. `order_lines` has no `updated_at`. If you want to extract incrementally, you #emph[need] to join with `orders` to borrow its timestamp as your cursor. That join doesn't add business meaning -- it adds extraction metadata. You're not enriching `order_lines` with order data; you're giving yourself a `_cursor_at` so you know what to pull. That's conforming.
 
-  #ecl-warning(
+  #ecl-tip(
     "The join test",
-  )[If the join adds a column the business cares about, it's transforming. If it adds a column only your pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
+  )[If the join adds a column the business cares about, it's transforming. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
 
   #figure(
     image("diagrams/ecl-conforming-vs-transforming.svg", width: 90%),
   )
-
-  #ecl-tip(
-    "The join test",
-  )[If the join adds a column the business cares about, it's transforming. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
 
   == The Conforming Checklist
   <the-conforming-checklist>
@@ -589,9 +589,9 @@
 
   Loading goes through `COPY` from S3. This is the fast path. Row-by-row `INSERT` is painfully slow compared to `COPY` -- orders of magnitude slower on any meaningful volume. If your pipeline isn't using `COPY`, fix that first.
 
-  VACUUM is still a thing. Deleted rows don't free space until VACUUM runs. If your pipeline does heavy deletes (hard delete detection, merge patterns), VACUUM becomes an operational concern. Dead rows inflate scan time and storage until they're cleaned up.
+  Redshift runs automatic VACUUM DELETE in the background, so routine cleanup is handled. But if your pipeline does heavy bulk deletes (hard delete detection, merge patterns with large DELETE+INSERT batches), automatic VACUUM may not keep up -- monitor `SVV_TABLE_INFO` for unsorted rows and dead-row bloat, and schedule manual VACUUM during off-peak if needed.
 
-  Column additions are cheap. Type changes require recreating the table. A `VARCHAR(100)` that should have been `VARCHAR(500)` means a full table rebuild later. Plan your types carefully on initial load.
+  Sort keys and dist keys can be changed via `ALTER TABLE` without a full rebuild, but the operation rewrites data in the background and can take hours on large tables -- plan them carefully at creation rather than treating them as easily adjustable. Column additions are cheap. Type changes require recreating the table. A `VARCHAR(100)` that should have been `VARCHAR(500)` means a full table rebuild later. Plan your types carefully on initial load.
 
   == Type Mapping: Where Conforming Happens
   <type-mapping-where-conforming-happens>
@@ -632,7 +632,7 @@
       table.hline(),
       [BigQuery], [`JSON` type (native)], [Cannot load from Parquet. Use JSONL.],
       [Snowflake], [`VARIANT` type], [Parquet loads produce string, needs `PARSE_JSON`],
-      [ClickHouse], [`String` (parse with JSON functions)], [No native JSON type in older versions],
+      [ClickHouse], [`JSON` (native since v25.3) or `String`], [Native `JSON` type is recent -- legacy tables use `String` with `JSONExtract*`],
       [Redshift], [`SUPER` type], [Semi-structured queries use PartiQL syntax],
     )],
     kind: table,
@@ -826,11 +826,11 @@
   ```
 
   ```sql
-  -- source: columnar
+  -- destination: columnar
   -- Compare to yesterday's destination count for the same scope
   SELECT COUNT(DISTINCT invoice_id) AS rows_in_destination_yesterday
   FROM stg_invoices
-  WHERE _extracted_at::DATE = CURRENT_DATE - 1;
+  WHERE DATE(_extracted_at) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY);
   ```
 
   A drop in the source count with no matching deletes in the destination means hard deletes happened. The only reliable way to detect them is a full count comparison or a full ID set comparison between yesterday's destination and today's source. Incremental extraction on `updated_at` is blind to deletions by design -- deleted rows have no `updated_at` because they no longer exist.
@@ -893,8 +893,8 @@
   -- Check orphaned order_lines
   SELECT COUNT(*) AS orphaned_lines
   FROM order_lines ol
-  LEFT JOIN orders o ON ol.order_id = o.id
-  WHERE o.id IS NULL;
+  LEFT JOIN orders o ON ol.order_id = o.order_id
+  WHERE o.order_id IS NULL;
   ```
 
   ```sql
@@ -1097,9 +1097,9 @@
   -- engine: postgresql
   -- Conform at source: cast types, synthesize key, inject metadata in the extraction query
   SELECT
-      order_id::TEXT || '-' || line_number::TEXT AS _source_key,
+      order_id::TEXT || '-' || line_num::TEXT AS _source_key,
       order_id,
-      line_number,
+      line_num,
       quantity::NUMERIC(10,2) AS quantity,
       NOW() AT TIME ZONE 'UTC' AS _extracted_at
   FROM order_lines
@@ -1719,7 +1719,7 @@
   ALTER TABLE stg_orders SWAP WITH orders;
   ```
 
-  `SWAP WITH` is the cleanest option on any engine: metadata-only, instant, truly atomic. One caveat: grants defined on `orders` do #strong[not] carry over after a SWAP -- they follow the table name, not the data. If consumers have been granted access to `orders`, they now have access to the old staging table (renamed to `orders` after the swap). Re-grant after every swap, or use `FUTURE GRANTS` on the schema.
+  `SWAP WITH` is the cleanest option on any engine: metadata-only, instant, truly atomic. One caveat: grants follow the table object, not the name. After the swap, the object that used to be `stg_orders` now carries the name `orders` -- but it has `stg_orders`'s original (empty) grant set. Consumers who had access to the old `orders` object lose access to the name `orders` because that name now points to a different object. Re-grant after every swap, or use `FUTURE GRANTS` on the schema so new objects inherit permissions automatically.
 
   === BigQuery
   <bigquery-1>
@@ -1928,11 +1928,11 @@
       [`orders`], [Usually], [Most old orders are done. Verify with the source team whether support can reopen them.],
       [`customers`],
       [No],
-      [A customer created in 2022 can update their email today. Use full scan (see @full-scan-strategies],
+      [A customer created in 2022 can update their email today. Use full scan (see @full-scan-strategies)],
       [`products`], [No], [Price changes and schema mutations affect all rows regardless of age. Use full scan.],
       [`order_lines`],
       [Indirectly],
-      [No reliable own timestamp. Borrow scope from `orders` via cursor from another table (see @cursor-from-another-table],
+      [No reliable own timestamp. Borrow scope from `orders` via cursor from another table (see @cursor-from-another-table)],
     )],
     kind: table,
   )
@@ -2186,7 +2186,7 @@
   <relation-to-activity-driven-extraction>
   0207 solves a related problem differently. Sparse table extraction still scans the full source table -- it just drops most rows before loading. Activity-driven extraction avoids scanning the sparse table at all: it uses recent transaction history to determine which dimension combinations are worth pulling, then queries only those.
 
-  0207 is simpler and works for any sparse table. 0208 is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, 0207 is the next step.
+  This pattern (0206) is simpler and works for any sparse table. 0207 is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, 0207 is the next step.
 
   // ---
 
@@ -2431,7 +2431,7 @@
 
   == The Trap
   <the-trap>
-  The danger isn't the exclusion. It's the silence.
+  The danger is the silence around the exclusion.
 
   A consumer queries `destination.customers` looking for `national_id`. The column doesn't exist. They assume it's null in the source -- or worse, they assume the source doesn't have it. Neither is true. The column exists in the source with valid data; it just wasn't loaded.
 
@@ -2646,9 +2646,7 @@
   FROM orders;
   ```
 
-  Simple, zero extra infrastructure, self-contained. The cursor lives in the data.
-
-  The risk: it's tied to what's actually in the destination. If the destination is rebuilt, truncated, or has rows with stale timestamps from a bad load, the max is wrong. A cursor that's too low causes re-extraction (harmless, upsert handles it). A cursor that's too high skips rows permanently.
+  Simple, zero extra infrastructure, self-contained -- the cursor lives in the data. The risk: it's tied to what's actually in the destination. If the destination is rebuilt, truncated, or has rows with stale timestamps from a bad load, the max is wrong. A cursor that's too low causes re-extraction (harmless, upsert handles it). A cursor that's too high skips rows permanently.
 
   #strong[Option 2: External state store.] Orchestrator metadata, a dedicated state table, a key-value store. Survives destination rebuilds and is decoupled from data quality.
 
@@ -2752,7 +2750,7 @@
   - Wide window (30 days) running nightly -- catches retroactive edits and slow-arriving rows
   - Periodic full replace -- catches everything outside both windows
 
-  Three tiers, no cursor state anywhere, each tier sized independently.
+  All three tiers run without cursor state, each sized independently.
 
   // ---
 
@@ -2764,9 +2762,10 @@
 
   ```sql
   -- source: transactional
+  -- engine: postgresql
   SELECT *
   FROM invoices
-  WHERE invoice_date >= CURRENT_DATE - 90;
+  WHERE invoice_date >= CURRENT_DATE - INTERVAL '90 days';
   ```
 
   Every source that rewrites history has a horizon -- the furthest back a correction can reach. "Sales figures finalize after 60 days." "Invoices can be disputed within 90 days." That horizon defines your window size. If the business says 60 days, extract 90. The stated horizon is a soft rule (0106) -- verify it against actual data before trusting it.
@@ -3162,9 +3161,7 @@
     AND updated_at >= :last_run;
   ```
 
-  UNION the results and load. See 0403 for load options.
-
-  The open set covers all mutations and line changes -- everything the header cursor in 0304 couldn't see. The closed set is cheap because closed documents don't change.
+  UNION the results and load (see 0403 for load options). The open set covers all mutations and line changes -- everything the header cursor in 0304 couldn't see. The closed set is cheap because closed documents don't change.
 
   The #strong[destination] still has documents that were open last run but have since closed or been deleted at the source. The open-side extract no longer includes them. The closed-side cursor catches transitions (the document appears with `status = 'closed'` and a recent `updated_at`). Deletes need 0306.
 
@@ -3291,9 +3288,7 @@
 
   == The Default: 0304
   <the-default-0304>
-  When independent detail mutations are rare, the 0304 approach is still the right default -- just with the explicit acknowledgment that it only catches detail changes that coincide with header changes, and the periodic full replace catches the rest.
-
-  The strategies below apply when that blind spot is too wide.
+  When independent detail mutations are rare, the 0304 approach is still the right default -- just with the explicit acknowledgment that it only catches detail changes that coincide with header changes, and the periodic full replace catches the rest. The strategies below apply when that blind spot is too wide.
 
   // ---
 
@@ -3620,8 +3615,6 @@
   FROM orders
   WHERE COALESCE(updated_at, created_at) >= :last_run;
   ```
-
-  This works when `created_at` is reliably populated on INSERT (it usually is -- application frameworks and ORMs set it by default). The query captures both populations: updated rows through `updated_at`, and never-updated rows through `created_at`.
 
   This works when `created_at` is reliably populated on INSERT -- application frameworks and ORMs set it by default. The query captures both populations: updated rows through `updated_at`, and never-updated rows through `created_at`.
 
@@ -5259,9 +5252,9 @@
   -- Quick canary check after load
   SELECT customer_name
   FROM customers
-  WHERE customer_name LIKE '%ñ%'
-     OR customer_name LIKE '%ü%'
-     OR customer_name LIKE '%ç%'
+  WHERE name LIKE '%ñ%'
+     OR name LIKE '%ü%'
+     OR name LIKE '%ç%'
   LIMIT 10;
   ```
 
@@ -5479,7 +5472,7 @@
 
   The one thing worth adding is trend tracking on duration. A 3-minute job that creeps to 30 minutes is a signal even when it still succeeds, because it tells you the table is growing or the source is degrading before either becomes an emergency. I had a table silently grow enough that its extraction started overlapping with the next scheduled run, causing 3 PM crashes for weeks before I charted duration and saw it had been climbing steadily for months -- the fix was moving heavy tables to a less frequent schedule (0608), but the signal was in the health table long before the failure. Without duration trends, you discover these problems when jobs start timing out, which is too late to fix gracefully.
 
-  Retry counts are worth recording if your pipeline retries on transient failures. A job that succeeds on the third retry every day is not healthy -- it's masking an unstable connection or a source system under load.
+  Retry counts are worth recording if your pipeline retries on transient failures. A job that succeeds on the third retry every day is masking an unstable connection or a source system under load.
 
   === 2. Data Health
   <data-health>
@@ -5626,7 +5619,7 @@
   -- View on top of the health table for common derived metrics.
   CREATE VIEW health.runs_derived AS
   SELECT
-    ,
+    *,
     extraction_seconds + normalization_seconds + load_seconds
       AS total_seconds,
     -- Per-run check: did everything extracted actually land?
@@ -5811,7 +5804,7 @@
       [Partition-scoped merge, or switch to 0404],
       [Unpartitioned full scan],
       [Every query reads the entire table],
-      [Partition by date, enforce `require_partition_filter` (0704)],
+      [Partition by date, enforce `require_partition_filter` (0702)],
       [Staging cleanup missed],
       [Orphaned staging datasets accumulate storage],
       [Scheduled cleanup job, weekly or after each run],
@@ -6253,7 +6246,7 @@
   <the-problem-6>
   READ-ONLY access doesn't mean zero impact. A full table scan on a 50-million-row table locks pages, consumes I/O, and competes with the application for CPU and memory -- and the DBA watching the monitoring dashboard doesn't care that your query is a harmless SELECT. Their job is to keep the application fast for the users who generate revenue; your extraction is a background process that, from their perspective, exists only to slow things down. If you're careless about when and how you extract, you'll lose access -- and if you're unlucky, you'll bring the database down on your way out.
 
-  I had a client whose IT team didn't mention they ran full database backups between 5 and 6 AM. A load failed overnight, and the automatic retry kicked in at 5:30 AM -- right on top of the backup window. The database went down. It was back up within the hour, but the conversation about revoking my access lasted a week. The mistake wasn't the retry logic; it was not knowing the source's maintenance windows.
+  I had a client whose IT team didn't mention they ran full database backups between 5 and 6 AM. A load failed overnight, and the automatic retry kicked in at 5:30 AM -- right on top of the backup window. The database went down. It was back up within the hour, but the conversation about revoking my access lasted a week. The retry logic was fine -- I just didn't know the source's maintenance windows.
 
   == Know Your Source
   <know-your-source>
@@ -6360,7 +6353,7 @@
   <the-problem-7>
   The naive approach is one schedule for everything: all tables, same cadence, same extraction method. It works when you have a dozen tables and a daily overnight window. It stops working when some of those tables need to be fresh within the hour while others haven't changed in months -- because now you're either over-refreshing cold data (wasting compute, money and source load) or under-refreshing hot data (delivering stale results to the consumers).
 
-  The subtler version of this problem is not refreshing everything at the same #emph[frequency] but with the same #emph[method];. I had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was not. The DBA noticed before I did. The fix wasn't changing the schedule; it was splitting the table's extraction into tiers: recent data incrementally and often, historical data fully but rarely.
+  The subtler version of this problem is not refreshing everything at the same #emph[frequency] but with the same #emph[method];. I had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was not. The DBA noticed before I did. The fix was splitting the table's extraction into tiers: recent data incrementally and often, historical data fully but rarely.
 
   == The Tiers
   <the-tiers>
@@ -6821,7 +6814,7 @@
   <the-problem-11>
   A pipeline run that processes multiple tables can fail partway through: 40 tables succeed, 10 fail. Rerunning the entire job wastes time reprocessing the 40 tables that already landed correctly. Not rerunning leaves 10 tables stale, and the staleness compounds with every subsequent run that doesn't fix them. The real problem is knowing which tables failed, at which step, and whether to retry now or wait for the next scheduled run.
 
-  At scale, partial failures are daily. With hundreds of tables extracting from multiple sources, something fails every run -- a connection timeout on one source, a DML quota hit on the destination, a schema change on a table nobody warned you about. The pipeline that handles partial failures well isn't the one where nothing ever fails; it's the one where failures are visible, scoped, and retriable without disrupting the tables that succeeded.
+  At scale, partial failures are daily. With hundreds of tables extracting from multiple sources, something fails every run -- a connection timeout on one source, a DML quota hit on the destination, a schema change on a table nobody warned you about. The pipeline that handles partial failures well is the one where failures are visible, scoped, and retriable without disrupting the tables that succeeded.
 
   #ecl-warning(
     "Cursor safety and partial failures",
@@ -6839,7 +6832,7 @@
   <extraction-succeeded-load-failed>
   The data was extracted correctly but the destination rejected it -- DML quota exceeded, permission error, schema mismatch, disk full. The extraction is valid and may still be sitting in staging; if it is, you can retry the load without re-extracting. If staging is ephemeral (cleaned up per run), the extraction has to run again.
 
-  Destination quotas are the most common cause at scale. Columnar engines like BigQuery impose daily DML limits, and a pipeline that runs hundreds of merges can exhaust the quota partway through -- the first 150 tables land fine, the remaining 50 get rejected. The fix isn't more quota (though that helps); it's knowing which tables didn't land and retrying them in the next window when the quota resets. This is also where full replace earns its keep: a `DELETE + INSERT` or partition swap avoids the DML-heavy merge path entirely, and quota limits on batch loads are generally higher than on row-level DML.
+  Destination quotas are the most common cause at scale. Columnar engines like BigQuery impose daily DML limits, and a pipeline that runs hundreds of merges can exhaust the quota partway through -- the first 150 tables land fine, the remaining 50 get rejected. More quota helps, but the real fix is knowing which tables didn't land and retrying them in the next window when the quota resets. This is also where full replace earns its keep: a `DELETE + INSERT` or partition swap avoids the DML-heavy merge path entirely, and quota limits on batch loads are generally higher than on row-level DML.
 
   === Load Partially Applied
   <load-partially-applied>
@@ -7200,7 +7193,7 @@
 
   == The Exception: `metrics_daily`
   <the-exception-metrics_daily>
-  Some source tables are already pre-aggregated. `metrics_daily` in the domain model is computed by the source system -- the aggregation decision was made upstream, not by your pipeline. Landing a pre-aggregated table as-is is conforming because you're cloning what the source has, aggregation included. The rule isn't "never land aggregates" -- it's "don't aggregate in the pipeline."
+  Some source tables are already pre-aggregated. `metrics_daily` in the domain model is computed by the source system -- the aggregation decision was made upstream, not by your pipeline. Landing a pre-aggregated table as-is is conforming because you're cloning what the source has, aggregation included. The rule: don't aggregate in the pipeline -- land what the source gives you.
 
   == Movements vs.~Photos
   <movements-vs.-photos>
@@ -7297,7 +7290,7 @@
 
   #strong[ClickHouse.] `PARTITION BY` expression in the MergeTree definition, fixed at table creation. `ORDER BY` in the MergeTree definition is the cluster key -- the most important physical layout decision in ClickHouse, also fixed at creation. Partition pruning and block skipping are automatic on filtered queries.
 
-  #strong[Redshift.] No native partitioning in the columnar sense. Sort keys determine scan efficiency for range queries (a sort key on `order_date` lets Redshift skip blocks outside the filtered range). Dist keys control how data is distributed across nodes for JOIN performance. Both are fixed at creation -- changing requires a full table rebuild.
+  #strong[Redshift.] No native partitioning in the columnar sense. Sort keys determine scan efficiency for range queries (a sort key on `order_date` lets Redshift skip blocks outside the filtered range). Dist keys control how data is distributed across nodes for JOIN performance. Both can be changed via `ALTER TABLE` (sort key, dist key, and dist style), but the operation rewrites data in the background -- plan them carefully at creation.
 
   == Partition Alignment with Load Strategy
   <partition-alignment-with-load-strategy>
@@ -7686,11 +7679,11 @@
       "https://docs.aws.amazon.com/redshift/latest/dg/t_Reclaiming_storage_space202.html",
     )[VACUUM] -- #link("https://docs.aws.amazon.com/redshift/latest/dg/c-using-spectrum.html")[Redshift Spectrum]]
 
-  #strong[Sort keys.] The equivalent of clustering -- they determine physical sort order on disk and enable block skipping on filtered queries. Compound sort keys work for range queries on a prefix of columns. Interleaved sort keys work for multi-column filters where queries might filter on any combination, at the cost of slower VACUUM. Fixed at creation -- changing requires a full table rebuild.
+  #strong[Sort keys.] The equivalent of clustering -- they determine physical sort order on disk and enable block skipping on filtered queries. Compound sort keys work for range queries on a prefix of columns. Interleaved sort keys work for multi-column filters where queries might filter on any combination, at the cost of slower VACUUM. Changeable via `ALTER TABLE ... ALTER SORTKEY`, but the operation rewrites data in the background -- plan them at creation when possible.
 
   #strong[Dist keys.] Control how data is distributed across nodes. When two tables are distributed on the same key (e.g., both `orders` and `order_lines` on `order_id`), JOINs between them don't need to redistribute data across the network -- co-located rows are already on the same node.
 
-  #strong[VACUUM and ANALYZE.] After heavy DELETE or UPDATE operations, Redshift doesn't fully reclaim space automatically. Dead rows from deleted records inflate scans and waste I/O until VACUUM runs. ANALYZE updates the query planner's statistics. If your pipeline does heavy deletes (hard delete detection, merge patterns), schedule VACUUM as part of the post-load step.
+  #strong[VACUUM and ANALYZE.] Redshift runs automatic VACUUM DELETE in the background for routine cleanup, and automatic ANALYZE keeps statistics current. For pipelines with heavy bulk deletes (hard delete detection, large DELETE+INSERT merge batches), automatic VACUUM may not keep up -- dead rows accumulate faster than the background process clears them. Monitor `SVV_TABLE_INFO` for unsorted-row percentage and dead-row bloat, and schedule manual VACUUM during off-peak if the numbers drift.
 
   #strong[Spectrum.] Query data in S3 directly without loading it into the cluster. Useful for cold data that's too large or too infrequent to justify cluster storage. Spectrum bills per byte scanned (like BigQuery), so the optimization advice for S3-resident data is the same: partition, use Parquet, select only the columns you need.
 
@@ -8357,7 +8350,7 @@
   ALTER TABLE stg_orders SWAP WITH orders;
   ```
 
-  Atomic, metadata-only. Grants do #strong[not] carry over -- they follow the table name, not the data. Re-grant after every swap, or use `FUTURE GRANTS` on the schema.
+  Atomic, metadata-only. Grants follow the table object, not the name -- after the swap, consumers querying the name `orders` see the old staging table's (empty) grants. Re-grant after every swap, or use `FUTURE GRANTS` on the schema.
 
   #strong[BigQuery]
 
@@ -8501,7 +8494,7 @@
   DISTKEY (event_id);
   ```
 
-  Sort keys and dist keys are fixed at creation -- changing them requires a full table rebuild. Sort key serves the role of a partition/cluster key for scan pruning. Dist key controls how data distributes across nodes for join performance.
+  Sort keys and dist keys are changeable via `ALTER TABLE`, but the rewrite runs in the background and can be slow on large tables -- choose well at creation. Sort key serves the role of a partition/cluster key for scan pruning. Dist key controls how data distributes across nodes for join performance.
 
   See 0104 for storage mechanics and 0702 for key selection.
 
@@ -8578,7 +8571,7 @@
       table.hline(),
       [BigQuery], [`JSON`], [No -- use JSONL or Avro], [`JSON_VALUE(col, '$.key')`, dot notation],
       [Snowflake], [`VARIANT`], [Lands as string, needs `PARSE_JSON`], [`col:key::type`, `:` path notation],
-      [ClickHouse], [`String` (parse with functions)], [Yes (as string)], [`JSONExtractString(col, 'key')`],
+      [ClickHouse], [`JSON` (v25.3+) or `String`], [Yes (as string)], [`JSONExtractString(col, 'key')` or native path access on `JSON` type],
       [Redshift], [`SUPER`], [Yes], [PartiQL syntax: `col.key`],
       [PostgreSQL], [`JSONB` / `JSON`], [N/A (not a bulk load format)], [`col->>'key'`, `col @> '{}'` operators],
       [MySQL], [`JSON`], [N/A], [`JSON_EXTRACT(col, '$.key')`, `col->>'$.key'`],
@@ -8610,7 +8603,7 @@
       [--],
       [CLONE picks up new columns automatically],
       [`ORDER BY` key fixed at creation],
-      [Sort/dist keys fixed at creation],
+      [Sort/dist keys changeable via `ALTER TABLE` (background rewrite)],
     )],
     kind: table,
   )
@@ -8634,11 +8627,11 @@
   <engine-quirks>
   #strong[BigQuery] - DML concurrency: max 2 mutating statements per table concurrently, up to 20 queued. Flood it and statements fail outright - Every DML rewrites entire partitions it touches -- 10K rows across 30 dates = 30 full partition rewrites - Copy jobs are free for same-region operations - Streaming inserts: rows may be briefly invisible to `EXPORT DATA` and table copies (typically minutes, up to 90)
 
-  #strong[Snowflake] - `PRIMARY KEY` and `UNIQUE` constraints are not enforced -- they're metadata hints only. Deduplication is your problem - `VARIANT` from Parquet loads as string, not queryable JSON, until you `PARSE_JSON` - Result cache: identical queries within 24h return cached results at no warehouse cost - Grants don't survive `SWAP WITH` or `CREATE TABLE ... CLONE`
+  #strong[Snowflake] - `PRIMARY KEY` and `UNIQUE` constraints are not enforced -- they're metadata hints only. Deduplication is your problem - `VARIANT` from Parquet loads as string, not queryable JSON, until you `PARSE_JSON` - Result cache: identical queries within 24h return cached results at no warehouse cost - Grants follow the table object, not the name -- after `SWAP WITH` or `CLONE`, re-grant or use `FUTURE GRANTS`
 
   #strong[ClickHouse] - `ALTER TABLE ... UPDATE` and `ALTER TABLE ... DELETE` are async -- they return immediately, actual work happens during the next merge - `ReplacingMergeTree` deduplicates on merge, not on insert. Duplicates coexist until the merge scheduler runs. `SELECT ... FINAL` forces read-time dedup at a performance cost - Small inserts cause a "too many parts" error. Batch inserts into blocks of at least tens of thousands of rows - `ENGINE` is required in every `CREATE TABLE`. `ORDER BY` is fixed at creation
 
-  #strong[Redshift] - `COPY` from S3 is the only performant bulk load. Row-by-row `INSERT` is orders of magnitude slower - `VACUUM` is required after heavy deletes -- dead rows inflate scan time and storage until cleaned up - Sort keys and dist keys are fixed at creation. Changing them requires a full table rebuild - Hard limit of 1,600 columns per table
+  #strong[Redshift] - `COPY` from S3 is the only performant bulk load. Row-by-row `INSERT` is orders of magnitude slower - Automatic VACUUM DELETE runs in the background for most cases, but manual VACUUM may still be needed after heavy bulk deletes or to reclaim sort order - Sort keys and dist keys are changeable via `ALTER TABLE`, but the background rewrite can be slow on large tables -- plan them at creation - Hard limit of 1,600 columns per table
 
   == Engine Cheat Sheet
   <engine-cheat-sheet>
@@ -8864,17 +8857,17 @@
       table.header([Table], [PK], [Key columns], [ECL role], [Primary patterns]),
       table.hline(),
       [`orders`],
-      [`id`],
-      [`customer_id`, `status`, `created_at`, `updated_at`],
+      [`order_id`],
+      [`customer_id`, `status`, `total`, `created_at`, `updated_at`],
       [Broken cursor showcase],
       [0301, 0303, 0310],
       [`order_lines`],
       [`id`],
-      [`order_id`, `product_id`, `quantity`, `unit_price`],
+      [`order_id`, `product_id`, `line_num`, `quantity`, `unit_price`],
       [Detail with no timestamp],
       [0304, 0308],
       [`customers`], [`id`], [`name`, `email`, `is_active`], [Soft-delete dimension], [0201, 0106],
-      [`products`], [`id`], [`name`, `price`], [Schema drift case], [0201, 0105, 0209],
+      [`products`], [`id`], [`name`, `price`, `category`], [Schema drift case], [0201, 0105, 0209],
       [`invoices`],
       [`id`],
       [`order_id`, `status`, `total_amount`, `created_at`, `updated_at`],
@@ -9057,7 +9050,7 @@
     "Never build your own orchestrator",
   )[Every team that builds a custom orchestrator eventually rebuilds 60% of Airflow, poorly. The "we just need a simple scheduler" conversation leads to a homegrown system with no UI, no backfill capability, no alerting, and a bus factor of one. Use a real orchestrator and spend the engineering time on the pipelines.]
 
-  == Author's Recommendation
+  == My Recommendation
   <authors-recommendation>
   For a new ECL project, start with #strong[Dagster]. The asset model maps 1:1 to the "one asset = one destination table" structure this book is built around, partition-based backfills are the hardest thing to build from scratch, and inline asset checks plus freshness policies implement half of Part VI as configuration. The asset graph and partition-based backfills have justified the learning curve many times over.
 
@@ -9387,7 +9380,7 @@
 
   #strong[ECL weaknesses:]
   - `PRIMARY KEY` and `UNIQUE` constraints are metadata hints only -- deduplication is entirely your responsibility
-  - Grants don't survive `SWAP WITH` or `CREATE TABLE ... CLONE`, requiring `FUTURE GRANTS` or a re-grant step after every swap
+  - Grants follow the table object, not the name -- after `SWAP WITH` or `CLONE`, consumers lose access unless you re-grant or use `FUTURE GRANTS`
   - Reclustering costs warehouse credits in the background; heavily mutated tables accumulate significant charges
   - No partition filter enforcement -- consumers can full-scan any table without warning
 
@@ -9422,8 +9415,8 @@
   - Spectrum queries S3 data directly without loading, useful for cold-tier data
 
   #strong[ECL weaknesses:]
-  - Sort keys and dist keys are fixed at table creation -- changing them requires a full table rebuild
-  - `VACUUM` is required after heavy deletes; dead rows inflate scan time until cleaned up
+  - Sort keys and dist keys are changeable via `ALTER TABLE`, but the background rewrite can take hours on large tables -- plan them at creation
+  - Automatic VACUUM DELETE handles most cleanup, but manual VACUUM may still be needed after heavy bulk deletes or to restore sort order
   - Row-by-row `INSERT` is orders of magnitude slower than `COPY` -- every load path must stage through S3
   - Hard limit of 1,600 columns per table, and type changes require table rebuilds
 
@@ -9444,7 +9437,7 @@
   #strong[ECL weaknesses:]
   - Single-writer architecture -- concurrent pipeline runs writing to the same database need external coordination (one run at a time, or separate databases per table)
   - No partitioning in the BigQuery/Snowflake sense. Hive-partitioned Parquet on object storage or min/max index pruning, but no `PARTITION BY` in DDL, no partition-level replace, no `require_partition_filter`
-  - No `QUALIFY` syntax -- dedup queries need the subquery wrapper, same as PostgreSQL and Redshift
+  - `QUALIFY` is supported (since v0.5) -- dedup queries work the same as BigQuery and Snowflake
   - At multi-TB scale with many concurrent dashboard users, MotherDuck costs converge toward Snowflake territory. The cost advantage is strongest for small teams with moderate data
   - Self-hosting DuckDB on a dedicated server (Hetzner, bare metal) is zero-cost-per-query for a single client, but for multi-client pipelines the single-writer constraint means one database file per client with no shared users, roles, access control, or high availability -- at that point the engineering overhead of building isolation exceeds the hosting savings
 
@@ -9497,7 +9490,7 @@
       [`CREATE OR REPLACE` or `TRUNCATE` + `INSERT`. Free locally],
       [`INSERT` or `COPY FROM` Parquet. Free locally],
       [`MERGE INTO` (1.4+) or `INSERT ON CONFLICT`. Free locally; MotherDuck charges per GB scanned],
-      [Subquery dedup view (no `QUALIFY`) + `CREATE OR REPLACE` compaction. Free locally],
+      [`QUALIFY` dedup view + `CREATE OR REPLACE` compaction. Free locally],
     )],
     kind: table,
   )
