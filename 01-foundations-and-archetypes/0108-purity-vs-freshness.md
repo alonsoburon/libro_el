@@ -4,7 +4,7 @@ aliases: []
 tags:
   - pattern/foundations
   - chapter/part-1
-status: first_iteration
+status: draft
 created: 2026-03-08
 updated: 2026-03-08
 ---

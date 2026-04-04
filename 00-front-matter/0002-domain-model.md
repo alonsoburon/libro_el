@@ -3,7 +3,7 @@ title: Domain Model
 aliases: []
 tags:
   - front-matter
-status: first_iteration
+status: draft
 created: 2026-03-08
 updated: 2026-03-09
 ---
