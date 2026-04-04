@@ -1,40 +1,37 @@
-#import "theme.typ": gruvbox, ecl-theme
+#import "theme.typ": *
 
 #set document(title: "ECL Patterns", author: "Alonso Burón")
 
 #show: ecl-theme
 
-// Front Matter
+// === Front Matter (roman numerals) ===
+#set page(numbering: "i")
 #include "ch00-front-matter.typ"
-#pagebreak()
 
-// Part I -- Foundations & Source Archetypes
+// === Main Matter (arabic, starting at 1) ===
+#set page(numbering: "1")
+#counter(page).update(1)
+
+#ecl-part-page("I", "Foundations & Source Archetypes")
 #include "ch01-foundations.typ"
-#pagebreak()
 
-// Part II -- Full Replace Patterns
+#ecl-part-page("II", "Full Replace Patterns")
 #include "ch02-full-replace.typ"
-#pagebreak()
 
-// Part III -- Incremental Extraction Patterns
+#ecl-part-page("III", "Incremental Extraction Patterns")
 #include "ch03-incremental.typ"
-#pagebreak()
 
-// Part IV -- Load Strategies
+#ecl-part-page("IV", "Load Strategies")
 #include "ch04-load-strategies.typ"
-#pagebreak()
 
-// Part V -- The Conforming Playbook
+#ecl-part-page("V", "The Conforming Playbook")
 #include "ch05-conforming.typ"
-#pagebreak()
 
-// Part VI -- Operating the Pipeline
+#ecl-part-page("VI", "Operating the Pipeline")
 #include "ch06-operating.typ"
-#pagebreak()
 
-// Part VII -- Serving the Destination
+#ecl-part-page("VII", "Serving the Destination")
 #include "ch07-serving.typ"
-#pagebreak()
 
-// Appendix
+#ecl-part-page("VIII", "Appendix")
 #include "ch08-appendix.typ"

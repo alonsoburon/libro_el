@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Timestamp Extraction Foundations
 <timestamp-extraction-foundations>
 #quote(block: true)[
@@ -7,7 +6,6 @@
 ]
 
 == The Problem
-<the-problem>
 Incremental extraction needs a signal: which rows changed since the last run? `updated_at` is the obvious answer -- it's on most tables, queryable, and cheap to filter. The difficulty is that it's maintained by the application layer, not the database. That means it works only if every write path remembers to update it -- triggers, ORMs, admin scripts, bulk imports. In practice, at least one always forgets.
 
 Two patterns build on this signal: 0302 tracks a high-water mark between runs; 0303 always re-extracts a fixed trailing window. Both fail the same way when the signal is wrong.
@@ -37,7 +35,7 @@ WHERE order_id IN (1001, 1002);
   , kind: table
   )
 
-Order 1002 was just inserted. `updated_at` is NULL. Invisible to any `updated_at`-based filter. See 0310-create-vs-update-separation.
+Order 1002 was just inserted. `updated_at` is NULL. Invisible to any `updated_at`-based filter. See @create-vs-update-separation.
 
 #strong[Bulk operations bypass triggers.] Imports, backfills, admin scripts that write directly to the table -- they skip the trigger layer entirely and land rows with stale or null `updated_at`. The person running the script rarely knows your trigger exists.
 
@@ -77,16 +75,15 @@ A periodic full replace resets all of it. How often do you see corrections that 
   , kind: table
   )
 
-If a full table reload is too expensive, scope the full replace to a rolling window of recent partitions -- see 0204-scoped-full-replace.
+If a full table reload is too expensive, scope the full replace to a rolling window of recent partitions -- see @scoped-full-replace.
 
 // ---
 
 == Related Patterns
-<related-patterns>
-- 0302-cursor-based-extraction -- track a high-water mark; extract only what changed since the last run
-- 0303-stateless-window-extraction -- extract a fixed trailing window every run; no cursor, no state
-- 0310-create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
-- 0201-full-scan-strategies -- when the table is small enough that incremental complexity isn't worth it
+- @cursor-based-timestamp-extraction -- track a high-water mark; extract only what changed since the last run
+- @stateless-window-extraction -- extract a fixed trailing window every run; no cursor, no state
+- @create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
+- @full-scan-strategies -- when the table is small enough that incremental complexity isn't worth it
 
 // ---
 
@@ -137,25 +134,24 @@ Both are valid. `MAX` from destination is the simpler default. External state ea
 <boundary-handling>
 Always use `>=` not `>`. A missed row has no recovery path; a duplicate row is handled by the destination's upsert.
 
-Add a small buffer on the lower bound (5--30 seconds) to absorb clock skew between source and extractor. The overlap mechanism is the same as 0309-late-arriving-data -- just measured in seconds instead of hours.
+Add a small buffer on the lower bound (5--30 seconds) to absorb clock skew between source and extractor. The overlap mechanism is the same as @late-arriving-data -- just measured in seconds instead of hours.
 
 // ---
 
 == By Corridor
-<by-corridor>
-#ecl-info("Transactional to columnar corridor")[PostgreSQL `TIMESTAMPTZ` maps cleanly to BigQuery `TIMESTAMP`. MySQL `DATETIME` has no timezone and second-level precision -- the buffer compensates. A cursor limits the extracted row count but doesn't eliminate the destination load cost -- see 0403-merge-upsert for the MERGE cost anatomy.]
+#ecl-info("Transactional to columnar corridor")[PostgreSQL `TIMESTAMPTZ` maps cleanly to BigQuery `TIMESTAMP`. MySQL `DATETIME` has no timezone and second-level precision -- the buffer compensates. A cursor limits the extracted row count but doesn't eliminate the destination load cost -- see @merge-upsert for the MERGE cost anatomy.]
 
-#ecl-warning("Transactional to transactional corridor")[`MAX(updated_at)` from the destination is cheap -- a simple indexed column scan. The buffer overlap produces duplicates; the destination upsert handles them (see 0403-merge-upsert).]
+#ecl-warning("Transactional to transactional corridor")[`MAX(updated_at)` from the destination is cheap -- a simple indexed column scan. The buffer overlap produces duplicates; the destination upsert handles them (see @merge-upsert).]
 
 // ---
 
 == Related Patterns
 <related-patterns-1>
-- 0301-timestamp-extraction-foundations -- when `updated_at` lies, validation checklist, periodic full replace
-- 0303-stateless-window-extraction -- cursor-free alternative; always re-extracts a fixed trailing window
-- 0305-sequential-id-cursor -- when `updated_at` doesn't exist but the PK is monotonic
-- 0406-reliable-loads -- checkpointing, atomicity, and what "confirmed successful load" actually means
-- 0310-create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
+- @timestamp-extraction-foundations -- when `updated_at` lies, validation checklist, periodic full replace
+- @stateless-window-extraction -- cursor-free alternative; always re-extracts a fixed trailing window
+- @sequential-id-cursor -- when `updated_at` doesn't exist but the PK is monotonic
+- @reliable-loads -- checkpointing, atomicity, and what "confirmed successful load" actually means
+- @create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
 
 // ---
 
@@ -212,13 +208,13 @@ If you're running daily or less, or the table is small-to-moderate, the stateles
 
 == Window Size x Run Frequency
 <window-size-x-run-frequency>
-This is the knob that matters. A 7-day window running daily costs X. The same window running hourly costs 24X -- both in source query cost and destination load cost (see 0403-merge-upsert for the cost anatomy).
+This is the knob that matters. A 7-day window running daily costs X. The same window running hourly costs 24X -- both in source query cost and destination load cost (see @merge-upsert for the cost anatomy).
 
 Size the window for correctness (it must cover your correction lag). Then set run frequency for cost. If the cost is too high, the answer is usually to run less often -- not to shrink the window below what correctness requires.
 
 == Align Windows to Partition Boundaries
 <align-windows-to-partition-boundaries>
-If the destination is partitioned by date, align the window to complete days. A 7-day window that spans 8 calendar days touches 8 partitions instead of 7. See 0403-merge-upsert for why partition alignment matters in columnar engines.
+If the destination is partitioned by date, align the window to complete days. A 7-day window that spans 8 calendar days touches 8 partitions instead of 7. See @merge-upsert for why partition alignment matters in columnar engines.
 
 == Multiple Windows
 <multiple-windows>
@@ -257,19 +253,19 @@ Load with append-and-materialize (0404) to keep the per-run cost near zero. At i
 
 == By Corridor
 <by-corridor-1>
-#ecl-info("Transactional to columnar corridor")[The source query is cheap (indexed `updated_at` scan). The load cost is where window size and run frequency multiply -- see 0403-merge-upsert and 0603-cost-monitoring. MySQL `DATETIME` second-level precision is a non-issue with a window measured in days.]
+#ecl-info("Transactional to columnar corridor")[The source query is cheap (indexed `updated_at` scan). The load cost is where window size and run frequency multiply -- see @merge-upsert and @cost-monitoring. MySQL `DATETIME` second-level precision is a non-issue with a window measured in days.]
 
-#ecl-warning("Transactional to transactional corridor")[Cheap on both sides. The source query is the same indexed scan. Load cost scales with batch size, not table size -- high-frequency runs are viable here. See 0403-merge-upsert for the upsert mechanics.]
+#ecl-warning("Transactional to transactional corridor")[Cheap on both sides. The source query is the same indexed scan. Load cost scales with batch size, not table size -- high-frequency runs are viable here. See @merge-upsert for the upsert mechanics.]
 
 // ---
 
 == Related Patterns
 <related-patterns-2>
-- 0301-timestamp-extraction-foundations -- when `updated_at` lies, validation checklist, periodic full replace
-- 0302-cursor-based-extraction -- stateful alternative; earns its overhead on large, high-frequency tables
-- 0309-late-arriving-data -- sizing the overlap for late arrivals
-- 0310-create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
-- 0204-scoped-full-replace -- combining a full-replace zone with a stateless window layer
+- @timestamp-extraction-foundations -- when `updated_at` lies, validation checklist, periodic full replace
+- @cursor-based-timestamp-extraction -- stateful alternative; earns its overhead on large, high-frequency tables
+- @late-arriving-data -- sizing the overlap for late arrivals
+- @create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
+- @scoped-full-replace -- combining a full-replace zone with a stateless window layer
 
 // ---
 
@@ -292,7 +288,6 @@ Re-extracting all lines on every run works until the table crosses a few million
 // ---
 
 == The Pattern
-<the-pattern>
 Use the header's cursor to figure out which detail rows to pull. Two ways to write it -- which one is better depends on your source engine and how the query planner handles it.
 
 #strong[Subquery filter:]
@@ -339,7 +334,7 @@ JOIN orders o ON s.order_id = o.order_id
 WHERE o.updated_at >= :last_run;
 ```
 
-Each join multiplies the row count and the assumptions. You're trusting two foreign key relationships and two intermediate tables to be correct and up to date. At three hops, the scoped full replace in 0204-scoped-full-replace is almost certainly simpler, cheaper, and more reliable.
+Each join multiplies the row count and the assumptions. You're trusting two foreign key relationships and two intermediate tables to be correct and up to date. At three hops, the scoped full replace in @scoped-full-replace is almost certainly simpler, cheaper, and more reliable.
 
 // ---
 
@@ -367,33 +362,33 @@ The common thread: the line mutated, the header didn't, and the cursor is blind 
 
 === The line disappears entirely
 <the-line-disappears-entirely>
-`invoice_lines` get hard-deleted independently of the header -- not just via cascade. In SAP B1, removing a single line triggers a delete+reinsert of ALL surviving lines with new `LineNum` values. No tombstone, no change log entry. The cursor has nothing to detect because the row is gone and the header may not have registered the event. See 0306-hard-delete-detection.
+`invoice_lines` get hard-deleted independently of the header -- not just via cascade. In SAP B1, removing a single line triggers a delete+reinsert of ALL surviving lines with new `LineNum` values. No tombstone, no change log entry. The cursor has nothing to detect because the row is gone and the header may not have registered the event. See @hard-delete-detection.
 
 When this happens, you have two good options:
 
 + #strong[Accept the blind spot.] The periodic full replace catches everything the cursor misses. If your SLA tolerates the lag, this is the cheapest approach and the one we use most often.
 
-+ #strong[Split by document lifecycle.] Extract all open documents from the source (they're mutable, re-extract everything), combine with only the recently modified closed documents (they're frozen, cursor is reliable). This gives you full coverage of the mutable set without re-extracting the entire table -- but the combination logic is nontrivial, especially when documents transition between open and closed between runs, or when lines get hard-deleted from open documents. 0307-open-closed-documents covers the full pattern.
++ #strong[Split by document lifecycle.] Extract all open documents from the source (they're mutable, re-extract everything), combine with only the recently modified closed documents (they're frozen, cursor is reliable). This gives you full coverage of the mutable set without re-extracting the entire table -- but the combination logic is nontrivial, especially when documents transition between open and closed between runs, or when lines get hard-deleted from open documents. @openclosed-documents covers the full pattern.
 
-For detail tables where even these approaches aren't enough, see 0308-detail-without-timestamp.
+For detail tables where even these approaches aren't enough, see @detail-without-timestamp.
 
 // ---
 
 == By Corridor
 <by-corridor-2>
-#ecl-warning("Transactional to columnar corridor")[The join runs on the source, so extraction cost is a source-side index scan. Wide detail tables (many columns per line) amplify the load cost even for moderate row counts -- see 0403-merge-upsert and 0603-cost-monitoring.]
+#ecl-warning("Transactional to columnar corridor")[The join runs on the source, so extraction cost is a source-side index scan. Wide detail tables (many columns per line) amplify the load cost even for moderate row counts -- see @merge-upsert and @cost-monitoring.]
 
-#ecl-info("Transactional to transactional corridor")[Cheap on both sides. Extraction is the same index scan. The composite key (`order_id, line_num`) must be indexed on the destination for the upsert to perform -- see 0403-merge-upsert.]
+#ecl-info("Transactional to transactional corridor")[Cheap on both sides. Extraction is the same index scan. The composite key (`order_id, line_num`) must be indexed on the destination for the upsert to perform -- see @merge-upsert.]
 
 // ---
 
 == Related Patterns
 <related-patterns-3>
-- 0301-timestamp-extraction-foundations -- `updated_at` reliability and validation
-- 0302-cursor-based-extraction -- the header-side cursor this pattern depends on
-- 0307-open-closed-documents -- using document lifecycle to scope detail extraction
-- 0308-detail-without-timestamp -- when the header cursor can't cover detail changes at all
-- 0204-scoped-full-replace -- when cascading joins get deep enough that scoped full replace is simpler
+- @timestamp-extraction-foundations -- `updated_at` reliability and validation
+- @cursor-based-timestamp-extraction -- the header-side cursor this pattern depends on
+- @openclosed-documents -- using document lifecycle to scope detail extraction
+- @detail-without-timestamp -- when the header cursor can't cover detail changes at all
+- @scoped-full-replace -- when cascading joins get deep enough that scoped full replace is simpler
 
 // ---
 
@@ -458,31 +453,31 @@ WHERE event_id >= :last_id - 100;
 
 The overlap re-extracts, at a minimum, the last 100 IDs on every run. The upsert handles duplicates. Size the buffer to your worst observed out-of-order gap -- 100 covers most `CACHE` configurations.
 
-Hard deletes are invisible too, same as with any cursor -- see 0306-hard-delete-detection.
+Hard deletes are invisible too, same as with any cursor -- see @hard-delete-detection.
 
 // ---
 
 == Composite Keys
 <composite-keys>
-When the primary key is a composite (`order_id + line_num`, `warehouse_id + sku`), there's no natural ordering to build a cursor on. This pattern doesn't apply. See 0304-cursor-from-another-table for borrowing a timestamp from a related table, or 0308-detail-without-timestamp when no timestamp is available anywhere in the relationship.
+When the primary key is a composite (`order_id + line_num`, `warehouse_id + sku`), there's no natural ordering to build a cursor on. This pattern doesn't apply. See @cursor-from-another-table for borrowing a timestamp from a related table, or @detail-without-timestamp when no timestamp is available anywhere in the relationship.
 
 // ---
 
 == By Corridor
 <by-corridor-3>
-#ecl-info("Transactional to columnar corridor")[For truly append-only sources, the extraction is a simple indexed range scan. The load can use pure APPEND instead of MERGE -- see 0402-append-only. If the table turns out to have occasional updates (the soft rule breaks), a periodic full replace catches them.]
+#ecl-info("Transactional to columnar corridor")[For truly append-only sources, the extraction is a simple indexed range scan. The load can use pure APPEND instead of MERGE -- see @append-only-load. If the table turns out to have occasional updates (the soft rule breaks), a periodic full replace catches them.]
 
-#ecl-warning("Transactional to transactional corridor")[Same indexed range scan on the source. The load strategy depends on whether the source is truly immutable -- see 0402-append-only for append-only and 0403-merge-upsert for upsert.]
+#ecl-warning("Transactional to transactional corridor")[Same indexed range scan on the source. The load strategy depends on whether the source is truly immutable -- see @append-only-load for append-only and @merge-upsert for upsert.]
 
 // ---
 
 == Related Patterns
 <related-patterns-4>
-- 0301-timestamp-extraction-foundations -- when a timestamp IS available, prefer it
-- 0402-append-only -- when the source is guaranteed immutable, the load strategy simplifies further
-- 0306-hard-delete-detection -- hard deletes are invisible to any cursor
-- 0310-create-vs-update-separation -- when you need inserts AND updates but only have a cursor for inserts
-- 0106-hard-rules-soft-rules -- "this table is append-only" is a soft rule until the schema enforces it
+- @timestamp-extraction-foundations -- when a timestamp IS available, prefer it
+- @append-only-load -- when the source is guaranteed immutable, the load strategy simplifies further
+- @hard-delete-detection -- hard deletes are invisible to any cursor
+- @create-vs-update-separation -- when you need inserts AND updates but only have a cursor for inserts
+- @hard-rules-soft-rules -- "this table is append-only" is a soft rule until the schema enforces it
 
 // ---
 
@@ -556,13 +551,13 @@ Run the source count immediately after the load completes -- the closer in time 
 
 For partitioned tables, compare counts per partition (`GROUP BY date_partition`) to narrow the scope before running a full ID comparison on only the divergent partitions.
 
-#ecl-warning("Count reconciliation as a gate")[Run `COUNT(\*)` on every incremental extraction as a cheap health check. It adds seconds to the run and catches drift early -- before it accumulates into a reconciliation problem. See 0614-reconciliation-patterns.]
+#ecl-warning("Count reconciliation as a gate")[Run `COUNT(\*)` on every incremental extraction as a cheap health check. It adds seconds to the run and catches drift early -- before it accumulates into a reconciliation problem. See @reconciliation-patterns.]
 
 // ---
 
 == Propagation
 <propagation>
-Once you've identified deleted IDs, the question is what to do with them in the destination. This is a load concern -- see 0403-merge-upsert for the mechanics.
+Once you've identified deleted IDs, the question is what to do with them in the destination. This is a load concern -- see @merge-upsert for the mechanics.
 
 Three options, in order of preference:
 
@@ -587,7 +582,7 @@ In SAP B1, removing a single `invoice_line` triggers a delete+reinsert of ALL su
 
 == By Corridor
 <by-corridor-4>
-#ecl-info("Transactional to columnar corridor")[The source-side `SELECT id` is the bottleneck -- a full table scan on a transactional engine. The destination-side comparison is cheap (single-column scan). Land source IDs into a staging table and run the diff in the destination to avoid pulling large ID sets through the orchestrator. For propagation, soft-delete is a metadata update on the destination -- see 0403-merge-upsert.]
+#ecl-info("Transactional to columnar corridor")[The source-side `SELECT id` is the bottleneck -- a full table scan on a transactional engine. The destination-side comparison is cheap (single-column scan). Land source IDs into a staging table and run the diff in the destination to avoid pulling large ID sets through the orchestrator. For propagation, soft-delete is a metadata update on the destination -- see @merge-upsert.]
 
 #ecl-warning("Transactional to transactional corridor")[Both sides are cheap for ID extraction if the primary key is indexed (it always is). The comparison can run in either system. `DELETE FROM destination WHERE id IN (...)` is a natural fit here -- transactional engines handle point deletes efficiently.]
 
@@ -595,11 +590,11 @@ In SAP B1, removing a single `invoice_line` triggers a delete+reinsert of ALL su
 
 == Related Patterns
 <related-patterns-5>
-- 0301-timestamp-extraction-foundations -- periodic full replace as the ultimate safety net for undetected deletes
-- 0302-cursor-based-extraction -- the cursor that can't see deletes
-- 0304-cursor-from-another-table -- blind to detail-level deletes when the header doesn't change
-- 0307-open-closed-documents -- open documents are the ones most likely to get hard-deleted
-- 0614-reconciliation-patterns -- count and hash reconciliation as ongoing health checks
+- @timestamp-extraction-foundations -- periodic full replace as the ultimate safety net for undetected deletes
+- @cursor-based-timestamp-extraction -- the cursor that can't see deletes
+- @cursor-from-another-table -- blind to detail-level deletes when the header doesn't change
+- @openclosed-documents -- open documents are the ones most likely to get hard-deleted
+- @reconciliation-patterns -- count and hash reconciliation as ongoing health checks
 
 // ---
 
@@ -748,13 +743,13 @@ In systems with long-lived open documents -- consulting invoices open for months
 
 == Related Patterns
 <related-patterns-6>
-- 0304-cursor-from-another-table -- the simpler pattern that teases this one; this is where its blind spots get resolved
-- 0306-hard-delete-detection -- open documents are the ones most likely to get hard-deleted; closed-side deletes need this
-- 0302-cursor-based-extraction -- the cursor for the closed-document side
-- 0303-stateless-window-extraction -- absorbs the reopen gap if the window is wide enough
-- 0308-detail-without-timestamp -- when even the open/closed split can't cover detail changes
-- 0106-hard-rules-soft-rules -- "closed invoices are immutable" is backed by law in most jurisdictions
-- 0204-scoped-full-replace -- the alternative when the open set grows too large
+- @cursor-from-another-table -- the simpler pattern that teases this one; this is where its blind spots get resolved
+- @hard-delete-detection -- open documents are the ones most likely to get hard-deleted; closed-side deletes need this
+- @cursor-based-timestamp-extraction -- the cursor for the closed-document side
+- @stateless-window-extraction -- absorbs the reopen gap if the window is wide enough
+- @detail-without-timestamp -- when even the open/closed split can't cover detail changes
+- @hard-rules-soft-rules -- "closed invoices are immutable" is backed by law in most jurisdictions
+- @scoped-full-replace -- the alternative when the open set grows too large
 
 // ---
 
@@ -781,7 +776,7 @@ The header cursor is blind to all of these because the signal it depends on neve
 // ---
 
 == The Default: 0304
-<the-default-03-incremental-patterns0304-cursor-from-another-table0304>
+<the-default-0304>
 When independent detail mutations are rare, the 0304 approach is still the right default -- just with the explicit acknowledgment that it only catches detail changes that coincide with header changes, and the periodic full replace catches the rest.
 
 The strategies below apply when that blind spot is too wide.
@@ -886,11 +881,11 @@ Since the header cursor misses these changes entirely, two responses are worth c
 
 == Related Patterns
 <related-patterns-7>
-- 0304-cursor-from-another-table -- the simpler case where header cursor is sufficient
-- 0306-hard-delete-detection -- detail rows can also be hard-deleted independently
-- 0307-open-closed-documents -- document lifecycle split applied to headers; can also apply to detail tables independently
-- 0208-hash-based-change-detection -- the full hash-based pattern
-- 0301-timestamp-extraction-foundations -- periodic full replace as the safety net
+- @cursor-from-another-table -- the simpler case where header cursor is sufficient
+- @hard-delete-detection -- detail rows can also be hard-deleted independently
+- @openclosed-documents -- document lifecycle split applied to headers; can also apply to detail tables independently
+- @hash-based-change-detection -- the full hash-based pattern
+- @timestamp-extraction-foundations -- periodic full replace as the safety net
 
 // ---
 
@@ -979,7 +974,7 @@ Oracle BI Applications (OBIA) formalized this pattern as `PRUNE_DAYS` -- a confi
 
 == Cost of Overscanning
 <cost-of-overscanning>
-A wider overlap re-extracts more rows that haven't changed, increasing both source query cost and destination load cost (see 0403-merge-upsert for the load side). The tradeoff is correctness vs.~cost, framed by 0108-purity-vs-freshness: an hours-long overlap adds negligible cost, a days-long overlap is moderate depending on mutation rate, and a weeks-long overlap starts approaching a full replace -- at which point a scoped full replace (0204) may be simpler than a cursor with a massive overlap.
+A wider overlap re-extracts more rows that haven't changed, increasing both source query cost and destination load cost (see @merge-upsert for the load side). The tradeoff is correctness vs.~cost, framed by @purity-vs-freshness: an hours-long overlap adds negligible cost, a days-long overlap is moderate depending on mutation rate, and a weeks-long overlap starts approaching a full replace -- at which point a scoped full replace (0204) may be simpler than a cursor with a massive overlap.
 
 // ---
 
@@ -999,13 +994,13 @@ Late-arriving data is one of the hardest pipeline problems to explain to non-tec
 
 + #strong["Why can't the data just be right?"] Because "right" has a cost. A 7-day overlap window on a table with 100 million rows re-extracts 7 days of data on every run to catch the rare late arrival. A 30-day overlap re-extracts 30 days. At some point, the cost of absolute correctness exceeds the cost of the occasional missing row. The overlap window is where we draw that line, and the full replace is the safety net behind it.
 
-#ecl-tip("Frame it as a tradeoff")[Stakeholders respond better to \"we chose a 7-day safety margin that catches 99% of late arrivals, with a weekly full reload as a backstop\" than to \"our pipeline might miss some rows.\" Both are true, but the first version communicates a deliberate engineering decision. See 0604-sla-management for how to formalize these guarantees into measurable SLAs.]
+#ecl-tip("Frame it as a tradeoff")[Stakeholders respond better to \"we chose a 7-day safety margin that catches 99% of late arrivals, with a weekly full reload as a backstop\" than to \"our pipeline might miss some rows.\" Both are true, but the first version communicates a deliberate engineering decision. See @sla-management for how to formalize these guarantees into measurable SLAs.]
 
 // ---
 
 == By Corridor
 <by-corridor-7>
-#ecl-warning("Transactional to columnar corridor")[The source-side extraction cost scales with the overlap (wider window = more rows scanned on an indexed `updated_at`). The destination-side cost depends on how many partitions the overlap touches -- see 0403-merge-upsert and 0104 for partition rewrite behavior per engine.]
+#ecl-warning("Transactional to columnar corridor")[The source-side extraction cost scales with the overlap (wider window = more rows scanned on an indexed `updated_at`). The destination-side cost depends on how many partitions the overlap touches -- see @merge-upsert and 0104 for partition rewrite behavior per engine.]
 
 #ecl-info("Transactional to transactional corridor")[Both sides scale with batch size, not table size, so wider overlaps are cheap. A 7-day overlap on a table with 1,000 changes per day re-extracts \~7,000 rows per run -- negligible for a transactional upsert.]
 
@@ -1013,11 +1008,11 @@ Late-arriving data is one of the hardest pipeline problems to explain to non-tec
 
 == Related Patterns
 <related-patterns-8>
-- 0301-timestamp-extraction-foundations -- the periodic full replace as the ultimate safety net for anything the overlap misses
-- 0302-cursor-based-extraction -- boundary handling buffer is the same mechanism at small scale
-- 0303-stateless-window-extraction -- the stateless window has overlap built in by design
-- 0108-purity-vs-freshness -- the tradeoff between correctness and cost that drives overlap sizing
-- 0204-scoped-full-replace -- when the overlap grows large enough that a scoped full replace is simpler
+- @timestamp-extraction-foundations -- the periodic full replace as the ultimate safety net for anything the overlap misses
+- @cursor-based-timestamp-extraction -- boundary handling buffer is the same mechanism at small scale
+- @stateless-window-extraction -- the stateless window has overlap built in by design
+- @purity-vs-freshness -- the tradeoff between correctness and cost that drives overlap sizing
+- @scoped-full-replace -- when the overlap grows large enough that a scoped full replace is simpler
 
 // ---
 
@@ -1063,7 +1058,6 @@ Orders 1005, 1004, and 1002 were inserted but never updated -- `updated_at` is N
 // ---
 
 == Detection
-<detection>
 Before building any workaround, confirm the problem exists:
 
 ```sql
@@ -1215,18 +1209,18 @@ In all cases, the periodic full replace from 0301 catches anything the workaroun
 
 == By Corridor
 <by-corridor-8>
-#ecl-warning("Transactional to columnar corridor")[The dual cursor produces two result sets that get UNIONed before loading. The duplicate rows from the overlap between insert and update cursors are handled by the destination's MERGE -- see 0403-merge-upsert. The COALESCE approach benefits from a functional index on the source side; without one, the extraction query is a full scan on every run.]
+#ecl-warning("Transactional to columnar corridor")[The dual cursor produces two result sets that get UNIONed before loading. The duplicate rows from the overlap between insert and update cursors are handled by the destination's MERGE -- see @merge-upsert. The COALESCE approach benefits from a functional index on the source side; without one, the extraction query is a full scan on every run.]
 
-#ecl-info("Transactional to transactional corridor")[Both cursors should be cheap indexed range scans on the source. The destination upsert (`ON CONFLICT ... DO UPDATE`) absorbs overlap duplicates naturally -- see 0403-merge-upsert.]
+#ecl-info("Transactional to transactional corridor")[Both cursors should be cheap indexed range scans on the source. The destination upsert (`ON CONFLICT ... DO UPDATE`) absorbs overlap duplicates naturally -- see @merge-upsert.]
 
 // ---
 
 == Related Patterns
 <related-patterns-9>
-- 0301-timestamp-extraction-foundations -- the "trigger fires on UPDATE only" failure mode that leads here
-- 0302-cursor-based-extraction -- the standard cursor that works once the source is fixed
-- 0305-sequential-id-cursor -- the insert-only cursor used in the dual-cursor approach when `created_at` doesn't exist
-- 0309-late-arriving-data -- overlap buffer on both cursors absorbs the same class of timing problems
-- 0403-merge-upsert -- handles the duplicate rows from dual-cursor overlap
+- @timestamp-extraction-foundations -- the "trigger fires on UPDATE only" failure mode that leads here
+- @cursor-based-timestamp-extraction -- the standard cursor that works once the source is fixed
+- @sequential-id-cursor -- the insert-only cursor used in the dual-cursor approach when `created_at` doesn't exist
+- @late-arriving-data -- overlap buffer on both cursors absorbs the same class of timing problems
+- @merge-upsert -- handles the duplicate rows from dual-cursor overlap
 
 // ---

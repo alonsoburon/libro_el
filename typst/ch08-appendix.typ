@@ -1,5 +1,4 @@
-#import "theme.typ": ecl-danger, ecl-info, ecl-theme, ecl-tip, ecl-warning, gruvbox
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = SQL Dialect Reference
 <sql-dialect-reference>
 The lookup table for every operation that differs between engines. When a pattern in the book says "syntax varies by engine," it points here. Six engines are covered: PostgreSQL, MySQL, and SQL Server as sources and transactional destinations; BigQuery, Snowflake, ClickHouse, and Redshift as columnar destinations.
@@ -223,7 +222,7 @@ See 0403 for cost analysis and when to use MERGE vs alternatives.
 // ---
 
 == Append and Materialize
-<append-and-materialize>
+<dialect-append-and-materialize>
 The alternative to MERGE on columnar engines: append every extraction to a log table, deduplicate with a view. Load cost drops to near-zero (pure INSERT), and the dedup cost shifts to read time.
 
 #strong[Append to log (all engines)]
@@ -574,19 +573,19 @@ Three decisions drive every ECL pipeline: how to extract, how to load, and how o
 
 == Extraction Strategy
 <extraction-strategy>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 The default path is the shortest: if the table fits a full scan, use full replace and stop thinking. Every branch to the right adds complexity that should be earned, not assumed.
 
 == Load Strategy
 <load-strategy>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 On transactional destinations, MERGE is cheap -- use it by default. On columnar destinations, append-and-materialize avoids the per-run MERGE cost and shifts deduplication to read time or a scheduled compaction job.
 
 == Freshness Tier
 <freshness-tier>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 See 0608 for the full framework.
 
@@ -822,7 +821,7 @@ See 0106 for why these matter and how your pipeline should handle violations.
 
 == Relationships
 <relationships>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 `events`, `sessions`, and `metrics_daily` have no foreign keys into the schema above. `inventory` and `inventory_movements` connect to `products` via `sku_id` but have no `warehouses` table -- `warehouse_id` is a plain integer key.
 
@@ -975,7 +974,6 @@ For a new ECL project, start with #strong[Dagster]. The asset model maps 1:1 to 
 )
 
 == Related Patterns
-<related-patterns>
 - 0602 -- The health table that orchestrators populate
 - 0604 -- Freshness policies and SLA monitoring
 - 0606 -- Scheduling cadence and co-scheduling

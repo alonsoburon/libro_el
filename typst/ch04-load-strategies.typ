@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Full Replace Load
 <full-replace-load>
 #quote(block: true)[
@@ -9,7 +8,6 @@
 // ---
 
 == The Problem
-<the-problem>
 The extraction patterns in Part II give you a dataset -- full table, scoped range, set of partitions -- and this page covers the destination-side mechanics: how to swap it in.
 
 The naive TRUNCATE + INSERT leaves a window where the table is empty -- bad if anyone's querying it. Safer mechanisms exist, and the choice depends on how much downtime is acceptable and how much validation you want before committing.
@@ -33,10 +31,10 @@ This works when the load completes in seconds and no consumers query during the 
 // ---
 
 == Staging Swap
-<staging-swap>
+<load-staging-swap>
 Load into a staging table, validate, then swap to production. Consumers see complete data throughout -- the old version until the swap, the new version after.
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 The validation step between load and swap is the key advantage over truncate + insert. If the extraction returned garbage -- zero rows from a silent failure, a schema change that dropped columns, a type mismatch that cast everything to NULL -- you catch it before it reaches production.
 
@@ -45,7 +43,7 @@ The swap mechanism varies by engine: Snowflake has `ALTER TABLE SWAP WITH` (atom
 // ---
 
 == Partition Swap
-<partition-swap>
+<load-partition-swap>
 When the table is partitioned and you're replacing a slice -- yesterday's data, last week's events, a backfill of a specific month -- partition swap replaces only the affected partitions while leaving the rest untouched.
 
 ```sql
@@ -117,7 +115,6 @@ All three are idempotent -- rerunning the same extraction and load produces the 
 // ---
 
 == By Corridor
-<by-corridor>
 #ecl-warning("Transactional to columnar")[Staging swap is the standard for mutable tables. Partition swap for partitioned tables where only a slice needs replacing. Truncate + insert is viable for small reference tables loaded outside business hours. On BigQuery, prefer `bq cp` over DML for both staging swap and partition swap -- copy jobs are free (no slot consumption, no bytes-scanned charge) for same-region operations.]
 
 #ecl-info("Transactional to transactional")[All three mechanisms work cleanly. PostgreSQL's transactional TRUNCATE makes truncate + insert atomic for free -- a significant advantage over columnar destinations. For staging swap, the `RENAME` approach inside a transaction is atomic and instant. One caveat: foreign keys referencing the production table will break during the rename. Disable FK checks or drop and recreate constraints as part of the swap if other tables reference the target.]
@@ -125,14 +122,13 @@ All three are idempotent -- rerunning the same extraction and load produces the 
 // ---
 
 == Related Patterns
-<related-patterns>
-- 0202-partition-swap -- per-engine partition swap mechanics, partition alignment, validation
-- 0203-staging-swap -- per-engine staging swap mechanics, schema conventions, grant handling
-- 0109-idempotency -- full replace gets idempotency for free
-- 0402-append-only -- when the source is immutable and no replace is needed
-- 0403-merge-upsert -- when only changed rows should be loaded, not the full table
-- 0406-reliable-loads -- atomicity and failure recovery for loads
-- 0610-extraction-status-gates -- gating the load on extraction status to prevent loading 0 rows
+- @partition-swap -- per-engine partition swap mechanics, partition alignment, validation
+- @staging-swap -- per-engine staging swap mechanics, schema conventions, grant handling
+- @idempotency -- full replace gets idempotency for free
+- @append-only-load -- when the source is immutable and no replace is needed
+- @merge-upsert -- when only changed rows should be loaded, not the full table
+- @reliable-loads -- atomicity and failure recovery for loads
+- @extraction-status-gates -- gating the load on extraction status to prevent loading 0 rows
 
 // ---
 
@@ -153,7 +149,6 @@ The append-only load skips all of that: extract the new rows, INSERT them into t
 // ---
 
 == The Pattern
-<the-pattern>
 The extraction side uses a sequential ID cursor (0305) or a `created_at` timestamp cursor (0302) to scope the new rows:
 
 ```sql
@@ -262,12 +257,12 @@ This alignment gives you three operational advantages:
 
 == Related Patterns
 <related-patterns-1>
-- 0305-sequential-id-cursor -- the extraction cursor that feeds this load pattern
-- 0302-cursor-based-extraction -- cursor on `created_at` as an alternative extraction mechanism
-- 0401-full-replace -- for backfilling partitions on append-only tables
-- 0403-merge-upsert -- when the source is mutable and append-only doesn't apply
-- 0404-append-and-materialize -- append every version of mutable data and deduplicate downstream
-- 0106-hard-rules-soft-rules -- "this table is append-only" is a soft rule until the schema enforces it
+- @sequential-id-cursor -- the extraction cursor that feeds this load pattern
+- @cursor-based-timestamp-extraction -- cursor on `created_at` as an alternative extraction mechanism
+- @full-replace-load -- for backfilling partitions on append-only tables
+- @merge-upsert -- when the source is mutable and append-only doesn't apply
+- @append-and-materialize -- append every version of mutable data and deduplicate downstream
+- @hard-rules-soft-rules -- "this table is append-only" is a soft rule until the schema enforces it
 
 // ---
 
@@ -424,10 +419,7 @@ Neither outcome is good. Schema evolution needs handling #strong[before] the MER
 
 Some loaders offer `discard_row` and `discard_value` modes that drop data silently when the schema doesn't match. These are transformation decisions -- deciding what data to keep based on schema fit -- and they break the conforming boundary (0102). If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data.
 
-#block[
-#set enum(numbering: "1.", start: 3)
-+ #strong[Apply] -- if the policy is `evolve`, add the column to the destination (`ALTER TABLE ADD COLUMN`) before the MERGE runs. If it's `freeze`, the pipeline stops and alerts.
-]
+3. #strong[Apply] -- if the policy is `evolve`, add the column to the destination (`ALTER TABLE ADD COLUMN`) before the MERGE runs. If it's `freeze`, the pipeline stops and alerts.
 
 The recommended production default is `evolve` for new columns and `freeze` for type changes -- new nullable columns appearing in the destination are harmless (downstream queries that don't reference them are unaffected), while type changes that silently widen a column can break downstream logic. See 0609 for formalizing schema policies into enforceable contracts, and 0104 for how each engine handles `ALTER TABLE ADD COLUMN`.
 
@@ -470,15 +462,15 @@ Some loaders deduplicate staging automatically when a primary key is defined on 
 
 == Related Patterns
 <related-patterns-2>
-- 0302-cursor-based-extraction -- produces the batch that feeds the MERGE
-- 0303-stateless-window-extraction -- another extraction pattern that produces batches for MERGE
-- 0401-full-replace -- when the table is small enough that MERGE complexity isn't worth it
-- 0402-append-only -- when the source is immutable and MERGE isn't needed
-- 0404-append-and-materialize -- avoid MERGE entirely by appending every version and deduplicating downstream
-- 0405-hybrid-append-merge -- append for history, MERGE for current state
-- 0502-synthetic-keys -- when the source has no stable primary key for the MERGE
-- 0609-data-contracts -- schema policies that gate the MERGE on schema compatibility
-- 0613-duplicate-detection -- when non-unique keys cause duplicates to compound
+- @cursor-based-timestamp-extraction -- produces the batch that feeds the MERGE
+- @stateless-window-extraction -- another extraction pattern that produces batches for MERGE
+- @full-replace-load -- when the table is small enough that MERGE complexity isn't worth it
+- @append-only-load -- when the source is immutable and MERGE isn't needed
+- @append-and-materialize -- avoid MERGE entirely by appending every version and deduplicating downstream
+- @hybrid-append-merge -- append for history, MERGE for current state
+- @synthetic-keys -- when the source has no stable primary key for the MERGE
+- @data-contracts -- schema policies that gate the MERGE on schema compatibility
+- @duplicate-detection -- when non-unique keys cause duplicates to compound
 
 // ---
 
@@ -523,7 +515,7 @@ QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 
 
 Consumers query `orders` and see the current state. The view abstracts the log entirely.
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 // ---
 
@@ -588,7 +580,7 @@ FROM orders_log
 QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1;
 ```
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 Compaction replaces the log with the deduplicated result -- every key retains its latest version, all duplicate extractions and historical versions are gone. Storage reclaims completely and the view's `ROW_NUMBER()` scan drops to near-trivial size. Compaction frequency determines how large the log gets between runs and how heavy the dedup scan is at peak, not how stale the view is -- the view always reflects the latest version of every row in the log.
 
@@ -652,13 +644,13 @@ See 0706 for the full treatment of point-in-time reconstruction from append logs
 
 == Related Patterns
 <related-patterns-3>
-- 0108-purity-vs-freshness -- the tradeoff this pattern optimizes: cheaper loads → higher frequency → less drift → more purity
-- 0402-append-only -- the simpler case where the source is immutable and no dedup is needed
-- 0403-merge-upsert -- the per-run cost ceiling this pattern removes
-- 0405-hybrid-append-merge -- append for history + MERGE for current state, when the read-side cost of the dedup view is too high
-- 0401-full-replace -- the full-replace mechanics used when compacting the log to latest-only state
-- 0303-stateless-window-extraction -- the extraction pattern that produces mostly-duplicate batches by design
-- 0501-metadata-column-injection -- `_extracted_at` and `_batch_id` as the dedup ordering key
+- @purity-vs-freshness -- the tradeoff this pattern optimizes: cheaper loads → higher frequency → less drift → more purity
+- @append-only-load -- the simpler case where the source is immutable and no dedup is needed
+- @merge-upsert -- the per-run cost ceiling this pattern removes
+- @hybrid-append-merge -- append for history + MERGE for current state, when the read-side cost of the dedup view is too high
+- @full-replace-load -- the full-replace mechanics used when compacting the log to latest-only state
+- @stateless-window-extraction -- the extraction pattern that produces mostly-duplicate batches by design
+- @metadata-column-injection -- `_extracted_at` and `_batch_id` as the dedup ordering key
 
 // ---
 
@@ -686,7 +678,7 @@ Extract once. Load the same batch to two destinations in different engines, each
 
 + #strong[Transactional] (e.g.~PostgreSQL): current-state table via `INSERT ... ON CONFLICT UPDATE`. Cheap upsert, instant point queries. Operational consumers -- APIs, application backends, services that validate state before acting (e.g.~stock check before order confirmation) -- read from here without touching the log. Best for high-frequency, low-volume consumption
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 The log gives you replay and history; the current table gives you low-latency reads without dedup overhead. Neither destination is redundant because each serves a consumer type the other engine handles poorly.
 
@@ -796,7 +788,7 @@ The checkpoint is when you declare success -- advance the cursor, mark a partiti
 
 #strong[After confirmed load (correct).] The cursor advances only after the destination confirms the load succeeded -- a successful MERGE, a confirmed partition swap, a row count check on the target. This is the safe default: failures before confirmation mean the next run reprocesses the same batch, which is safe if the load is idempotent.
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 The gap between "load completes" and "cursor advances" is the vulnerability window. Keep it as small as possible -- ideally a single transaction that writes the data and updates the cursor atomically. When that's not possible (columnar engines don't support cross-table transactions), make the load idempotent so the reprocessing path is always safe.
 

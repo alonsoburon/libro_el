@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Monitoring and Observability
 <monitoring-and-observability>
 #quote(block: true)[
@@ -7,7 +6,6 @@
 ]
 
 == The Problem
-<the-problem>
 Most pipelines start with a single check: did it succeed? That binary signal covers maybe 40% of what can go wrong. A pipeline can succeed while producing garbage -- a query timed out and returned partial results, a full replace that used to take 3 minutes now takes 45 because the table grew 10x, the source schema changed and the loader silently dropped columns, or half the batch loaded while the other half timed out, leaving the destination with rows from two different points in time. Every one of these scenarios reports SUCCESS. Every one of them delivers broken data to consumers.
 
 Without structured #strong[observability];, you discover these problems when a stakeholder asks why the dashboard is wrong -- often days after the data actually broke. By that point the blast radius is wide: downstream models have consumed the bad data, reports have been sent, and the person asking is already frustrated. The monitoring pattern in this chapter is about catching those failures before anyone else does, ideally within minutes of the pipeline run that caused them.
@@ -61,13 +59,11 @@ Before diving into implementation, it's worth naming what you're actually lookin
 In a single-orchestrator setup, the orchestrator's native UI covers items 1 and 2 well enough. Items 3 and 4 come from the health table and the cost monitoring layer from 0603. In a multi-orchestrator setup, the health table is the only place where all four numbers converge -- which is why it exists.
 
 == The Pattern
-<the-pattern>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 The pattern is straightforward: after every pipeline run, append a row to a health table. One row per table per run, with the raw measurements needed to answer the four morning questions. Everything else -- dashboards, alerts, SLA reports -- is a query on top of this table. 0602 covers the schema, the column-by-column rationale, and how to populate it.
 
 == Anti-Patterns
-<anti-patterns>
 #ecl-warning("Don't confuse monitoring with alerting")[Monitoring is the dashboard you look at; alerting is the pager that wakes you up. They share data, but the threshold for "worth recording" is much lower than "worth paging someone." Record everything in the health table. Alert on a carefully tuned subset. See 0605 for how to calibrate the boundary.]
 
 #ecl-danger("Don't track everything equally")[Per-row metrics on a 100M-row table are storage, not observability. The health table is one row per table per run -- aggregate metrics only. If you need row-level diagnostics, run them ad hoc against the source or destination, not as part of every pipeline run.]
@@ -705,11 +701,10 @@ If your orchestrator can't group tables into a single schedule that runs them co
 #ecl-danger("Don't assume your limit is theirs")[Your orchestrator might allow 20 parallel tasks, but the on-prem database you're extracting from might buckle under 8. The constraint is always the weakest link -- your infrastructure #emph[or] the source, whichever gives first. Test against the actual source before increasing limits.]
 
 == Related Patterns
-<related-patterns>
-- 0604-sla-management -- schedule design directly affects whether SLAs are achievable
-- 0607-source-system-etiquette -- concurrency limits and safe hours protect the source
-- 0608-tiered-freshness -- different freshness tiers drive different schedule groups
-- 0308-detail-without-timestamp -- header-detail extraction strategy when the detail table has no cursor
+- @sla-management -- schedule design directly affects whether SLAs are achievable
+- @source-system-etiquette -- concurrency limits and safe hours protect the source
+- @tiered-freshness -- different freshness tiers drive different schedule groups
+- @detail-without-timestamp -- header-detail extraction strategy when the detail table has no cursor
 
 == What Comes Next
 <what-comes-next-4>
@@ -816,11 +811,11 @@ The relationship with the source team determines how much access you keep and ho
 
 == Related Patterns
 <related-patterns-1>
-- 0601-monitoring-observability -- source health metrics measure your impact
-- 0606-scheduling-and-dependencies -- safe hours, concurrency limits, and parallelism tradeoffs
-- 0610-extraction-status-gates -- timeout handling and explicit failure
-- 0201-full-scan-strategies -- full scans are the highest-impact extraction pattern
-- 0604-sla-management -- business hours and freshness expectations are agreed during SLA stage
+- @monitoring-and-observability -- source health metrics measure your impact
+- @scheduling-and-dependencies -- safe hours, concurrency limits, and parallelism tradeoffs
+- @extraction-status-gates -- timeout handling and explicit failure
+- @full-scan-strategies -- full scans are the highest-impact extraction pattern
+- @sla-management -- business hours and freshness expectations are agreed during SLA stage
 
 == What Comes Next
 <what-comes-next-5>
@@ -935,12 +930,12 @@ A table can move between tiers as business cycles shift. Month-end promotes some
 
 == Related Patterns
 <related-patterns-2>
-- 0604-sla-management -- SLA tiers define freshness requirements; tiered freshness implements them
-- 0606-scheduling-and-dependencies -- schedule structure and safe hours
-- 0603-cost-monitoring -- tiered freshness is partly a cost optimization strategy
-- 0205-rolling-window-replace -- the warm tier often uses rolling window
-- 0302-cursor-based-extraction -- the hot tier uses cursor-based incremental
-- 0108-purity-vs-freshness -- the fundamental tradeoff that tiered freshness navigates
+- @sla-management -- SLA tiers define freshness requirements; tiered freshness implements them
+- @scheduling-and-dependencies -- schedule structure and safe hours
+- @cost-monitoring -- tiered freshness is partly a cost optimization strategy
+- @rolling-window-replace -- the warm tier often uses rolling window
+- @cursor-based-timestamp-extraction -- the hot tier uses cursor-based incremental
+- @purity-vs-freshness -- the fundamental tradeoff that tiered freshness navigates
 
 // ---
 
@@ -1070,13 +1065,13 @@ The practical approach is to rely on a type-mapping library (SQLAlchemy, your lo
 
 == Related Patterns
 <related-patterns-3>
-- 0601-monitoring-observability -- schema fingerprinting and null rate tracking feed contracts
-- 0605-alerting-and-notifications -- contract violations trigger alerts
-- 0610-extraction-status-gates -- pre-load gate is the inline enforcement mechanism
-- 0604-sla-management -- freshness contract is the SLA expressed as a checkable rule
-- 0614-reconciliation-patterns -- volume contract enforcement post-load
-- 0403-merge-upsert -- schema evolution policy reasoning (why discard modes break conforming)
-- 0209-partial-column-loading -- the explicit alternative to silent column discarding
+- @monitoring-and-observability -- schema fingerprinting and null rate tracking feed contracts
+- @alerting-and-notifications -- contract violations trigger alerts
+- @extraction-status-gates -- pre-load gate is the inline enforcement mechanism
+- @sla-management -- freshness contract is the SLA expressed as a checkable rule
+- @reconciliation-patterns -- volume contract enforcement post-load
+- @merge-upsert -- schema evolution policy reasoning (why discard modes break conforming)
+- @partial-column-loading -- the explicit alternative to silent column discarding
 
 // ---
 
@@ -1146,7 +1141,9 @@ If the source is genuinely empty, you have a harder decision with no universal a
 
 Neither option is always right. Full replace tables almost always deserve a hold -- the destination wipeout is too destructive to let through. Incremental tables with partial data lean toward loading what you got, since some fresh data is better than none and the gap is bounded. For everything in between, the decision depends on the table, the consumer, and how much pain you're willing to absorb on upstream's behalf.
 
-Whichever you choose, make the decision explicit: log it in the health table, include it in the alert, and document the policy per table. A gate that silently holds data without anyone knowing it held is a judgment call that nobody can audit -- and the next engineer on call will make a different judgment if they don't know yours. \#\# Tradeoffs
+Whichever you choose, make the decision explicit: log it in the health table, include it in the alert, and document the policy per table. A gate that silently holds data without anyone knowing it held is a judgment call that nobody can audit -- and the next engineer on call will make a different judgment if they don't know yours.
+
+== Tradeoffs
 
 #figure(
   align(center)[#table(
@@ -1170,11 +1167,11 @@ Whichever you choose, make the decision explicit: log it in the health table, in
 
 == Related Patterns
 <related-patterns-4>
-- 0609-data-contracts -- defines enforcement points (when to check); this pattern defines gate mechanics (what to check)
-- 0605-alerting-and-notifications -- the gate triggers alerts
-- 0614-reconciliation-patterns -- count reconciliation is a post-load version of the same idea
-- 0406-reliable-loads -- cursor advancement gated on confirmed load success
-- 0303-stateless-window-extraction -- stateless windows reduce cursor risk but still benefit from load gating
+- @data-contracts -- defines enforcement points (when to check); this pattern defines gate mechanics (what to check)
+- @alerting-and-notifications -- the gate triggers alerts
+- @reconciliation-patterns -- count reconciliation is a post-load version of the same idea
+- @reliable-loads -- cursor advancement gated on confirmed load success
+- @stateless-window-extraction -- stateless windows reduce cursor risk but still benefit from load gating
 
 // ---
 
@@ -1271,13 +1268,13 @@ Both should be launchable from your orchestrator's UI without modifying code or 
 
 == Related Patterns
 <related-patterns-5>
-- 0202-partition-swap -- the mechanism for date-range backfills in partitioned tables
-- 0205-rolling-window-replace -- rolling window as a scoped backfill strategy
-- 0401-full-replace -- full table backfill
-- 0303-stateless-window-extraction -- no state to reset after backfill
-- 0607-source-system-etiquette -- safe hours and source protection
-- 0608-tiered-freshness -- cold-tier full replace is a scheduled backfill by another name
-- 0615-recovery-from-corruption -- backfill as a recovery mechanism after corruption
+- @partition-swap -- the mechanism for date-range backfills in partitioned tables
+- @rolling-window-replace -- rolling window as a scoped backfill strategy
+- @full-replace-load -- full table backfill
+- @stateless-window-extraction -- no state to reset after backfill
+- @source-system-etiquette -- safe hours and source protection
+- @tiered-freshness -- cold-tier full replace is a scheduled backfill by another name
+- @recovery-from-corruption -- backfill as a recovery mechanism after corruption
 
 // ---
 
@@ -1347,14 +1344,14 @@ The tension is failure fatigue. If the pipeline fails every single run because o
 
 == Related Patterns
 <related-patterns-6>
-- 0302-cursor-based-extraction -- cursor advances only after confirmed load; partial failures don't create gaps
-- 0303-stateless-window-extraction -- no cursor state, so partial failure recovery is automatic on next run
-- 0406-reliable-loads -- idempotent loads that survive interruption
-- 0602-health-table -- per-table per-run outcome tracking
-- 0605-alerting-and-notifications -- partial failures must alert, not just log
-- 0610-extraction-status-gates -- gates prevent load on suspect extraction results
-- 0613-duplicate-detection -- deduplication after a partially applied append
-- 0615-recovery-from-corruption -- when partial failure leads to corrupted data
+- @cursor-based-timestamp-extraction -- cursor advances only after confirmed load; partial failures don't create gaps
+- @stateless-window-extraction -- no cursor state, so partial failure recovery is automatic on next run
+- @reliable-loads -- idempotent loads that survive interruption
+- @the-health-table -- per-table per-run outcome tracking
+- @alerting-and-notifications -- partial failures must alert, not just log
+- @extraction-status-gates -- gates prevent load on suspect extraction results
+- @duplicate-detection -- deduplication after a partially applied append
+- @recovery-from-corruption -- when partial failure leads to corrupted data
 
 // ---
 
@@ -1388,7 +1385,6 @@ Checking for duplicates is fast -- a `GROUP BY pk HAVING COUNT(*) > 1` takes sec
 #ecl-warning("Cross-partition duplicates")[Partitioning the destination by `updated_at` or another mutable date makes cross-partition duplicates likely: a row lands in the March partition, gets updated in April, and the next extraction writes the updated version to the April partition while the March copy persists. Partitioning by an immutable business date (`order_date`, `invoice_date`) prevents the row from scattering across partitions -- every re-extraction targets the same partition, which is cheaper and correctly scoped. But #strong[partitioning alone doesn't deduplicate];: columnar engines don't enforce uniqueness, so you still need your load strategy (merge with the correct key, or a dedup view from 0404) to handle duplicates within the partition.]
 
 == Detection
-<detection>
 === Row Count Comparison
 <row-count-comparison>
 The simplest signal: compare `COUNT(*)` between source and destination. If the destination has more rows, you either have duplicates or you're missing hard-delete detection. Run hard-delete detection first (0306) -- if after cleaning up deleted rows the destination still has more rows than the source, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness constraints).
@@ -1407,7 +1403,9 @@ GROUP BY id
 HAVING COUNT(*) > 1;
 ```
 
-If you're particularly worried about duplicates and you have overhead to spare, add this at the end of your pipeline, after loading finishes. \#\#\# By Content Hash
+If you're particularly worried about duplicates and you have overhead to spare, add this at the end of your pipeline, after loading finishes.
+
+=== By Content Hash
 
 When there's no natural PK, hash the columns that identify the entity and group by hash -- count \> 1 means multiple rows for the same entity. Fix the key definition (0502) so it uses only the columns that define identity (revise your synthetic keys, maybe?), then deduplicate.
 
@@ -1471,12 +1469,12 @@ Fast to deploy, no DML, no data loss risk. If you rename the base table to `orde
 
 == Related Patterns
 <related-patterns-7>
-- 0401-full-replace -- full replace as a dedup-via-rebuild strategy
-- 0403-merge-upsert -- merge prevents duplicates when the PK is correct
-- 0404-append-and-materialize -- structural dedup via view, eliminates duplicate risk permanently
-- 0501-metadata-column-injection -- `_batch_id` identifies which load introduced duplicates
-- 0502-synthetic-keys -- content hashing for dedup when no natural PK exists
-- 0614-reconciliation-patterns -- row count mismatch is often the first signal of duplication
+- @full-replace-load -- full replace as a dedup-via-rebuild strategy
+- @merge-upsert -- merge prevents duplicates when the PK is correct
+- @append-and-materialize -- structural dedup via view, eliminates duplicate risk permanently
+- @metadata-column-injection -- `_batch_id` identifies which load introduced duplicates
+- @synthetic-keys -- content hashing for dedup when no natural PK exists
+- @reconciliation-patterns -- row count mismatch is often the first signal of duplication
 
 // ---
 
@@ -1537,7 +1535,6 @@ The tradeoff: inline checks catch discrepancies before downstream queries run on
 Store the results in the health table (0602): table name, source count, destination count, delta, status (OK / warning / critical). Storing results historically lets you detect drift trends -- a table that's consistently 50 rows short is a different problem from one that's suddenly 50,000 rows short. If you store per-run source and destination counts as part of normal pipeline operation, the dedicated reconciliation job becomes a comparison of already-collected numbers rather than a fresh round of queries against both systems -- which makes it cheap enough to run across everything, every morning.
 
 == By Corridor
-<by-corridor>
 #ecl-warning("Transactional to columnar")[Source count: `SELECT COUNT(\*) FROM schema.table` at source. Destination count: `SELECT COUNT(\*)` -- BigQuery bills 0 bytes for it (resolved from table metadata internally); Snowflake resolves it from micro-partition headers without scanning data. Both engines also expose row counts in `INFORMATION_SCHEMA`, but those update asynchronously and can lag after a recent load, making them unreliable for post-load verification.]
 
 #ecl-info("Transactional to transactional")[Both sides support `COUNT(\*)` efficiently -- no reason not to use it.]
@@ -1548,15 +1545,15 @@ Store the results in the health table (0602): table name, source count, destinat
 
 == Related Patterns
 <related-patterns-8>
-- 0601-monitoring-observability -- reconciliation delta is a data health metric
-- 0602-health-table -- stores per-table counts for historical comparison
-- 0605-alerting-and-notifications -- threshold breaches trigger alerts
-- 0609-data-contracts -- volume contracts are reconciliation expressed as a pre-load check
-- 0610-extraction-status-gates -- pre-load gating is reconciliation's inline cousin
-- 0613-duplicate-detection -- count mismatch is often the first signal of duplication
-- 0306-hard-delete-detection -- pk-to-pk comparison for resolving small discrepancies
-- 0201-full-scan-strategies -- full reload for resolving large discrepancies
-- 0202-partition-swap -- partition-scoped reload for resolving discrepancies in a date range
+- @monitoring-and-observability -- reconciliation delta is a data health metric
+- @the-health-table -- stores per-table counts for historical comparison
+- @alerting-and-notifications -- threshold breaches trigger alerts
+- @data-contracts -- volume contracts are reconciliation expressed as a pre-load check
+- @extraction-status-gates -- pre-load gating is reconciliation's inline cousin
+- @duplicate-detection -- count mismatch is often the first signal of duplication
+- @hard-delete-detection -- pk-to-pk comparison for resolving small discrepancies
+- @full-scan-strategies -- full reload for resolving large discrepancies
+- @partition-swap -- partition-scoped reload for resolving discrepancies in a date range
 
 // ---
 
@@ -1649,12 +1646,12 @@ None of these prevent corruption from happening -- source schemas change, bugs s
 
 == Related Patterns
 <related-patterns-9>
-- 0501-metadata-column-injection -- `_batch_id` and `_extracted_at` scope the corruption to specific loads
-- 0306-hard-delete-detection -- PK-to-PK comparison for surgical repair
-- 0609-data-contracts -- contracts catch the drift before it becomes corruption
-- 0611-backfill-strategies -- the mechanism for rebuilding a date range
-- 0614-reconciliation-patterns -- post-rebuild verification and small-gap resolution
-- 0612-partial-failure-recovery -- when corruption is caused by a partial failure
-- 0303-stateless-window-extraction -- no state to reset after recovery
+- @metadata-column-injection -- `_batch_id` and `_extracted_at` scope the corruption to specific loads
+- @hard-delete-detection -- PK-to-PK comparison for surgical repair
+- @data-contracts -- contracts catch the drift before it becomes corruption
+- @backfill-strategies -- the mechanism for rebuilding a date range
+- @reconciliation-patterns -- post-rebuild verification and small-gap resolution
+- @partial-failure-recovery -- when corruption is caused by a partial failure
+- @stateless-window-extraction -- no state to reset after recovery
 
 // ---

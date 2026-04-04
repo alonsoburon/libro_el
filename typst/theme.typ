@@ -44,15 +44,87 @@
 #let ecl-danger(title, body) = ecl-callout(title, body, color: gruvbox.red_d)
 #let ecl-info(title, body) = ecl-callout(title, body, color: gruvbox.blue_d)
 
-// Apply book-wide styling. Call this at the top of every chapter file
-// or in main.typ. Safe to call multiple times.
+// Part numbering state -- stepped by ecl-part-page, used by heading numbering
+#let ecl-part = state("ecl-part", 0)
+
+// Part title page -- O'Reilly style, centered
+#let ecl-part-page(num, title) = {
+  ecl-part.update(n => n + 1)
+  counter(heading).update(0)
+  pagebreak()
+  page(header: none, footer: none)[
+    #v(1fr)
+    #align(center)[
+      #text(fill: gruvbox.fg4, size: 14pt, tracking: 2pt, upper[Part #num])
+      #v(12pt)
+      #text(fill: gruvbox.fg0, size: 28pt, weight: "bold", title)
+    ]
+    #v(1fr)
+  ]
+}
+
+// Apply book-wide styling
 #let ecl-theme(body) = {
-  set page(paper: "a4", margin: (x: 2cm, y: 2.5cm), fill: gruvbox.bg0_h)
+  set page(
+    paper: "a4",
+    margin: (x: 2cm, y: 2.5cm),
+    fill: gruvbox.bg0_h,
+    // Running header: current pattern name, suppressed on the heading's own page
+    header: context {
+      let elems = query(heading.where(level: 1).before(here()))
+      if elems.len() > 0 {
+        let current = elems.last()
+        let here-page = counter(page).at(here()).first()
+        let heading-page = counter(page).at(current.location()).first()
+        if heading-page != here-page {
+          text(fill: gruvbox.fg4, size: 9pt, current.body)
+          v(-4pt)
+          line(length: 100%, stroke: 0.5pt + gruvbox.bg2)
+        }
+      }
+    },
+    footer: context {
+      align(center, text(fill: gruvbox.fg4, size: 9pt, counter(page).display()))
+    },
+  )
   set text(font: "Libertinus Serif", size: 11pt, fill: gruvbox.fg1)
-  set heading(numbering: "1.1")
-  show heading.where(level: 1): set text(fill: gruvbox.fg0, size: 22pt)
+
+  // Heading numbering: Part.Pattern.Section (e.g. 2.3.1)
+  // Front matter (part = 0) gets no numbers.
+  set heading(numbering: (..nums) => context {
+    let part = ecl-part.get()
+    if part > 0 {
+      numbering("1.1", part, ..nums.pos())
+    }
+  })
+
+  // Level 1: pattern titles -- number + rule below
+  show heading.where(level: 1): it => {
+    set text(fill: gruvbox.fg0, size: 22pt)
+    it
+    v(2pt)
+    line(length: 100%, stroke: 0.75pt + gruvbox.bg3)
+    v(6pt)
+  }
   show heading.where(level: 2): set text(fill: gruvbox.fg0, size: 16pt)
   show heading.where(level: 3): set text(fill: gruvbox.fg2, size: 13pt)
+
+  // Cross-references: show "1.2 — Name" instead of "Section 1.2"
+  show ref: it => {
+    let el = it.element
+    if el != none and el.func() == heading {
+      link(el.location())[#context {
+        let nums = counter(heading).at(el.location())
+        let part = ecl-part.at(el.location())
+        if part > 0 {
+          numbering("1.1", part, ..nums)
+        }
+      } -- #el.body]
+    } else {
+      it
+    }
+  }
+
   show raw.where(block: true): it => block(
     fill: gruvbox.bg0, inset: 12pt, radius: 4pt, width: 100%,
     text(fill: gruvbox.fg1, size: 9pt, it)

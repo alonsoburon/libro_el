@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Metadata Column Injection
 <metadata-column-injection>
 #quote(block: true)[
@@ -122,7 +121,6 @@ For `_extracted_at` and `_batch_id`, the source query is almost always the right
 // ---
 
 == By Corridor
-<by-corridor>
 #ecl-warning("Transactional to columnar")[No special considerations. Columnar destinations accept new columns without issue. If you're using 0404, `_extracted_at` is the dedup ordering key -- make sure it's populated on every row.]
 
 #ecl-info("Transactional to transactional")[Same approach. One advantage: if you need to add metadata columns to an existing destination table retroactively, `ALTER TABLE ADD COLUMN` is cheap and instant on most transactional engines. On columnar engines it's also cheap, but backfilling the column for historical rows is more expensive.]
@@ -130,7 +128,6 @@ For `_extracted_at` and `_batch_id`, the source query is almost always the right
 // ---
 
 == Related Patterns
-<related-patterns>
 - 0404 -- `_extracted_at` as the dedup ordering key
 - 0208 -- `_source_hash` enables hash-based change detection
 - 0614 -- `_batch_id` for source-destination row count reconciliation
@@ -215,7 +212,7 @@ Document which columns participate in the key. Downstream consumers, reconciliat
 // ---
 
 == Hash Function Choice
-<hash-function-choice>
+<conforming-hash-function>
 #strong[MD5.] 128-bit output, fast on every engine. The standard choice for synthetic keys. This isn't cryptography -- you're not protecting against adversarial collisions, you're generating unique identifiers for MERGE matching. MD5's known cryptographic weaknesses are irrelevant here.
 
 #strong[SHA-256.] 256-bit output, slower. The only reason to use it over MD5 is if regulatory or audit requirements mandate a specific hash function. Some compliance frameworks specify SHA-256 for anything labeled "hash" regardless of context -- easier to comply than to argue.
@@ -280,8 +277,8 @@ The central reference for type conforming across engines. Every source-destinati
     [`TINYINT(1)`], [MySQL], [`BOOLEAN`], [BigQuery], [MySQL's pseudo-boolean. May contain values other than 0/1],
     [`NVARCHAR(MAX)`], [SQL Server / HANA], [`STRING`], [BigQuery], [No length limit in BigQuery STRING. Safe],
     [`TEXT`], [PostgreSQL], [`STRING`], [BigQuery], [PostgreSQL `TEXT` is unlimited. BigQuery `STRING` has a 10MB per-value limit. Rarely hit in practice],
-    [`JSONB`], [PostgreSQL], [`STRING` or `JSON`], [BigQuery / Snowflake], [See \[\[05-conforming-playbook/0507-nested-data-and-json],
-    [`TIMESTAMP WITH TIME ZONE`], [PostgreSQL], [`TIMESTAMP`], [BigQuery], [BigQuery `TIMESTAMP` is always UTC. See \[\[05-conforming-playbook/0505-timezone-conforming],
+    [`JSONB`], [PostgreSQL], [`STRING` or `JSON`], [BigQuery / Snowflake], [See @nested-data-and-json],
+    [`TIMESTAMP WITH TIME ZONE`], [PostgreSQL], [`TIMESTAMP`], [BigQuery], [BigQuery `TIMESTAMP` is always UTC. See @timezone-conforming],
   )]
   , kind: table
   )
@@ -621,7 +618,6 @@ The only thing you need to get right is the declaration. If you tell the driver 
 // ---
 
 == Detection
-<detection>
 Encoding problems are invisible until they're not. The data loads successfully, the row counts match, and everything looks fine -- until someone searches for a customer named "Muñoz" and finds "Mu?oz" or "MuÃ±oz" instead.
 
 #strong[Replacement characters.] Rows with `?` or `\ufffd` (the Unicode replacement character) in text columns. These appear when the driver encounters a byte sequence that's invalid in the declared encoding and substitutes a placeholder instead of failing. If you see them, the encoding declaration is wrong.
@@ -684,7 +680,7 @@ Collation is related to encoding but distinct: encoding determines #emph[how byt
 // ---
 
 == Schema Naming
-<schema-naming>
+<conforming-schema-naming>
 Related but distinct concern: the characters in table and column #emph[names];, not in the data. This is about safety and consistency across engines, not about renaming `OACT` to `chart_of_accounts`.
 
 #strong[The problem.] SQL Server allows `[Emojis 👽]` as a column name. PostgreSQL allows `"@Table"` with quotes. SAP tables are named `OACT`, `OINV`, `INV1`. These identifiers may contain spaces, special characters, brackets, or characters that are reserved words in the destination engine. A column named `order` in the source breaks every query on the destination unless quoted -- and nobody quotes consistently.

@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Full Scan Strategies
 <full-scan-strategies>
 #quote(block: true)[
@@ -20,7 +19,7 @@ The decision comes down to one comparison: #strong[full scan cost vs.~incrementa
 
 #strong[The source rewrites history.] Some applications correct past records in bulk. A pricing table where last quarter's prices get retroactively adjusted. An ERP where a journal entry gets reversed and reposted to a prior period. A more problematic DBA who runs UPDATE scripts directly. A cursor on `updated_at` misses rows that were corrected without bumping the timestamp. Full scan doesn't care -- you get the current state of every row, always.
 
-#ecl-warning("Earn incremental complexity")[Full scan is the default -- don't assume incremental is needed. Incremental is a performance optimization with a cost in complexity, drift risk, and maintenance. Build full scan first. Switch to incremental only when the scan is genuinely too slow or too expensive for your schedule window. See 0108-purity-vs-freshness.]
+#ecl-warning("Earn incremental complexity")[Full scan is the default -- don't assume incremental is needed. Incremental is a performance optimization with a cost in complexity, drift risk, and maintenance. Build full scan first. Switch to incremental only when the scan is genuinely too slow or too expensive for your schedule window. See @purity-vs-freshness.]
 
 == The Two Shapes of Full Scan
 <the-two-shapes-of-full-scan>
@@ -71,17 +70,17 @@ with engine.connect() as conn:
 
 #ecl-warning("Stage all chunks before replacing")[If you chunk the extraction and write each chunk directly to the final destination table, chunk N replaces chunk N-1. You'll end up with only the last chunk in the destination. Extract all chunks to a staging area first, validate, then swap. Always.]
 
-See 0607-source-system-etiquette for connection limits, timeout coordination, and DBA communication.
+See @source-system-etiquette for connection limits, timeout coordination, and DBA communication.
 
 == At the Destination: Replace Strategies
 <at-the-destination-replace-strategies>
 Full replace is not "DELETE everything, INSERT everything." That approach leaves a window where the table is empty, and it's more expensive than necessary on most engines.
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
-#strong[Staging swap.] Load into a staging table, validate, then atomically swap staging to production. Zero downtime -- consumers query the production table and see complete data throughout. Rollback is dropping the staging table without touching prod. This is the recommended approach for any table with live consumers. See 0203-staging-swap.
+#strong[Staging swap.] Load into a staging table, validate, then atomically swap staging to production. Zero downtime -- consumers query the production table and see complete data throughout. Rollback is dropping the staging table without touching prod. This is the recommended approach for any table with live consumers. See @staging-swap.
 
-#strong[Partition-level replace.] When the table is partitioned by date and you're replacing a specific date range, drop and reload only the affected partitions. Still a full replace per partition -- you extract all rows for those dates and reload completely -- but you don't touch partitions outside the range. See 0202-partition-swap.
+#strong[Partition-level replace.] When the table is partitioned by date and you're replacing a specific date range, drop and reload only the affected partitions. Still a full replace per partition -- you extract all rows for those dates and reload completely -- but you don't touch partitions outside the range. See @partition-swap.
 
 #strong[Truncate + reload.] `TRUNCATE` the table and insert fresh. Simple, but it has a window where the table is empty. Acceptable for overnight runs where no dashboards or queries are running against the table. Never acceptable for tables with intraday consumers.
 
@@ -124,25 +123,24 @@ A full replace that lands zero rows because of a source connection failure is a 
 
 Most orchestrators support post-load validation hooks or checks that run after the staging load and block the swap if any check fails.
 
-See 0609-data-contracts for formalizing these checks into reusable contracts.
+See @data-contracts for formalizing these checks into reusable contracts.
 
 == What Full Scan Doesn't Solve
 <what-full-scan-doesnt-solve>
-#strong[Tables too large to scan entirely.] When the full scan takes longer than your schedule window, or when the source can't handle the load at any hour, full scan isn't viable. Options: scope the scan to the current + previous period (0204-scoped-full-replace), or switch to a rolling window (0205-rolling-window-replace).
+#strong[Tables too large to scan entirely.] When the full scan takes longer than your schedule window, or when the source can't handle the load at any hour, full scan isn't viable. Options: scope the scan to the current + previous period (@scoped-full-replace), or switch to a rolling window (@rolling-window-replace).
 
 #strong[Freshness tighter than scan frequency.] If the business needs data every 15 minutes and a full scan takes 2 hours, you need incremental. Part III covers cursor-based extraction, merge patterns, and append strategies for tables that need sub-hourly freshness.
 
 #strong[Source that can't absorb the load.] Some sources are so sensitive that even an off-hours full scan causes problems. Shared multi-tenant SaaS databases, under-resourced ERPs, systems with hard connection limits. In these cases, extract incrementally and accept the complexity cost. It's cheaper than a production incident.
 
 == Related Patterns
-<related-patterns>
-- 0202-partition-swap
-- 0203-staging-swap
-- 0204-scoped-full-replace
-- 0302-cursor-based-extraction
-- 0607-source-system-etiquette
-- 0609-data-contracts
-- 0108-purity-vs-freshness
+- @partition-swap
+- @staging-swap
+- @scoped-full-replace
+- @cursor-based-timestamp-extraction
+- @source-system-etiquette
+- @data-contracts
+- @purity-vs-freshness
 
 // ---
 
@@ -163,7 +161,7 @@ Rows outside the target range are never touched. The rest of the table stays exa
 - Full table replace is too expensive -- years of history sit in partitions you have no reason to touch
 - `metrics_daily`, `events`, `sessions` -- any table where each partition is a self-contained, replaceable unit
 
-The partition boundary must be meaningful. If your `events` table has rows for `2026-03-07` scattered across multiple partitions because of a timezone mismatch, partition swap will produce incorrect results. See 0505-timezone-conforming.
+The partition boundary must be meaningful. If your `events` table has rows for `2026-03-07` scattered across multiple partitions because of a timezone mismatch, partition swap will produce incorrect results. See @timezone-conforming.
 
 == The Mechanics
 <the-mechanics>
@@ -180,7 +178,7 @@ WHERE event_date BETWEEN :start_date AND :end_date;
 
 Load everything to a staging table on the destination. Validate. Then replace the affected partitions -- all of them, in the same job.
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 === Extraction Status as the First Gate
 <extraction-status-as-the-first-gate>
@@ -197,7 +195,7 @@ except Exception as e:
 
 If the extraction raised an error, the job fails. Staging is never loaded. No partition is replaced. The data in production stays exactly as it was.
 
-#ecl-warning("Silent failures return empty results")[The dangerous case is an extraction layer that swallows exceptions and returns an empty result set instead of raising. Check your database driver and connection wrapper -- make sure a dropped connection or a query timeout surfaces as an error, not as an empty iterator. If your extraction layer can return 0 rows on failure, you've lost the signal that makes this safe. See 0610-extraction-status-gates.]
+#ecl-warning("Silent failures return empty results")[The dangerous case is an extraction layer that swallows exceptions and returns an empty result set instead of raising. Check your database driver and connection wrapper -- make sure a dropped connection or a query timeout surfaces as an error, not as an empty iterator. If your extraction layer can return 0 rows on failure, you've lost the signal that makes this safe. See @extraction-status-gates.]
 
 == Atomicity Per Engine
 <atomicity-per-engine>
@@ -221,7 +219,7 @@ Atomic: if the INSERT fails, the DELETE rolls back. Safe to retry.
 The DELETE must cover the full target range, not `IN (SELECT DISTINCT partition_date FROM stg)`. If Saturday had 10 rows last run and the source corrected them to Friday, staging has no Saturday rows -- and a DELETE driven by staging would leave the old Saturday data in place. Delete by the declared range; insert whatever staging holds, including nothing for days with no activity.
 
 === BigQuery
-<bigquery>
+<fullreplace-bigquery>
 MERGE is the wrong answer here. It scans both tables in full and is the slowest, most expensive DML option BigQuery has. Real-world cases of MERGE consuming hours of slot time on large tables are documented. DELETE + INSERT has no transaction wrapper and leaves an empty-partition window between the two statements.
 
 The right approach: load all data to a staging table partitioned by the same column as the destination, then use #strong[partition copy] per partition -- a near-metadata operation that is orders of magnitude faster than any DML:
@@ -239,7 +237,7 @@ N partition copies for N partitions, but each copy is fast. The staging load is 
 #ecl-warning("Staging must match partition spec")[`bq cp` with a partition decorator requires the source table to be partitioned by the same column and type as the destination. Create staging with `PARTITION BY event_date` -- same as the destination -- before loading.]
 
 === ClickHouse
-<clickhouse>
+<fullreplace-clickhouse>
 DELETE is an async mutation -- queued, not inline. `ALTER TABLE ... REPLACE PARTITION` is the right mechanism: it atomically swaps the source partition into the destination.
 
 ```sql
@@ -288,24 +286,23 @@ For Snowflake and Redshift, the DELETE + INSERT is a single transaction -- it ei
 <partition-alignment-is-your-responsibility>
 The engine partitions by whatever value is in the partition key column. If that value is wrong -- because of a timezone mismatch, a bulk load that used server time instead of event time, a late-arriving batch processed with today's date -- the row lands in the wrong partition and partition swap will replace the wrong thing.
 
-Conform timezone before determining the partition key, not after. See 0505-timezone-conforming.
+Conform timezone before determining the partition key, not after. See @timezone-conforming.
 
-Late-arriving data adds another dimension: rows for prior dates arriving today belong in their original partition, not today's. Your extraction range must account for this. If yesterday's data is still arriving today, your target range should include yesterday -- and your overlap window should be wide enough to catch stragglers. See 0309-late-arriving-data.
+Late-arriving data adds another dimension: rows for prior dates arriving today belong in their original partition, not today's. Your extraction range must account for this. If yesterday's data is still arriving today, your target range should include yesterday -- and your overlap window should be wide enough to catch stragglers. See @late-arriving-data.
 
 == By Corridor
-<by-corridor>
 #ecl-warning("Transactional to Columnar")[Primary use case (e.g.~PostgreSQL → BigQuery). Columnar destinations are built for partitioned loads. One staging load + N partition operations per job. BigQuery partition copy is near-free compared to any DML option.]
 
 #ecl-info("Transactional to Transactional")[E.g.~PostgreSQL → PostgreSQL. Transactional destinations have no columnar partition concept. Equivalent: `DELETE WHERE partition_key BETWEEN :start AND :end` then bulk INSERT from staging, inside a transaction. Less elegant but achieves the same scoped replace with the same atomicity guarantee.]
 
 == Related Patterns
 <related-patterns-1>
-- 0201-full-scan-strategies
-- 0203-staging-swap
-- 0309-late-arriving-data
-- 0505-timezone-conforming
-- 0104-columnar-destinations
-- 0610-extraction-status-gates
+- @full-scan-strategies
+- @staging-swap
+- @late-arriving-data
+- @timezone-conforming
+- @columnar-destinations
+- @extraction-status-gates
 
 // ---
 
@@ -316,7 +313,6 @@ Late-arriving data adds another dimension: rows for prior dates arriving today b
 ]
 
 == The Problem
-<the-problem>
 The naive full replace is `TRUNCATE production; INSERT INTO production SELECT * FROM source`. Simple. And it leaves a window where `production` is empty -- any dashboard or query that runs between the TRUNCATE and the INSERT sees nothing. On a table with live consumers, that's an incident.
 
 The second problem: if the load fails halfway through, you're left with a half-loaded production table and no clean way back. You can't replay the INSERT without truncating again, which means another empty window.
@@ -325,7 +321,7 @@ Staging swap eliminates both problems. Consumers see complete data throughout. R
 
 == The Mechanics
 <the-mechanics-1>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 Three steps:
 
@@ -353,7 +349,7 @@ Two conventions for where staging lives, each with real trade-offs:
 
 The parallel schema convention is worth it at scale -- permission management alone justifies it when you're running hundreds of tables. But go in with eyes open: the swap step is more involved on PostgreSQL and Redshift, and you'll need to handle it explicitly per engine.
 
-#strong[\2. Validate.] Run checks against `stg_orders` before touching production. At minimum: row count \> 0, % change vs.~production is within threshold, required columns have no NULLs. See 0609-data-contracts for formalizing these as reusable contracts.
+#strong[\2. Validate.] Run checks against `stg_orders` before touching production. At minimum: row count \> 0, % change vs.~production is within threshold, required columns have no NULLs. See @data-contracts for formalizing these as reusable contracts.
 
 #strong[\3. Swap.] Atomically replace production with staging. The mechanism varies by engine -- covered below -- but the result is the same: one moment consumers are reading the old data, the next they're reading the new data, with no empty window in between.
 
@@ -362,7 +358,7 @@ The parallel schema convention is worth it at scale -- permission management alo
 The swap must be atomic -- consumers should never see a missing table. Each engine has its own mechanism.
 
 === Snowflake
-<snowflake>
+<fullreplace-snowflake>
 ```sql
 -- engine: snowflake
 -- Atomic metadata-only swap -- fast regardless of table size
@@ -486,10 +482,10 @@ If the swap itself fails mid-operation (rare, but possible on non-atomic engines
 
 == Related Patterns
 <related-patterns-2>
-- 0201-full-scan-strategies
-- 0202-partition-swap
-- 0609-data-contracts
-- 0610-extraction-status-gates
+- @full-scan-strategies
+- @partition-swap
+- @data-contracts
+- @extraction-status-gates
 
 // ---
 
@@ -509,13 +505,13 @@ Scoped full replace is the middle path. Define a boundary and apply full-replace
 
 == The Mechanics
 <the-mechanics-2>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 #strong[Declare the scope.] `scope_start` is a parameter the pipeline receives at runtime, not a constant baked into SQL. Externalizing it lets you widen the scope for backfills without touching extraction logic.
 
 #strong[Extract within scope.] Pull only rows where the scope field falls inside the declared window. The source query is bounded -- no full-table scan.
 
-#strong[Replace the managed zone.] Use partition swap (0202-partition-swap) to replace every partition in `scope_start → today`. The frozen zone is never part of the destination operation.
+#strong[Replace the managed zone.] Use partition swap (@partition-swap) to replace every partition in `scope_start → today`. The frozen zone is never part of the destination operation.
 
 == Defining the Scope
 <defining-the-scope>
@@ -538,7 +534,7 @@ Three ways to anchor `scope_start`:
     table.hline(),
     [Start of last year], [`DATE_TRUNC('year', CURRENT_DATE - INTERVAL '1 year')`], [Accounting data with open/closed fiscal years. Year boundaries are natural partition boundaries. Window grows Jan→Dec then resets.],
     [Fixed date], [`'2025-01-01'`], [History before that date is known bad, migrated from another system, or simply not needed. Stable until you change it deliberately.],
-    [Rolling offset], [Last N days], [Different pattern -- see \[\[02-full-replace-patterns/0205-rolling-window-replace],
+    [Rolling offset], [Last N days], [Different pattern -- see @rolling-window-replace],
   )]
   , kind: table
   )
@@ -565,9 +561,9 @@ Scoped full replace rests on one explicit bet: #strong[records created before `s
     [`metrics_daily`], [Yes], [Old dates only change during explicit recalculations. Treat those as one-off backfills.],
     [`invoices`], [Yes], [Closed invoices are frozen. Open invoices are recent.If this soft rule is broken, there could be some legal trouble.],
     [`orders`], [Usually], [Most old orders are done. Verify with the source team whether support can reopen them.],
-    [`customers`], [No], [A customer created in 2022 can update their email today. Use full scan (see \[\[02-full-replace-patterns/0201-full-scan-strategies],
+    [`customers`], [No], [A customer created in 2022 can update their email today. Use full scan (see @full-scan-strategies],
     [`products`], [No], [Price changes and schema mutations affect all rows regardless of age. Use full scan.],
-    [`order_lines`], [Indirectly], [No reliable own timestamp. Borrow scope from `orders` via cursor from another table (see \[\[03-incremental-patterns/0304-cursor-from-another-table],
+    [`order_lines`], [Indirectly], [No reliable own timestamp. Borrow scope from `orders` via cursor from another table (see @cursor-from-another-table],
   )]
   , kind: table
   )
@@ -603,7 +599,7 @@ FROM stg_orders;
 <getting-creative>
 Scoped full replace sets a single boundary: managed vs.~frozen. Once you see it as a zone concept, the obvious next step is multiple zones with different replacement cadences -- each tuned to how often that slice of data actually changes.
 
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 #strong[Cold zone] (2+ years ago): Data is almost certainly stable. Replace weekly -- one extraction pass covers the full cold range, partition swap replaces those partitions. Cost is low because the source query is bounded and runs once a week.
 
@@ -613,7 +609,7 @@ Scoped full replace sets a single boundary: managed vs.~frozen. Once you see it 
 
 Three pipelines, one table, each running at the cadence that matches the data's volatility. The cold run is cheap and slow. The warm run is the core and the cleanup. The hot run is fast and disposable.
 
-#ecl-warning("Tiered freshness goes further")[The building blocks are this pattern, partition swap (0202), and incremental merge (0403). The hybrid strategy is introduced in 0108. For the full architecture -- how to wire the three zones together operationally -- see 0608-tiered-freshness.]
+#ecl-warning("Tiered freshness goes further")[The building blocks are this pattern, partition swap (0202), and incremental merge (0403). The hybrid strategy is introduced in 0108. For the full architecture -- how to wire the three zones together operationally -- see @tiered-freshness.]
 
 == By Corridor
 <by-corridor-2>
@@ -623,11 +619,11 @@ Three pipelines, one table, each running at the cadence that matches the data's 
 
 == Related Patterns
 <related-patterns-3>
-- 0202-partition-swap -- execution mechanism for the managed zone
-- 0201-full-scan-strategies -- for dimension tables that don't fit a scope
-- 0205-rolling-window-replace -- rolling offset instead of calendar anchor
-- 0304-cursor-from-another-table -- scoping detail tables without their own timestamp
-- 0108-purity-vs-freshness
+- @partition-swap -- execution mechanism for the managed zone
+- @full-scan-strategies -- for dimension tables that don't fit a scope
+- @rolling-window-replace -- rolling offset instead of calendar anchor
+- @cursor-from-another-table -- scoping detail tables without their own timestamp
+- @purity-vs-freshness
 
 // ---
 
@@ -651,11 +647,11 @@ Both patterns maintain a managed zone and a frozen zone. The difference is in ho
 
 Rolling window uses a metadata anchor -- `updated_at` or `created_at` relative to today. The window is always the same width. It advances daily. There's no natural hard boundary like a fiscal year close; N is a judgment call based on how long corrections typically take to arrive in the source.
 
-Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than 0204's "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See 0608-tiered-freshness.
+Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than 0204's "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See @tiered-freshness.
 
 == The Mechanics
 <the-mechanics-3>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 #strong[Extract by `updated_at`.] The filter is on the metadata field that reflects when a row last changed, not when it was created. A 3-year-old order that got its status updated yesterday is inside the 30-day window. A 3-week-old order that hasn't changed is also inside it -- you pull it again regardless, because within the window you replace everything, not just what changed.
 
@@ -721,7 +717,9 @@ FROM stg_orders;
 -- Fail if latest_updated < CURRENT_DATE
 ```
 
-Optionally, compare the window row count against the prior run. A large drop in row count (e.g.~\>20% fewer rows than yesterday's window) likely signals a source issue, not a real change in data volume. \#\# By Corridor
+Optionally, compare the window row count against the prior run. A large drop in row count (e.g.~>20% fewer rows than yesterday's window) likely signals a source issue, not a real change in data volume.
+
+== By Corridor
 
 #ecl-warning("Transactional to Columnar")[E.g.~PostgreSQL → BigQuery. Columnar destinations should partition by a stable (hopefully unchangeable) business date -- `created_at`, `doc_date`, `event_date`. Never by `updated_at`: a row that gets updated moves to a different partition on each edit, creating duplicates across partition boundaries -- deduplication requires a full table scan to resolve. This means the filter field (`updated_at`) and the partition key are misaligned. An order created two years ago that was updated yesterday lives in a two-year-old partition -- to replace it, you'd need to replace that partition too. Without scanning the whole table, you can't know which historical partitions are affected. The pattern becomes expensive and unpredictable in columnar. Prefer 0204 for columnar destinations.]
 
@@ -729,10 +727,10 @@ Optionally, compare the window row count against the prior run. A large drop in 
 
 == Related Patterns
 <related-patterns-4>
-- 0202-partition-swap -- execution mechanism for the columnar replacement
-- 0204-scoped-full-replace -- calendar anchor variant; harder boundary, less aggressive freezing
-- 0309-late-arriving-data -- sizing the window for late arrivals
-- 0302-cursor-based-extraction -- cursor-based equivalent; same intuition, different mechanics
+- @partition-swap -- execution mechanism for the columnar replacement
+- @scoped-full-replace -- calendar anchor variant; harder boundary, less aggressive freezing
+- @late-arriving-data -- sizing the window for late arrivals
+- @cursor-based-timestamp-extraction -- cursor-based equivalent; same intuition, different mechanics
 
 // ---
 
@@ -818,9 +816,9 @@ The filter is a contract. If the business changes the definition -- "now we also
 
 == Related Patterns
 <related-patterns-5>
-- 0207-activity-driven-extraction -- avoid scanning the sparse table entirely
-- 0201-full-scan-strategies -- if the table is small enough, the filter isn't worth the complexity
-- 0609-data-contracts -- formalize the filter as a documented contract
+- @activity-driven-extraction -- avoid scanning the sparse table entirely
+- @full-scan-strategies -- if the table is small enough, the filter isn't worth the complexity
+- @data-contracts -- formalize the filter as a documented contract
 
 // ---
 
@@ -838,7 +836,7 @@ Activity-driven extraction skips the scan entirely. Instead of asking the sparse
 
 == The Mechanics
 <the-mechanics-4>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 #strong[Step 1: get active combos from movements.]
 
@@ -884,7 +882,7 @@ This holds for most inventory use cases. It breaks when:
 
 - #strong[Slow movers exist.] A SKU that sells once a quarter won't appear in a 30-day transaction window. It might still have 500 units on hand. If no one queries it, that's fine. If a consumer expects complete on-hand data, it's a blind spot.
 - #strong[New combos have no history.] A SKU just added to a warehouse has zero transactions. It won't appear in the active set until its first order.
-- #strong[Not all systems log every change to movements.] If a bulk import script updates `inventory` directly without inserting a row into `inventory_movements`, the combo changes but the activity signal doesn't fire. This is a soft rule: "every stock change creates a movement" -- until it doesn't. See 0002-domain-model.
+- #strong[Not all systems log every change to movements.] If a bulk import script updates `inventory` directly without inserting a row into `inventory_movements`, the combo changes but the activity signal doesn't fire. This is a soft rule: "every stock change creates a movement" -- until it doesn't. See @domain-model.
 
 == Solving Blind Spots: Tiered Windows
 <solving-blind-spots-tiered-windows>
@@ -916,12 +914,12 @@ The index makes this fast. No full destination scan required -- the database res
 
 == Related Patterns
 <related-patterns-6>
-- 0206-sparse-table-extraction -- simpler variant; still scans the sparse table, just filters it
-- 0201-full-scan-strategies -- periodic reset that catches every blind spot
-- 0203-staging-swap -- load mechanism for columnar destinations
-- 0205-rolling-window-replace -- activity window sizing follows the same logic as rolling window N
-- 0608-tiered-freshness -- tiered cadences applied to the activity window
-- 0309-late-arriving-data -- sizing the window for slow movers
+- @sparse-table-extraction -- simpler variant; still scans the sparse table, just filters it
+- @full-scan-strategies -- periodic reset that catches every blind spot
+- @staging-swap -- load mechanism for columnar destinations
+- @rolling-window-replace -- activity window sizing follows the same logic as rolling window N
+- @tiered-freshness -- tiered cadences applied to the activity window
+- @late-arriving-data -- sizing the window for slow movers
 
 // ---
 
@@ -941,7 +939,7 @@ This is a last resort, not a first choice. Reach for it when there is genuinely 
 
 == The Mechanics
 <the-mechanics-5>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 #strong[Hash every source row.] Concatenate all data columns and compute a hash. The hash is a fingerprint of the row's current state.
 
@@ -1042,10 +1040,10 @@ If using `_source_hash` on the destination for comparison, reading that column o
 
 == Related Patterns
 <related-patterns-7>
-- 0105-the-lies-sources-tell -- broken cursors that make this necessary
-- 0302-cursor-based-extraction -- the cursor-based alternative when `updated_at` works
-- 0501-metadata-column-injection -- `_source_hash` as a standard metadata column
-- 0204-scoped-full-replace -- scope the hash comparison to avoid scanning frozen history
+- @the-lies-sources-tell -- broken cursors that make this necessary
+- @cursor-based-timestamp-extraction -- the cursor-based alternative when `updated_at` works
+- @metadata-column-injection -- `_source_hash` as a standard metadata column
+- @scoped-full-replace -- scope the hash comparison to avoid scanning frozen history
 
 // ---
 
@@ -1095,10 +1093,9 @@ A second trap: schema drift. When a source table adds a new column, `SELECT *` p
   , kind: table
   )
 
-Before excluding a column for type reasons, check 0503-type-casting-normalization. A type that can't be loaded directly can often be cast to a string or numeric representation. Partial loading is the fallback when casting isn't viable.
+Before excluding a column for type reasons, check @type-casting-and-normalization. A type that can't be loaded directly can often be cast to a string or numeric representation. Partial loading is the fallback when casting isn't viable.
 
 == The Pattern
-<the-pattern>
 Name every column explicitly. Comment every exclusion inline with the reason.
 
 ```sql
@@ -1159,8 +1156,8 @@ WHERE table_name = 'customers'
 
 == Related Patterns
 <related-patterns-8>
-- 0503-type-casting-normalization -- try casting before excluding; partial loading is the fallback
-- 0201-full-scan-strategies -- column exclusion applies regardless of how you detect changes
-- 0208-hash-based-change-detection -- hash-based detection breaks if the hashed column set doesn't match the extracted column set; align them explicitly
+- @type-casting-and-normalization -- try casting before excluding; partial loading is the fallback
+- @full-scan-strategies -- column exclusion applies regardless of how you detect changes
+- @hash-based-change-detection -- hash-based detection breaks if the hashed column set doesn't match the extracted column set; align them explicitly
 
 // ---

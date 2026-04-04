@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = Don't Pre-Aggregate
 <dont-pre-aggregate>
 #quote(block: true)[
@@ -7,7 +6,6 @@
 ]
 
 == The Problem
-<the-problem>
 The first request from every non-technical consumer sounds the same: "how much did we sell?" They want a total. They want it per month, per product, per warehouse. The temptation is to build that aggregation into the extraction -- `SELECT product_id, SUM(quantity) FROM order_lines GROUP BY product_id` -- and hand them exactly what they asked for. Clean, simple, one table with the numbers they need.
 
 Then they ask "which orders drove the spike in product X?" And the detail isn't in your warehouse, because you extracted the SUM and threw away the rows. You can't drill down from a total to its components. You can't recompute the aggregation with a different grouping. You can't debug a number that looks wrong because the individual records that produced it were never loaded. Every client who starts with "just give me the totals" eventually asks for the detail -- and if you aggregated at extraction, the only way to answer is to rebuild the pipeline.
@@ -61,17 +59,15 @@ A pre-built view (0703) that aggregates the raw data for their specific use case
 When the business logic changes -- a new product category, a different grouping, a revised pricing formula -- the view changes. The pipeline doesn't.
 
 == Anti-Patterns
-<anti-patterns>
 #ecl-warning("Don't extract SUMs instead of rows")[`SELECT product_id, SUM(quantity) FROM order_lines GROUP BY product_id` as your extraction query means the per-line detail never reaches the destination. The total looks correct until someone needs to drill down, and then there's nothing to drill into.]
 
 #ecl-danger("Don't compute derived columns at extraction")[`revenue = quantity \* unit_price` in the extraction query is a business calculation baked into the pipeline. When the formula changes -- and it will -- every historical row is wrong and the only fix is a full backfill of the entire table. Land the raw columns, compute downstream.]
 
 == Related Patterns
-<related-patterns>
-- 0102-what-is-conforming -- the conforming boundary that this pattern defends
-- 0703-pre-built-views -- the right place for consumer-facing aggregations
-- 0706-point-in-time-from-events -- reconstructing state from movements downstream
-- 0404-append-and-materialize -- the load pattern that preserves every version for downstream use
+- @what-is-conforming -- the conforming boundary that this pattern defends
+- @pre-built-views -- the right place for consumer-facing aggregations
+- @point-in-time-from-events -- reconstructing state from movements downstream
+- @append-and-materialize -- the load pattern that preserves every version for downstream use
 
 // ---
 
@@ -162,12 +158,12 @@ The rebuild is a full table rewrite, so it costs bytes scanned on the read and b
 
 == Related Patterns
 <related-patterns-1>
-- 0104-columnar-destinations -- per-engine storage mechanics
-- 0202-partition-swap -- partition-aligned load operations
-- 0403-merge-upsert -- MERGE cost scales with partitions touched
-- 0703-pre-built-views -- materialized views as an alternative when partition pruning isn't enough
-- 0603-cost-monitoring -- partition misalignment shows up as cost spikes
-- 0705-cost-optimization-by-engine -- partitioning and clustering as two levers among several
+- @columnar-destinations -- per-engine storage mechanics
+- @partition-swap -- partition-aligned load operations
+- @merge-upsert -- MERGE cost scales with partitions touched
+- @pre-built-views -- materialized views as an alternative when partition pruning isn't enough
+- @cost-monitoring -- partition misalignment shows up as cost spikes
+- @cost-optimization-by-engine -- partitioning and clustering as two levers among several
 
 // ---
 
@@ -266,11 +262,11 @@ When the nested schema mutates -- a new field appears, a field is renamed -- the
 
 == Related Patterns
 <related-patterns-2>
-- 0404-append-and-materialize -- the dedup view that most commonly needs materialization
-- 0404-append-and-materialize -- append logs that benefit most from materialized current-state views
-- 0507-nested-data-and-json -- raw JSON landing that needs flattening views
-- 0701-dont-pre-aggregate -- the boundary between serving and conforming
-- 0603-cost-monitoring -- the signal that tells you when to materialize
+- @append-and-materialize -- the dedup view that most commonly needs materialization
+- @append-and-materialize -- append logs that benefit most from materialized current-state views
+- @nested-data-and-json -- raw JSON landing that needs flattening views
+- @dont-pre-aggregate -- the boundary between serving and conforming
+- @cost-monitoring -- the signal that tells you when to materialize
 
 // ---
 
@@ -425,11 +421,11 @@ WHERE o.order_date >= '2026-03-01';
 
 == Related Patterns
 <related-patterns-3>
-- 0404-append-and-materialize -- the dedup view analysts should query
-- 0501-metadata-column-injection -- understanding `_extracted_at` and `_batch_id`
-- 0702-partitioning-for-consumers -- why partition filters matter for cost
-- 0703-pre-built-views -- views built to save consumers from the raw data
-- 0604-sla-management -- freshness expectations and what "up to date" means
+- @append-and-materialize -- the dedup view analysts should query
+- @metadata-column-injection -- understanding `_extracted_at` and `_batch_id`
+- @partitioning-clustering-and-pruning -- why partition filters matter for cost
+- @pre-built-views -- views built to save consumers from the raw data
+- @sla-management -- freshness expectations and what "up to date" means
 
 // ---
 
@@ -533,10 +529,10 @@ Redshift bills per node per hour (provisioned) or per RPU-second (Serverless). P
 
 == Related Patterns
 <related-patterns-4>
-- 0104-columnar-destinations -- per-engine storage and DML mechanics
-- 0603-cost-monitoring -- measure before optimizing
-- 0702-partitioning-for-consumers -- partition and cluster key selection
-- 0703-pre-built-views -- materialized views as a cost reduction tool
+- @columnar-destinations -- per-engine storage and DML mechanics
+- @cost-monitoring -- measure before optimizing
+- @partitioning-clustering-and-pruning -- partition and cluster key selection
+- @pre-built-views -- materialized views as a cost reduction tool
 
 // ---
 
@@ -678,11 +674,11 @@ The periodic full replace of the `inventory` table catches the drift -- it refle
 
 == Related Patterns
 <related-patterns-5>
-- 0404-append-and-materialize -- append log as version history when compaction is deferred
-- 0404-append-and-materialize -- extraction log as an implicit event trail
-- 0701-dont-pre-aggregate -- land movements, build photos downstream
-- 0703-pre-built-views -- materialized tables for pre-computed daily running totals
-- 0207-activity-driven-extraction -- `inventory_movements` as the activity signal
+- @append-and-materialize -- append log as version history when compaction is deferred
+- @append-and-materialize -- extraction log as an implicit event trail
+- @dont-pre-aggregate -- land movements, build photos downstream
+- @pre-built-views -- materialized tables for pre-computed daily running totals
+- @activity-driven-extraction -- `inventory_movements` as the activity signal
 
 // ---
 
@@ -863,9 +859,9 @@ Don't do it if you can avoid it. If you can't, treat it as a formal breaking cha
 
 == Related Patterns
 <related-patterns-6>
-- 0506-charset-encoding -- encoding of identifier names, not just data values
-- 0609-data-contracts -- naming convention as a schema contract
-- 0203-staging-swap -- staging table naming
-- 0104-columnar-destinations -- per-engine identifier behavior
+- @charset-and-encoding -- encoding of identifier names, not just data values
+- @data-contracts -- naming convention as a schema contract
+- @staging-swap -- staging table naming
+- @columnar-destinations -- per-engine identifier behavior
 
 // ---

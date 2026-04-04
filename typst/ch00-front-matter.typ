@@ -1,5 +1,4 @@
-#import "theme.typ": gruvbox, ecl-theme, ecl-tip, ecl-warning, ecl-danger, ecl-info
-#show: ecl-theme
+#import "theme.typ": gruvbox, ecl-tip, ecl-warning, ecl-danger, ecl-info
 = ECL Patterns
 <ecl-patterns>
 === A practical guide to moving data between systems without losing your mind
@@ -41,7 +40,7 @@ The tables were chosen because each one represents a distinct extraction challen
 
 == Schema
 <schema>
-\// TODO: Convert mermaid diagram to Typst or embed as SVG
+// TODO: Convert mermaid diagram to Typst or embed as SVG
 
 The three standalone tables -- `events`, `sessions`, and `metrics_daily` -- have no foreign keys into the schema above. `inventory` and `inventory_movements` connect to `products` via `sku_id` but have no `warehouses` table -- `warehouse_id` is a plain integer key. They represent different source archetypes.
 
@@ -81,6 +80,6 @@ The domain model is designed so that every "always true" business rule is, in fa
 - `inventory` -- "`on_hand` is always \>= 0." Until a write-off creates a negative balance.
 - `inventory_movements` -- "Every stock change creates a movement." Until a bulk import script updates `inventory` directly without logging movements.
 
-When a pattern depends on one of these holding -- or breaking -- it will say so explicitly. See 0106-hard-rules-soft-rules.
+When a pattern depends on one of these holding -- or breaking -- it will say so explicitly. See @hard-rules-soft-rules.
 
 // ---
