@@ -1,0 +1,15 @@
+# Compiled output
+typst/main.pdf
+
+# Obsidian workspace (per-machine state)
+.obsidian/workspace.json
+.obsidian/themes/
+
+# IDE settings
+.vscode/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Stray files
+schedule 1.md
