@@ -25,13 +25,7 @@ So, what we're going to be talking about is ECL: #strong[Extract, Conform, and L
 
 == What About the T?
 <what-about-the-t>
-If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. We cover how to protect them (and your invoice) in @query-patterns-for-analysts.
-
-== Related Patterns
-- #link(<domain-model>)[Domain Model] -- The shared schema used in every SQL example in this book
-- @what-is-conforming
-- @purity-vs-freshness
-- @query-patterns-for-analysts
+If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. I cover how to protect them (and your invoice) in @query-patterns-for-analysts.
 
 // ---
 
@@ -733,17 +727,6 @@ Run these as pre-extraction quality checks. They won't always block your pipelin
 
 This is where @hard-rules-soft-rules becomes critical. Constraints the database doesn't enforce are soft rules. Your pipeline must survive them being wrong -- but it should also surface when they are wrong, so someone can fix the root cause.
 
-== Related Patterns
-<related-patterns-1>
-- @hard-rules-soft-rules
-- @reliable-loads
-- @hard-delete-detection
-- @create-vs-update-separation
-- @synthetic-keys
-- @timezone-conforming
-- @data-contracts
-- @duplicate-detection
-
 // ---
 
 = Hard Rules, Soft Rules
@@ -874,14 +857,6 @@ Full replace sidesteps all of this. A table that gets fully replaced every run d
 
 See @cursor-based-timestamp-extraction for lookback window patterns, and @reliable-loads for building incrementals that survive unreliable cursors.
 
-== Related Patterns
-<related-patterns-2>
-- @the-lies-sources-tell
-- @purity-vs-freshness
-- @reliable-loads
-- @cursor-based-timestamp-extraction
-- @data-contracts
-
 // ---
 
 = Corridors
@@ -898,7 +873,7 @@ A corridor is the combination of source type and destination type. The extractio
 
 #strong[Transactional → Transactional.] PostgreSQL to PostgreSQL. MySQL to SQL Server. An ERP database to a reporting replica. Same class of engine on both ends, often the same dialect. The gap is narrower but not zero -- still have schema drift, cursor problems, and hard deletes. And you now have a destination that actually enforces FK constraints, rejects duplicates, and supports cheap `UPDATE`/`DELETE`. That changes your load strategy significantly.
 
-We don't cover Columnar → Columnar or Columnar → Transactional. The first is rare and usually handled by the analytical platform itself (BigQuery cross-region replication, Snowflake data sharing). The second is unusual enough to be its own project.
+This book doesn't cover Columnar → Columnar or Columnar → Transactional. The first is rare and usually handled by the analytical platform itself (BigQuery cross-region replication, Snowflake data sharing). The second is unusual enough to be its own project.
 
 #figure(
   image("diagrams/ecl-corridors.svg", width: 90%),
@@ -981,13 +956,6 @@ The narrower corridor. Same class of engine on both ends, but don't let that mak
 #ecl-info(
   "Patterns apply to both corridors",
 )[Where the implementation differs, chapters note it explicitly under "By Corridor." When nothing is called out, assume the pattern applies to both.]
-
-== Related Patterns
-<related-patterns-3>
-- @transactional-sources
-- @columnar-destinations
-- @type-casting-and-normalization
-- @sql-dialect-reference
 
 // ---
 
@@ -1098,13 +1066,6 @@ When the SLA genuinely requires sub-hourly continuous refresh: accept it, build 
   "Start with full replace",
 )[Document why you deviated. The default position is full replace. Every deviation toward incremental should be a documented decision: what made full replace infeasible, what purity tradeoffs were accepted, and what the plan is for correcting drift. If you can't articulate why you need incremental, you probably don't.]
 
-== Related Patterns
-<related-patterns-4>
-- @hard-rules-soft-rules
-- @full-scan-strategies
-- @scoped-full-replace
-- @cursor-based-timestamp-extraction
-
 // ---
 
 = Idempotency
@@ -1201,14 +1162,5 @@ These two properties are related but distinct. A pipeline is #strong[stateless] 
 The goal is the top-left quadrant: stateless and idempotent. Full replace lives there naturally. Everything else requires deliberate design to get there -- and @reliable-loads covers the mechanics.
 
 // ---
-
-== Related Patterns
-<related-patterns-5>
-- @purity-vs-freshness -- full replace maximizes both purity and idempotency; incremental trades idempotency guarantees for freshness
-- @full-replace-load -- idempotent by construction
-- @merge-upsert -- idempotent by key matching
-- @append-and-materialize -- idempotent at the view level
-- @reliable-loads -- the operational mechanics of checkpoint placement, retry, and recovery that depend on idempotency
-- @stateless-window-extraction -- the extraction pattern that achieves both statelessness and idempotency
 
 // ---

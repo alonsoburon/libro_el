@@ -127,12 +127,6 @@ For `_extracted_at` and `_batch_id`, the source query is almost always the right
 
 // ---
 
-== Related Patterns
-- 0404 -- `_extracted_at` as the dedup ordering key
-- 0208 -- `_source_hash` enables hash-based change detection
-- 0614 -- `_batch_id` for source-destination row count reconciliation
-- 0301 -- why `updated_at` is unreliable and `_extracted_at` is your safety net
-
 // ---
 
 = Synthetic Keys
@@ -232,13 +226,6 @@ If you're hashing across multiple tables and worry about cross-table collisions,
 #ecl-info("Transactional to transactional")[Transactional destinations can enforce UNIQUE on `_source_key`. Add a unique index or constraint on the column, and a collision or a badly constructed key gets rejected at the database level with an explicit error. This is a genuine safety net that columnar destinations can't offer -- use it.]
 
 // ---
-
-== Related Patterns
-<related-patterns-1>
-- 0403 -- the MERGE that needs a reliable key to match on
-- 0208 -- hash-based change detection uses similar mechanics but hashes all columns (mutable included) to detect changes, while synthetic keys hash only immutable columns to identify entities
-- 0106 -- "PKs are unique and stable" is often a soft rule
-- 0501 -- `_source_hash` hashes the full row for change detection; `_source_key` hashes immutable columns for identity. Different purpose, similar mechanics
 
 // ---
 
@@ -397,14 +384,6 @@ A few combinations that produce surprising behavior:
 
 // ---
 
-== Related Patterns
-<related-patterns-2>
-- 0104 -- full type mapping tables per engine
-- 0403 -- schema evolution and how new types interact with MERGE
-- 0102 -- type casting as a conforming operation, not transformation
-- 0505 -- timestamp timezone handling, adjacent to timestamp precision
-- 0614 -- monitoring precision drift on financial columns
-
 // ---
 
 = Null Handling
@@ -482,13 +461,6 @@ These are real, and you should document them -- but they're not your problem to 
 #ecl-info("Transactional to transactional")[Transactional destinations _can_ enforce NOT NULL. If the destination schema has NOT NULL constraints and the source has NULLs, the load fails -- and that's a schema mismatch to resolve by adjusting the destination DDL, not a reason to COALESCE in the extraction. If you genuinely need NOT NULL at the destination (for FK integrity or application requirements), make that a conscious decision and handle the NULLs explicitly in a documented transformation step, not silently in the ECL layer.]
 
 // ---
-
-== Related Patterns
-<related-patterns-3>
-- 0502 -- the one case where COALESCE before hashing is justified
-- 0310 -- NULL `updated_at` as an extraction problem
-- 0102 -- null handling as conforming, not transforming
-- 0609 -- surfacing NULL rates through quality checks
 
 // ---
 
@@ -580,14 +552,6 @@ This matters more than partition alignment. A row in the wrong partition is an i
 #ecl-info("Transactional to transactional")[If source is naive PostgreSQL and destination is naive PostgreSQL, no conversion needed -- the naive value transfers as-is. Document the assumption but don't add complexity. If the destination is a different engine (PostgreSQL to MySQL), check whether the naive type behavior differs -- PostgreSQL's `TIMESTAMP WITHOUT TIME ZONE` and MySQL's `DATETIME` are equivalent in practice, but SQL Server's `DATETIME2` has different precision (see 0503).]
 
 // ---
-
-== Related Patterns
-<related-patterns-4>
-- 0503 -- DATETIME2 → TIMESTAMP casting and precision truncation
-- 0504 -- same principle: reflect the source, don't add information that isn't there
-- 0202 -- partition boundaries and timezone alignment
-- 0105 -- "timestamps have timezones" as a common lie
-- 0303 -- overlap windows help with DST ambiguity
 
 // ---
 
@@ -699,12 +663,6 @@ This deserves its own full treatment -- see 0707 for the complete naming convent
 
 // ---
 
-== Related Patterns
-<related-patterns-5>
-- 0103 -- source encoding as an extraction gotcha
-- 0707 -- table and column naming conventions at the destination
-- 0503 -- NVARCHAR vs VARCHAR as a type casting concern
-
 // ---
 
 = Nested Data and JSON
@@ -801,12 +759,5 @@ If you must use a typed `STRUCT` (because the destination requires it or because
 #ecl-info("Transactional to transactional")[Usually straightforward. #strong[PostgreSQL to PostgreSQL]: `JSONB` to `JSONB`. Native, queryable, indexed with GIN indexes. Zero conversion needed. #strong[MySQL to MySQL / PostgreSQL]: MySQL `JSON` to PostgreSQL `JSONB`. Both accept arbitrary JSON. The query syntax differs (`->` vs `->>` semantics) but the data transfers as-is. Both engines accept arbitrary JSON without schema definition, so schema mutation within the JSON is never a load problem.]
 
 // ---
-
-== Related Patterns
-<related-patterns-6>
-- 0102 -- the line between conforming and transforming applies directly here
-- 0403 -- schema evolution and how JSON columns interact with MERGE
-- 0401 -- full replace as a clean way to handle STRUCT schema changes
-- 0703 -- flattening views for consumers who can't query JSON
 
 // ---

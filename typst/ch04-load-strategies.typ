@@ -121,15 +121,6 @@ All three are idempotent -- rerunning the same extraction and load produces the 
 
 // ---
 
-== Related Patterns
-- @partition-swap -- per-engine partition swap mechanics, partition alignment, validation
-- @staging-swap -- per-engine staging swap mechanics, schema conventions, grant handling
-- @idempotency -- full replace gets idempotency for free
-- @append-only-load -- when the source is immutable and no replace is needed
-- @merge-upsert -- when only changed rows should be loaded, not the full table
-- @reliable-loads -- atomicity and failure recovery for loads
-- @extraction-status-gates -- gating the load on extraction status to prevent loading 0 rows
-
 // ---
 
 = Append-Only Load
@@ -254,15 +245,6 @@ This alignment gives you three operational advantages:
 #ecl-warning("Transactional to transactional")[`INSERT ... ON CONFLICT DO NOTHING` handles duplicates at load time with minimal overhead. The primary key index absorbs the conflict check. For high-volume append tables (`events` with millions of rows per day), ensure the destination is partitioned and that `autovacuum` keeps up with the insert rate.]
 
 // ---
-
-== Related Patterns
-<related-patterns-1>
-- @sequential-id-cursor -- the extraction cursor that feeds this load pattern
-- @cursor-based-timestamp-extraction -- cursor on `created_at` as an alternative extraction mechanism
-- @full-replace-load -- for backfilling partitions on append-only tables
-- @merge-upsert -- when the source is mutable and append-only doesn't apply
-- @append-and-materialize -- append every version of mutable data and deduplicate downstream
-- @hard-rules-soft-rules -- "this table is append-only" is a soft rule until the schema enforces it
 
 // ---
 
@@ -460,18 +442,6 @@ Some loaders deduplicate staging automatically when a primary key is defined on 
 
 // ---
 
-== Related Patterns
-<related-patterns-2>
-- @cursor-based-timestamp-extraction -- produces the batch that feeds the MERGE
-- @stateless-window-extraction -- another extraction pattern that produces batches for MERGE
-- @full-replace-load -- when the table is small enough that MERGE complexity isn't worth it
-- @append-only-load -- when the source is immutable and MERGE isn't needed
-- @append-and-materialize -- avoid MERGE entirely by appending every version and deduplicating downstream
-- @hybrid-append-merge -- append for history, MERGE for current state
-- @synthetic-keys -- when the source has no stable primary key for the MERGE
-- @data-contracts -- schema policies that gate the MERGE on schema compatibility
-- @duplicate-detection -- when non-unique keys cause duplicates to compound
-
 // ---
 
 = Append and Materialize
@@ -602,7 +572,7 @@ This works without changing anything about the load -- the mechanism is the same
 <tiered-retention>
 Keeping every extraction indefinitely is a storage problem. Tiered retention sits in between full compaction and no compaction: daily granularity for the recent window, monthly snapshots for older data.
 
-We had a client requesting daily `inventory` snapshots for stock-level analysis across warehouses. After three months the log was large and growing linearly. They realized they only needed daily granularity for the last 60-90 days -- further back, a single snapshot per month was enough for seasonal trends and year-over-year comparisons.
+I had a client requesting daily `inventory` snapshots for stock-level analysis across warehouses. After three months the log was large and growing linearly. They realized they only needed daily granularity for the last 60-90 days -- further back, a single snapshot per month was enough for seasonal trends and year-over-year comparisons.
 
 ```sql
 -- destination: columnar
@@ -641,16 +611,6 @@ See 0706 for the full treatment of point-in-time reconstruction from append logs
 #ecl-warning("Transactional to transactional")[Less common here because `INSERT ... ON CONFLICT` is already cheap on transactional engines -- the MERGE cost ceiling that motivates this pattern doesn't exist. Use append-and-materialize on PostgreSQL when the auditing use case justifies the overhead.]
 
 // ---
-
-== Related Patterns
-<related-patterns-3>
-- @purity-vs-freshness -- the tradeoff this pattern optimizes: cheaper loads → higher frequency → less drift → more purity
-- @append-only-load -- the simpler case where the source is immutable and no dedup is needed
-- @merge-upsert -- the per-run cost ceiling this pattern removes
-- @hybrid-append-merge -- append for history + MERGE for current state, when the read-side cost of the dedup view is too high
-- @full-replace-load -- the full-replace mechanics used when compacting the log to latest-only state
-- @stateless-window-extraction -- the extraction pattern that produces mostly-duplicate batches by design
-- @metadata-column-injection -- `_extracted_at` and `_batch_id` as the dedup ordering key
 
 // ---
 
@@ -724,13 +684,6 @@ The two writes must be treated as a single pipeline unit. If the append to colum
 This pattern is inherently cross-corridor: columnar for the log side, transactional for the current-state side. It doesn't apply within a single corridor -- that's exactly why the simpler patterns exist.
 
 // ---
-
-== Related Patterns
-<related-patterns-4>
-- 0403 -- the upsert mechanic used on the transactional side
-- 0404 -- the append + dedup view used on the columnar side
-- 0406 -- checkpointing and partial failure recovery, especially relevant here where two destinations can fail independently
-- 0501 -- `_extracted_at` and `_batch_id` must be consistent across both destinations for the pair to be reconcilable
 
 // ---
 
@@ -839,16 +792,5 @@ A pipeline that fails silently is worse than one that fails loudly. Your orchest
 #ecl-info("Transactional to transactional")[Transactional engines allow atomic cursor advancement: write the data and update the cursor in the same transaction, making the confirmation gap effectively zero. This is the simplest path to reliable loads -- if you can use it, do. Partial load recovery is also simpler because you can wrap the entire batch in a single transaction and roll back on failure.]
 
 // ---
-
-== Related Patterns
-<related-patterns-5>
-- 0302 -- cursor storage and advancement, the extraction-side complement to this pattern
-- 0303 -- naturally idempotent and stateless, sidesteps most checkpoint concerns
-- 0401 -- idempotent by construction, the baseline that incremental loads need to match
-- 0403 -- upsert makes partial load recovery and retries natural
-- 0404 -- append + dedup view absorbs duplicates from retries
-- 0405 -- two destinations means two failure surfaces, making reliable loads doubly important
-- 0610 -- gating loads on extraction status to prevent silent failures
-- 0109 -- the foundational property that makes everything in this pattern work
 
 // ---

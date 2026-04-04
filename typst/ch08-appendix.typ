@@ -917,7 +917,7 @@ Dagster's core abstraction is the #strong[software-defined asset]: a function th
 - #strong[Asset checks] (`@asset_check`) run inline after materialization: row count validation, null rate thresholds, schema drift detection. Maps directly to 0609 and 0610.
 - #strong[Freshness policies] declare how stale an asset is allowed to be. Violations surface in the UI and trigger alerts -- the 0604 SLA expressed as a one-liner in the asset definition.
 - #strong[Custom metadata per materialization] (`context.add_output_metadata({"row_count": n})`) feeds the health table (0602) as a side effect of every run, with no explicit INSERT required.
-- #strong[Sensors] trigger runs from external events. We use sensors to let dashboard admins trigger an on-demand refresh of the tables behind their reports, which means the pipeline only needs to run once daily while consumers who need fresher data pull it when they actually need it -- without a high-frequency schedule running for data nobody checks until 10 AM.
+- #strong[Sensors] trigger runs from external events. I use sensors to let dashboard admins trigger an on-demand refresh of the tables behind their reports, which means the pipeline only needs to run once daily while consumers who need fresher data pull it when they actually need it -- without a high-frequency schedule running for data nobody checks until 10 AM.
 - #strong[Concurrency limits per resource] cap concurrent extractions against a single source without global semaphores. At scale -- thousands of tables across dozens of sources -- this is what keeps the pipeline from overloading its own clients.
 
 #ecl-info(
@@ -1002,15 +1002,6 @@ For a new ECL project, start with #strong[Dagster]. The asset model maps 1:1 to 
   )],
   kind: table,
 )
-
-== Related Patterns
-- 0602 -- The health table that orchestrators populate
-- 0604 -- Freshness policies and SLA monitoring
-- 0606 -- Scheduling cadence and co-scheduling
-- 0608 -- Tiered freshness by table criticality
-- 0609 -- Data quality checks and schema contracts
-- 0610 -- Status gates that block downstream on extraction failure
-- 0611 -- Backfill execution patterns
 
 // ---
 
@@ -1160,9 +1151,9 @@ Combined with a stateless trailing-window extraction (0303), the pipeline has no
 
 === Going Custom
 <going-custom>
-At scale, we don't use `sql_database` or `sql_table` -- we use dlt as a loader only and build extraction, merge, and schema evolution ourselves. The reasons are specific to our workload (thousands of tables, custom partition-pruned merges, PyArrow batching for performance), and most teams won't need this level of control. But if you outgrow the standard `sql_table` path, here's what we replaced and why:
+At scale, I don't use `sql_database` or `sql_table` -- I use dlt as a loader only and build extraction, merge, and schema evolution myself. The reasons are specific to my workload (thousands of tables, custom partition-pruned merges, PyArrow batching for performance), and most teams won't need this level of control. But if you outgrow the standard `sql_table` path, here's what I replaced and why:
 
-- #strong[Extraction]: custom `@dlt.resource` functions with manual SQL via SQLAlchemy instead of `sql_table`. We build the query ourselves (including the WHERE clause for trailing-window extraction) and yield PyArrow tables via dlt's `row_tuples_to_arrow` helper -- significantly faster than dict-based iteration for large tables.
+- #strong[Extraction]: custom `@dlt.resource` functions with manual SQL via SQLAlchemy instead of `sql_table`. I build the query myself (including the WHERE clause for trailing-window extraction) and yield PyArrow tables via dlt's `row_tuples_to_arrow` helper -- significantly faster than dict-based iteration for large tables.
 - #strong[Merge]: custom DELETE+INSERT+QUALIFY in a BigQuery transaction instead of dlt's built-in merge. dlt's merge rewrites all touched partitions; ours prunes the DELETE to only the months that appear in the staging data, which matters when a 7-day trailing window touches rows across 2-3 partition months on a table with years of history.
 - #strong[Schema evolution]: custom `ALTER TABLE ADD COLUMN` before the merge step, with a mapping for BigQuery's legacy type names (`FLOAT` → `FLOAT64`, `INTEGER` → `INT64`) that the schema API returns.
 - #strong[Incremental state]: no `_dlt_pipeline_state` table. The trailing window (0303) means every run re-extracts the same N-day range regardless of what happened before -- no cursor to track, no state to corrupt.
@@ -1242,13 +1233,6 @@ Worth it when no alternative exists or when the extraction logic is complex enou
   "Mix and match tools freely",
 )[Running dlt for your SQL sources and Fivetran for two SaaS APIs is a perfectly valid architecture. The destination doesn't care which tool loaded the data, as long as your naming convention and metadata columns are consistent across all of them.]
 
-== Related
-<related>
-- 0102 -- What belongs in the conforming layer
-- 0501 -- Metadata columns that every loader should inject
-- 0609 -- Schema contracts and data quality gates
-- 0707 -- Naming conventions and why they're permanent
-
 // ---
 
 = Destinations
@@ -1295,7 +1279,7 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 == BigQuery
 <bigquery>
-#strong[Best for:] serverless pay-per-query, many ad-hoc consumers, Google Cloud native stacks. This is our primary destination -- BigQuery's cost model rewards exactly what ECL pipelines produce: partition-scoped writes, partition-filtered reads, and bulk loads over row-by-row DML.
+#strong[Best for:] serverless pay-per-query, many ad-hoc consumers, Google Cloud native stacks. This is my primary destination -- BigQuery's cost model rewards exactly what ECL pipelines produce: partition-scoped writes, partition-filtered reads, and bulk loads over row-by-row DML.
 
 #strong[ECL strengths:]
 - `require_partition_filter` is the only engine with query-cost enforcement built into the table definition -- consumers literally cannot full-scan without a partition predicate
@@ -1473,13 +1457,5 @@ How each engine handles the load strategies from Part IV, and what each costs re
 )[The decision matrix above is a starting point, but the more productive question is often: which load strategies does my pipeline need, and which engines support them cheaply? If every table can be fully replaced, all five engines work fine and the choice comes down to your cloud provider and team expertise. The engine choice starts to matter when you need high-concurrency MERGE, append-and-materialize with dedup views, or partition-level atomic swaps -- that's when the compatibility table above narrows the field.]
 
 // ---
-
-== Related Patterns
-<related-patterns-1>
-- 0104 -- Storage mechanics, partitioning, and engine behavior
-- 0107 -- Transactional -\> Columnar vs Transactional -\> Transactional
-- 0405 -- Dual-destination pattern for mixed workloads
-- 0705 -- Engine-specific cost levers once data is loaded
-- 0801 -- Syntax differences across all engines
 
 // ---

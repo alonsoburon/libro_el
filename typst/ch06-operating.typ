@@ -36,7 +36,7 @@ Observability breaks into four layers, each covering a different failure mode. Y
 <run-health>
 The basics: did the pipeline run, did it succeed, and how long did it take? Every orchestrator tracks this natively -- run status, duration, dependency graphs -- so there's rarely anything to build here. What the orchestrator gives you for free is already enough.
 
-The one thing worth adding is trend tracking on duration. A 3-minute job that creeps to 30 minutes is a signal even when it still succeeds, because it tells you the table is growing or the source is degrading before either becomes an emergency. We had a table silently grow enough that its extraction started overlapping with the next scheduled run, causing 3 PM crashes for weeks before we charted duration and saw it had been climbing steadily for months -- the fix was moving heavy tables to a less frequent schedule (0608), but the signal was in the health table long before the failure. Without duration trends, you discover these problems when jobs start timing out, which is too late to fix gracefully.
+The one thing worth adding is trend tracking on duration. A 3-minute job that creeps to 30 minutes is a signal even when it still succeeds, because it tells you the table is growing or the source is degrading before either becomes an emergency. I had a table silently grow enough that its extraction started overlapping with the next scheduled run, causing 3 PM crashes for weeks before I charted duration and saw it had been climbing steadily for months -- the fix was moving heavy tables to a less frequent schedule (0608), but the signal was in the health table long before the failure. Without duration trends, you discover these problems when jobs start timing out, which is too late to fix gracefully.
 
 Retry counts are worth recording if your pipeline retries on transient failures. A job that succeeds on the third retry every day is not healthy -- it's masking an unstable connection or a source system under load.
 
@@ -44,7 +44,7 @@ Retry counts are worth recording if your pipeline retries on transient failures.
 <data-health>
 This is where monitoring earns its keep. Run Health tells you the pipeline executed; Data Health tells you what the pipeline produced.
 
-#strong[Row counts] are the single most useful metric. Track three numbers: `source_rows` (counted at the source before extraction), `rows_extracted` (returned by the extraction query), and `destination_rows` (counted at the destination after load). Each pair tells you something different. On a full replace, `rows_extracted` should equal `destination_rows` -- you pulled N rows and loaded them, so the destination should have N. If it doesn't, something was lost or duplicated during the load. `source_rows` vs `destination_rows` over time is a drift indicator for incremental tables -- if the totals diverge across runs, you're accumulating missed rows or orphaned deletes. A 50% drop in any of the three is a signal worth investigating, but row counts have a blind spot: they measure volume, not composition. We had a client whose `invoices` table hard-deleted draft invoices regularly while new ones replaced them at roughly the same rate -- the count stayed stable, but the destination accumulated stale drafts the source had already removed. Only a daily PK comparison (0614) caught the problem, because row counts told us the right #emph[number] of rows existed without revealing they were the wrong rows.
+#strong[Row counts] are the single most useful metric. Track three numbers: `source_rows` (counted at the source before extraction), `rows_extracted` (returned by the extraction query), and `destination_rows` (counted at the destination after load). Each pair tells you something different. On a full replace, `rows_extracted` should equal `destination_rows` -- you pulled N rows and loaded them, so the destination should have N. If it doesn't, something was lost or duplicated during the load. `source_rows` vs `destination_rows` over time is a drift indicator for incremental tables -- if the totals diverge across runs, you're accumulating missed rows or orphaned deletes. A 50% drop in any of the three is a signal worth investigating, but row counts have a blind spot: they measure volume, not composition. I had a client whose `invoices` table hard-deleted draft invoices regularly while new ones replaced them at roughly the same rate -- the count stayed stable, but the destination accumulated stale drafts the source had already removed. Only a daily PK comparison (0614) caught the problem, because row counts told us the right #emph[number] of rows existed without revealing they were the wrong rows.
 
 For incremental tables specifically, `rows_extracted` over time is revealing. It shows big moments of change -- month-end closes, batch corrections, seasonal spikes -- where you may want to widen your extraction window or shift the schedule to avoid overlapping with the source system's heaviest period.
 
@@ -387,7 +387,7 @@ Cost is one input to the freshness decision. 0604 defines #emph[when] data must 
 <the-problem-3>
 Stakeholders care about one thing: is the data fresh when they need it? Without an explicit SLA, freshness expectations are implicit -- discovered only when violated, usually via an angry email or an angry call from your boss. A pipeline that finishes at 8:15 AM is fine until someone builds a report that refreshes at 8:00 AM, and now you have an SLA you didn't know about.
 
-We had a client who we #emph[told] -- but didn't write down -- that data updated once daily. They built automated collection emails that fired before midday, but most of their customers had already paid by then. The emails were going out with stale receivables data, and the client blamed the pipeline for the embarrassment. The fix wasn't technical -- it was documenting the SLA in the contract so both sides agreed on what "once daily" actually meant: data reflects the previous night's extraction, available by 9 AM, not refreshed throughout the day. #strong[Everything that isn't written down can be reinterpreted against you.] Document the SLA.
+I had a client who I #emph[told] -- but didn't write down -- that data updated once daily. They built automated collection emails that fired before midday, but most of their customers had already paid by then. The emails were going out with stale receivables data, and the client blamed the pipeline for the embarrassment. The fix wasn't technical -- it was documenting the SLA in the contract so both sides agreed on what "once daily" actually meant: data reflects the previous night's extraction, available by 9 AM, not refreshed throughout the day. #strong[Everything that isn't written down can be reinterpreted against you.] Document the SLA.
 
 == Defining an SLA
 <defining-an-sla>
@@ -510,7 +510,7 @@ A single breach is an incident. Sustained breaches mean the SLA is wrong -- eith
 <anti-patterns-2>
 #ecl-danger("Don't promise SLAs you can't control")[If your pipeline depends on a source system batch job that finishes \"sometime between 5 AM and 7 AM,\" your SLA cannot be 7:30 AM. Build buffer or set the SLA at 9 AM and be honest about it. A missed SLA erodes trust in the pipeline and in you -- a conservative SLA that's always met builds more credibility than an aggressive one that breaks monthly.]
 
-#ecl-warning("Don't confuse desire with willingness to pay")[We had a client who wanted 15-minute maximum delay on their invoicing data. They weren't willing to pay the increased BigQuery bill, and their source had terrible metadata, hard deletes, and no reliable cursor -- making high-frequency extraction expensive to build and expensive to run. After scoping the effort and cost, they realized all they actually needed was one extra on-demand refresh per day. The Head of Sales wanted fresh numbers on his dashboard mid-morning, and a refresh button that triggered the pipeline solved the problem at a fraction of the cost and complexity. Ask what decision the freshness enables before engineering the SLA around it.]
+#ecl-warning("Don't confuse desire with willingness to pay")[I had a client who wanted 15-minute maximum delay on their invoicing data. They weren't willing to pay the increased BigQuery bill, and their source had terrible metadata, hard deletes, and no reliable cursor -- making high-frequency extraction expensive to build and expensive to run. After scoping the effort and cost, they realized all they actually needed was one extra on-demand refresh per day. The Head of Sales wanted fresh numbers on his dashboard mid-morning, and a refresh button that triggered the pipeline solved the problem at a fraction of the cost and complexity. Ask what decision the freshness enables before engineering the SLA around it.]
 
 == What Comes Next
 <what-comes-next-2>
@@ -716,16 +716,6 @@ If your orchestrator can't group tables into a single schedule that runs them co
 
 #ecl-danger("Don't assume your limit is theirs")[Your orchestrator might allow 20 parallel tasks, but the on-prem database you're extracting from might buckle under 8. The constraint is always the weakest link -- your infrastructure #emph[or] the source, whichever gives first. Test against the actual source before increasing limits.]
 
-== Related Patterns
-- @sla-management -- schedule design directly affects whether SLAs are achievable
-- @source-system-etiquette -- concurrency limits and safe hours protect the source
-- @tiered-freshness -- different freshness tiers drive different schedule groups
-- @detail-without-timestamp -- header-detail extraction strategy when the detail table has no cursor
-
-== What Comes Next
-<what-comes-next-4>
-0607 covers the source side of the equation in depth -- what your pipeline does to the database it reads from, and how to keep your access when extracting thousands of tables on a schedule.
-
 // ---
 
 = Source System Etiquette
@@ -738,7 +728,7 @@ If your orchestrator can't group tables into a single schedule that runs them co
 <the-problem-6>
 READ-ONLY access doesn't mean zero impact. A full table scan on a 50-million-row table locks pages, consumes I/O, and competes with the application for CPU and memory -- and the DBA watching the monitoring dashboard doesn't care that your query is a harmless SELECT. Their job is to keep the application fast for the users who generate revenue; your extraction is a background process that, from their perspective, exists only to slow things down. If you're careless about when and how you extract, you'll lose access -- and if you're unlucky, you'll bring the database down on your way out.
 
-I had a client whose IT team didn't mention they ran full database backups between 5 and 6 AM. A load failed overnight, and the automatic retry kicked in at 5:30 AM -- right on top of the backup window. The database went down. It was back up within the hour, but the conversation about revoking our access lasted a week. The mistake wasn't the retry logic; it was not knowing the source's maintenance windows.
+I had a client whose IT team didn't mention they ran full database backups between 5 and 6 AM. A load failed overnight, and the automatic retry kicked in at 5:30 AM -- right on top of the backup window. The database went down. It was back up within the hour, but the conversation about revoking my access lasted a week. The mistake wasn't the retry logic; it was not knowing the source's maintenance windows.
 
 == Know Your Source
 <know-your-source>
@@ -756,7 +746,7 @@ The sensitivity of a source system determines how carefully you need to tread. B
 <check-your-cursor-columns>
 `updated_at`, `UpdateDate`, `CreateDate` -- the columns your incremental queries filter on exist for the application, not for your extraction. Check whether they're indexed before assuming your `WHERE updated_at > :cursor` will be fast. If they're not indexed, you're forcing a full table scan every run, and the DBA will notice before you do.
 
-Ask the DBA to add an index. This is more achievable than it sounds -- adding an index on a timestamp column is a low-risk change that benefits anyone querying by date, and technical stakeholders on the source side often stand to gain from it too. We've had clients proactively add indexes after noticing our scans were slow, before we even asked. It's a soft rule -- officially read-only, but the performance improvement is large enough that most DBAs will cooperate.
+Ask the DBA to add an index. This is more achievable than it sounds -- adding an index on a timestamp column is a low-risk change that benefits anyone querying by date, and technical stakeholders on the source side often stand to gain from it too. I've had clients proactively add indexes after noticing my scans were slow, before I even asked. It's a soft rule -- officially read-only, but the performance improvement is large enough that most DBAs will cooperate.
 
 If they can't add an index -- vendor-controlled schemas sometimes make this difficult or unsupported -- schedule those extractions for off-peak hours and accept that the scan will be heavier than ideal (see 0606, safe hours).
 
@@ -825,18 +815,6 @@ The relationship with the source team determines how much access you keep and ho
 
 #ecl-danger("Don't assume the DBA knows you exist")[If nobody on the source team knows your pipeline connects to their database, the first time they find out will be during an incident -- which is the worst possible time to introduce yourself. Establish the relationship before you go live.]
 
-== Related Patterns
-<related-patterns-1>
-- @monitoring-and-observability -- source health metrics measure your impact
-- @scheduling-and-dependencies -- safe hours, concurrency limits, and parallelism tradeoffs
-- @extraction-status-gates -- timeout handling and explicit failure
-- @full-scan-strategies -- full scans are the highest-impact extraction pattern
-- @sla-management -- business hours and freshness expectations are agreed during SLA stage
-
-== What Comes Next
-<what-comes-next-5>
-0608 covers how to assign different update frequencies to different tables based on consumer needs -- the framework that determines which tables run during business hours, which wait for the off-peak window, and which only need a daily refresh.
-
 // ---
 
 = Tiered Freshness
@@ -849,7 +827,7 @@ The relationship with the source team determines how much access you keep and ho
 <the-problem-7>
 The naive approach is one schedule for everything: all tables, same cadence, same extraction method. It works when you have a dozen tables and a daily overnight window. It stops working when some of those tables need to be fresh within the hour while others haven't changed in months -- because now you're either over-refreshing cold data (wasting compute, money and source load) or under-refreshing hot data (delivering stale results to the consumers).
 
-The subtler version of this problem is not refreshing everything at the same #emph[frequency] but with the same #emph[method];. We had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was not. The DBA noticed before we did. The fix wasn't changing the schedule; it was splitting the table's extraction into tiers: recent data incrementally and often, historical data fully but rarely.
+The subtler version of this problem is not refreshing everything at the same #emph[frequency] but with the same #emph[method];. I had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was not. The DBA noticed before I did. The fix wasn't changing the schedule; it was splitting the table's extraction into tiers: recent data incrementally and often, historical data fully but rarely.
 
 == The Tiers
 <the-tiers>
@@ -943,15 +921,6 @@ A table can move between tiers as business cycles shift. Month-end promotes some
   )]
   , kind: table
   )
-
-== Related Patterns
-<related-patterns-2>
-- @sla-management -- SLA tiers define freshness requirements; tiered freshness implements them
-- @scheduling-and-dependencies -- schedule structure and safe hours
-- @cost-monitoring -- tiered freshness is partly a cost optimization strategy
-- @rolling-window-replace -- the warm tier often uses rolling window
-- @cursor-based-timestamp-extraction -- the hot tier uses cursor-based incremental
-- @purity-vs-freshness -- the fundamental tradeoff that tiered freshness navigates
 
 // ---
 
@@ -1079,16 +1048,6 @@ The practical approach is to rely on a type-mapping library (SQLAlchemy, your lo
   , kind: table
   )
 
-== Related Patterns
-<related-patterns-3>
-- @monitoring-and-observability -- schema fingerprinting and null rate tracking feed contracts
-- @alerting-and-notifications -- contract violations trigger alerts
-- @extraction-status-gates -- pre-load gate is the inline enforcement mechanism
-- @sla-management -- freshness contract is the SLA expressed as a checkable rule
-- @reconciliation-patterns -- volume contract enforcement post-load
-- @merge-upsert -- schema evolution policy reasoning (why discard modes break conforming)
-- @partial-column-loading -- the explicit alternative to silent column discarding
-
 // ---
 
 = Extraction Status Gates
@@ -1101,7 +1060,7 @@ The practical approach is to rely on a type-mapping library (SQLAlchemy, your lo
 <the-problem-9>
 An extraction that returns 0 rows and reports SUCCESS could mean two things: the table genuinely had no changes since the last run, or the source was down, the query timed out silently, or the connection returned an empty result set instead of an error. Without a gate, these two scenarios are indistinguishable -- and the pipeline treats them identically, loading nothing and advancing the cursor past data it never read. For incremental tables, that gap is permanent. For full replace tables, it's worse: the destination gets truncated and replaced with nothing.
 
-This happens more often with APIs than with direct SQL connections, but SQL sources aren't immune. We had a client whose upstream team gave us a "database clone" that periodically truncated its tables before reloading them. If our extraction hit the window between truncate and reload, we'd read 0 rows from a table that should have had hundreds of thousands -- and our full replace would dutifully wipe the destination clean. It happened more than once before we gated it.
+This happens more often with APIs than with direct SQL connections, but SQL sources aren't immune. I had a client whose upstream team gave us a "database clone" that periodically truncated its tables before reloading them. If my extraction hit the window between truncate and reload, I'd read 0 rows from a table that should have had hundreds of thousands -- and my full replace would dutifully wipe the destination clean. It happened more than once before I gated it.
 
 == Gate Mechanics
 <gate-mechanics>
@@ -1181,14 +1140,6 @@ Whichever you choose, make the decision explicit: log it in the health table, in
 
 #ecl-warning("Don't gate without a baseline")[A gate that fires on \"fewer rows than I expected\" without historical data to define \"expected\" is a guess. Run the pipeline ungated for 30 days, collect baselines, then enable the gate.]
 
-== Related Patterns
-<related-patterns-4>
-- @data-contracts -- defines enforcement points (when to check); this pattern defines gate mechanics (what to check)
-- @alerting-and-notifications -- the gate triggers alerts
-- @reconciliation-patterns -- count reconciliation is a post-load version of the same idea
-- @reliable-loads -- cursor advancement gated on confirmed load success
-- @stateless-window-extraction -- stateless windows reduce cursor risk but still benefit from load gating
-
 // ---
 
 = Backfill Strategies
@@ -1203,7 +1154,7 @@ Something went wrong upstream -- a schema change, a bad deploy, a data corruptio
 
 Backfills aren't rare. If you're running hundreds of tables with clients who routinely correct old records, delete and re-enter documents, or run maintenance scripts that touch historical data, backfills are a weekly operation. A `start_date` override or a `full_refresh: true` flag should be tools you reach for without hesitation -- the pipeline that can't backfill safely is the one that drifts furthest from its source.
 
-We had a client with a massive table on a very slow on-prem database -- too large to extract in a single overnight window. We loaded two years of data per night, chunked by date range, and it took four nights to complete. The table has been a constant headache since: every backfill is a multi-night operation, and any interruption on night three means deciding whether to restart from scratch or resume from the interrupted chunk.
+I had a client with a massive table on a very slow on-prem database -- too large to extract in a single overnight window. I loaded two years of data per night, chunked by date range, and it took four nights to complete. The table has been a constant headache since: every backfill is a multi-night operation, and any interruption on night three means deciding whether to restart from scratch or resume from the interrupted chunk.
 
 == Backfill Types
 <backfill-types>
@@ -1225,7 +1176,7 @@ Reload specific records by primary key -- a handful of corrupted orders, not the
 <isolation-from-live-pipelines>
 Backfills should never block or delay scheduled runs. Run them as separate jobs in your orchestrator, with their own schedule (or manual trigger) and their own concurrency limits. If your orchestrator supports run priority or queue separation, give scheduled runs higher priority so they proceed even when a backfill is in progress -- the backfill can pause between chunks while the scheduled run completes, then resume.
 
-We learned this when a backfill and a scheduled incremental run hit the same table at the same time -- both slowed down, both errored, and fixing it meant stopping the backfill, waiting for the scheduled run to finish, and restarting from the interrupted chunk.
+I learned this when a backfill and a scheduled incremental run hit the same table at the same time -- both slowed down, both errored, and fixing it meant stopping the backfill, waiting for the scheduled run to finish, and restarting from the interrupted chunk.
 
 === Chunking
 <chunking>
@@ -1281,16 +1232,6 @@ Both should be launchable from your orchestrator's UI without modifying code or 
 #ecl-danger("Don't forget the state reset")[On cursor-based pipelines, reloading the data while the cursor still points to the old high-water mark means the next incremental run skips everything between the cursor and the new data. Clear the state or force a full refresh. Stateless window extraction avoids this entirely -- there's no state to forget.]
 
 #ecl-warning("Don't let backfills compete with schedules")[A backfill that blocks a scheduled run isn't fixing the pipeline -- it's degrading it. Isolate backfills in separate jobs with lower priority, and design the chunking so a backfill can yield to a scheduled run between chunks.]
-
-== Related Patterns
-<related-patterns-5>
-- @partition-swap -- the mechanism for date-range backfills in partitioned tables
-- @rolling-window-replace -- rolling window as a scoped backfill strategy
-- @full-replace-load -- full table backfill
-- @stateless-window-extraction -- no state to reset after backfill
-- @source-system-etiquette -- safe hours and source protection
-- @tiered-freshness -- cold-tier full replace is a scheduled backfill by another name
-- @recovery-from-corruption -- backfill as a recovery mechanism after corruption
 
 // ---
 
@@ -1357,17 +1298,6 @@ The tension is failure fatigue. If the pipeline fails every single run because o
 #ecl-danger("Don't rerun everything")[Retry only the failed tables. Rerunning the entire pipeline to fix 3 failures wastes compute, risks new failures on previously successful tables, and delays recovery.]
 
 #ecl-warning("Don't leave tables stuck in loading")[A table in `loading` after the run process has died is a failed table. If your recovery logic doesn't detect and reset orphaned states, those tables sit in limbo indefinitely -- neither loaded nor marked for retry.]
-
-== Related Patterns
-<related-patterns-6>
-- @cursor-based-timestamp-extraction -- cursor advances only after confirmed load; partial failures don't create gaps
-- @stateless-window-extraction -- no cursor state, so partial failure recovery is automatic on next run
-- @reliable-loads -- idempotent loads that survive interruption
-- @the-health-table -- per-table per-run outcome tracking
-- @alerting-and-notifications -- partial failures must alert, not just log
-- @extraction-status-gates -- gates prevent load on suspect extraction results
-- @duplicate-detection -- deduplication after a partially applied append
-- @recovery-from-corruption -- when partial failure leads to corrupted data
 
 // ---
 
@@ -1483,15 +1413,6 @@ Fast to deploy, no DML, no data loss risk. If you rename the base table to `orde
 
 #ecl-danger("Verify duplicates before blaming the pipeline")[Run the `GROUP BY pk HAVING COUNT(\*) > 1` check first -- it takes seconds. If the table is clean, the problem is downstream.]
 
-== Related Patterns
-<related-patterns-7>
-- @full-replace-load -- full replace as a dedup-via-rebuild strategy
-- @merge-upsert -- merge prevents duplicates when the PK is correct
-- @append-and-materialize -- structural dedup via view, eliminates duplicate risk permanently
-- @metadata-column-injection -- `_batch_id` identifies which load introduced duplicates
-- @synthetic-keys -- content hashing for dedup when no natural PK exists
-- @reconciliation-patterns -- row count mismatch is often the first signal of duplication
-
 // ---
 
 = Reconciliation Patterns
@@ -1558,18 +1479,6 @@ Store the results in the health table (0602): table name, source count, destinat
 == Anti-Pattern
 <anti-pattern>
 #ecl-warning("Don't reconcile only on count")[A table with 1M rows at source and 1M rows at destination can still be wrong: 1,000 rows missing, 1,000 duplicates. Count matches, data doesn't. Use aggregate reconciliation for critical tables.]
-
-== Related Patterns
-<related-patterns-8>
-- @monitoring-and-observability -- reconciliation delta is a data health metric
-- @the-health-table -- stores per-table counts for historical comparison
-- @alerting-and-notifications -- threshold breaches trigger alerts
-- @data-contracts -- volume contracts are reconciliation expressed as a pre-load check
-- @extraction-status-gates -- pre-load gating is reconciliation's inline cousin
-- @duplicate-detection -- count mismatch is often the first signal of duplication
-- @hard-delete-detection -- pk-to-pk comparison for resolving small discrepancies
-- @full-scan-strategies -- full reload for resolving large discrepancies
-- @partition-swap -- partition-scoped reload for resolving discrepancies in a date range
 
 // ---
 
@@ -1659,15 +1568,5 @@ None of these prevent corruption from happening -- source schemas change, bugs s
 #ecl-warning("Don't fix forward without fixing backward")[Fixing the pipeline so future runs are correct doesn't fix the corrupted historical data already in the destination. You need both: fix the code AND rebuild the affected range. A pipeline that's producing correct data going forward while three months of bad data sits in the destination is a pipeline that's still wrong -- it's just wrong in a way that's harder to notice.]
 
 #ecl-danger("Don't rebuild before confirming the fix")[Reloading 3 months of data only to have the same bug corrupt it again is wasted work and a wasted weekend. Confirm the fix is deployed, test it on a small range, then run the full rebuild. The checklist above puts "test on a small range" before the rebuild for exactly this reason.]
-
-== Related Patterns
-<related-patterns-9>
-- @metadata-column-injection -- `_batch_id` and `_extracted_at` scope the corruption to specific loads
-- @hard-delete-detection -- PK-to-PK comparison for surgical repair
-- @data-contracts -- contracts catch the drift before it becomes corruption
-- @backfill-strategies -- the mechanism for rebuilding a date range
-- @reconciliation-patterns -- post-rebuild verification and small-gap resolution
-- @partial-failure-recovery -- when corruption is caused by a partial failure
-- @stateless-window-extraction -- no state to reset after recovery
 
 // ---

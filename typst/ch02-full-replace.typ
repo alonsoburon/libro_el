@@ -133,15 +133,6 @@ See @data-contracts for formalizing these checks into reusable contracts.
 
 #strong[Source that can't absorb the load.] Some sources are so sensitive that even an off-hours full scan causes problems. Shared multi-tenant SaaS databases, under-resourced ERPs, systems with hard connection limits. In these cases, extract incrementally and accept the complexity cost. It's cheaper than a production incident.
 
-== Related Patterns
-- @partition-swap
-- @staging-swap
-- @scoped-full-replace
-- @cursor-based-timestamp-extraction
-- @source-system-etiquette
-- @data-contracts
-- @purity-vs-freshness
-
 // ---
 
 = Partition Swap
@@ -294,15 +285,6 @@ Late-arriving data adds another dimension: rows for prior dates arriving today b
 #ecl-warning("Transactional to Columnar")[Primary use case (e.g.~PostgreSQL → BigQuery). Columnar destinations are built for partitioned loads. One staging load + N partition operations per job. BigQuery partition copy is near-free compared to any DML option.]
 
 #ecl-info("Transactional to Transactional")[E.g.~PostgreSQL → PostgreSQL. Transactional destinations have no columnar partition concept. Equivalent: `DELETE WHERE partition_key BETWEEN :start AND :end` then bulk INSERT from staging, inside a transaction. Less elegant but achieves the same scoped replace with the same atomicity guarantee.]
-
-== Related Patterns
-<related-patterns-1>
-- @full-scan-strategies
-- @staging-swap
-- @late-arriving-data
-- @timezone-conforming
-- @columnar-destinations
-- @extraction-status-gates
 
 // ---
 
@@ -480,13 +462,6 @@ If the swap itself fails mid-operation (rare, but possible on non-atomic engines
 
 #ecl-warning("Transactional to Transactional")[Equally valid (e.g.~PostgreSQL → PostgreSQL). The PostgreSQL RENAME-within-transaction approach is clean and atomic. One additional concern: foreign keys referencing the production table. If other tables have FK constraints pointing to `orders`, the rename sequence may fail or temporarily break referential integrity. Disable FK checks or use `CASCADE` options with care before swapping.]
 
-== Related Patterns
-<related-patterns-2>
-- @full-scan-strategies
-- @partition-swap
-- @data-contracts
-- @extraction-status-gates
-
 // ---
 
 = Scoped Full Replace
@@ -617,14 +592,6 @@ Three pipelines, one table, each running at the cadence that matches the data's 
 
 #ecl-warning("Transactional to Transactional")[Same logic, different destination operation (e.g.~PostgreSQL → PostgreSQL): `DELETE FROM orders WHERE created_at >= :scope_start` followed by bulk INSERT from staging, inside a transaction. Rows before `scope_start` are outside the DELETE range and untouched. The same scope documentation requirement applies.]
 
-== Related Patterns
-<related-patterns-3>
-- @partition-swap -- execution mechanism for the managed zone
-- @full-scan-strategies -- for dimension tables that don't fit a scope
-- @rolling-window-replace -- rolling offset instead of calendar anchor
-- @cursor-from-another-table -- scoping detail tables without their own timestamp
-- @purity-vs-freshness
-
 // ---
 
 = Rolling Window Replace
@@ -725,13 +692,6 @@ Optionally, compare the window row count against the prior run. A large drop in 
 
 #ecl-info("Transactional to Transactional")[Natural fit (e.g.~PostgreSQL → PostgreSQL). DELETE by PK from staging, then INSERT -- or upsert with `ON CONFLICT (id) DO UPDATE`. Precise, no partition mismatch, no overshoot. The destination PK constraint is the safety net. See mechanics above for the full SQL.]
 
-== Related Patterns
-<related-patterns-4>
-- @partition-swap -- execution mechanism for the columnar replacement
-- @scoped-full-replace -- calendar anchor variant; harder boundary, less aggressive freezing
-- @late-arriving-data -- sizing the window for late arrivals
-- @cursor-based-timestamp-extraction -- cursor-based equivalent; same intuition, different mechanics
-
 // ---
 
 = Sparse Table Extraction
@@ -813,12 +773,6 @@ The filter is a contract. If the business changes the definition -- "now we also
 0207 solves a related problem differently. Sparse table extraction still scans the full source table -- it just drops most rows before loading. Activity-driven extraction avoids scanning the sparse table at all: it uses recent transaction history to determine which dimension combinations are worth pulling, then queries only those.
 
 0207 is simpler and works for any sparse table. 0208 is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, 0207 is the next step.
-
-== Related Patterns
-<related-patterns-5>
-- @activity-driven-extraction -- avoid scanning the sparse table entirely
-- @full-scan-strategies -- if the table is small enough, the filter isn't worth the complexity
-- @data-contracts -- formalize the filter as a documented contract
 
 // ---
 
@@ -911,15 +865,6 @@ ON CONFLICT (sku_id, warehouse_id) DO UPDATE SET
 ```
 
 The index makes this fast. No full destination scan required -- the database resolves each upsert via the PK index.]
-
-== Related Patterns
-<related-patterns-6>
-- @sparse-table-extraction -- simpler variant; still scans the sparse table, just filters it
-- @full-scan-strategies -- periodic reset that catches every blind spot
-- @staging-swap -- load mechanism for columnar destinations
-- @rolling-window-replace -- activity window sizing follows the same logic as rolling window N
-- @tiered-freshness -- tiered cadences applied to the activity window
-- @late-arriving-data -- sizing the window for slow movers
 
 // ---
 
@@ -1038,13 +983,6 @@ If using `_source_hash` on the destination for comparison, reading that column o
 
 #ecl-warning("Transactional to Transactional")[E.g.~PostgreSQL → PostgreSQL. `_source_hash` on the destination is cheap -- a column scan on a transactional DB with an index is fast. Compare via JOIN, upsert changed rows by PK with `ON CONFLICT DO UPDATE`, delete missing PKs. The destination enforces the PK, so the upsert is safe. Simpler than the columnar case.]
 
-== Related Patterns
-<related-patterns-7>
-- @the-lies-sources-tell -- broken cursors that make this necessary
-- @cursor-based-timestamp-extraction -- the cursor-based alternative when `updated_at` works
-- @metadata-column-injection -- `_source_hash` as a standard metadata column
-- @scoped-full-replace -- scope the hash comparison to avoid scanning frozen history
-
 // ---
 
 = Partial Column Loading
@@ -1153,11 +1091,5 @@ WHERE table_name = 'customers'
 #ecl-info("Transactional to Columnar")[E.g.~any source → BigQuery. Columnar stores have first-class column-level descriptions in their catalog. Use them. Set the table description and annotate each present column; note which columns are absent and why. Consumers who query the information schema or use a data catalog tool will see it without needing to find the pipeline code.]
 
 #ecl-info("Transactional to Transactional")[E.g.~any source → PostgreSQL. Same extraction SQL. At the destination, use `COMMENT ON COLUMN` or `COMMENT ON TABLE` to document the exclusions directly in the schema. It's the closest equivalent to a catalog annotation and it travels with the table.]
-
-== Related Patterns
-<related-patterns-8>
-- @type-casting-and-normalization -- try casting before excluding; partial loading is the fallback
-- @full-scan-strategies -- column exclusion applies regardless of how you detect changes
-- @hash-based-change-detection -- hash-based detection breaks if the hashed column set doesn't match the extracted column set; align them explicitly
 
 // ---

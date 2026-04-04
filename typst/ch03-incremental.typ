@@ -79,12 +79,6 @@ If a full table reload is too expensive, scope the full replace to a rolling win
 
 // ---
 
-== Related Patterns
-- @cursor-based-timestamp-extraction -- track a high-water mark; extract only what changed since the last run
-- @stateless-window-extraction -- extract a fixed trailing window every run; no cursor, no state
-- @create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
-- @full-scan-strategies -- when the table is small enough that incremental complexity isn't worth it
-
 // ---
 
 = Cursor-Based Timestamp Extraction
@@ -145,20 +139,12 @@ Add a small buffer on the lower bound (5--30 seconds) to absorb clock skew betwe
 
 // ---
 
-== Related Patterns
-<related-patterns-1>
-- @timestamp-extraction-foundations -- when `updated_at` lies, validation checklist, periodic full replace
-- @stateless-window-extraction -- cursor-free alternative; always re-extracts a fixed trailing window
-- @sequential-id-cursor -- when `updated_at` doesn't exist but the PK is monotonic
-- @reliable-loads -- checkpointing, atomicity, and what "confirmed successful load" actually means
-- @create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
-
 // ---
 
 = Stateless Window Extraction
 <stateless-window-extraction>
 #quote(block: true)[
-#strong[One-liner:] Extract a fixed trailing window on every run. No cursor, no state between runs. This is how we run most of our incremental tables.
+#strong[One-liner:] Extract a fixed trailing window on every run. No cursor, no state between runs. This is how I run most of my incremental tables.
 ]
 
 See 0301 for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
@@ -182,11 +168,11 @@ A window measured in days absorbs any clock skew between source and extractor. N
 
 // ---
 
-== Why We Default to This
-<why-we-default-to-this>
+== Why I Default to This
+<why-i-default-to-this>
 A cursor-based pipeline can fail in ways that are hard to debug: partial loads that advance the cursor, destination rebuilds that reset the high-water mark, orchestrator metadata that gets out of sync. All of these produce permanent gaps that are invisible until someone notices the counts are off.
 
-A stateless window can't have any of these problems. There's no state to corrupt. Re-run it, get the same result. Retry after failure -- just run again. Backfill a date range -- change the window bounds. Two runs overlap -- upsert or dedup handles it. Every property we want from a pipeline (stateless, idempotent, safe to retry, safe to parallelize) comes for free.
+A stateless window can't have any of these problems. There's no state to corrupt. Re-run it, get the same result. Retry after failure -- just run again. Backfill a date range -- change the window bounds. Two runs overlap -- upsert or dedup handles it. Every property you want from a pipeline (stateless, idempotent, safe to retry, safe to parallelize) comes for free.
 
 The tradeoff: you always process the full window even when almost nothing changed. For small-to-moderate tables with indexed `updated_at`, that cost is almost always less than the engineering cost of managing cursor state across thousands of tables.
 
@@ -258,14 +244,6 @@ Load with append-and-materialize (0404) to keep the per-run cost near zero. At i
 #ecl-warning("Transactional to transactional corridor")[Cheap on both sides. The source query is the same indexed scan. Load cost scales with batch size, not table size -- high-frequency runs are viable here. See @merge-upsert for the upsert mechanics.]
 
 // ---
-
-== Related Patterns
-<related-patterns-2>
-- @timestamp-extraction-foundations -- when `updated_at` lies, validation checklist, periodic full replace
-- @cursor-based-timestamp-extraction -- stateful alternative; earns its overhead on large, high-frequency tables
-- @late-arriving-data -- sizing the overlap for late arrivals
-- @create-vs-update-separation -- when the trigger fires on UPDATE only and INSERT rows are invisible
-- @scoped-full-replace -- combining a full-replace zone with a stateless window layer
 
 // ---
 
@@ -366,7 +344,7 @@ The common thread: the line mutated, the header didn't, and the cursor is blind 
 
 When this happens, you have two good options:
 
-+ #strong[Accept the blind spot.] The periodic full replace catches everything the cursor misses. If your SLA tolerates the lag, this is the cheapest approach and the one we use most often.
++ #strong[Accept the blind spot.] The periodic full replace catches everything the cursor misses. If your SLA tolerates the lag, this is the cheapest approach and the one I use most often.
 
 + #strong[Split by document lifecycle.] Extract all open documents from the source (they're mutable, re-extract everything), combine with only the recently modified closed documents (they're frozen, cursor is reliable). This gives you full coverage of the mutable set without re-extracting the entire table -- but the combination logic is nontrivial, especially when documents transition between open and closed between runs, or when lines get hard-deleted from open documents. @openclosed-documents covers the full pattern.
 
@@ -381,14 +359,6 @@ For detail tables where even these approaches aren't enough, see @detail-without
 #ecl-info("Transactional to transactional corridor")[Cheap on both sides. Extraction is the same index scan. The composite key (`order_id, line_num`) must be indexed on the destination for the upsert to perform -- see @merge-upsert.]
 
 // ---
-
-== Related Patterns
-<related-patterns-3>
-- @timestamp-extraction-foundations -- `updated_at` reliability and validation
-- @cursor-based-timestamp-extraction -- the header-side cursor this pattern depends on
-- @openclosed-documents -- using document lifecycle to scope detail extraction
-- @detail-without-timestamp -- when the header cursor can't cover detail changes at all
-- @scoped-full-replace -- when cascading joins get deep enough that scoped full replace is simpler
 
 // ---
 
@@ -423,7 +393,7 @@ After a confirmed successful load, set `:last_id` to the `MAX(event_id)` from th
 <the-tradeoff-you-accept>
 This cursor detects inserts only. An existing row that gets modified will never be re-extracted. You accept this when:
 
-- The table is append-only in practice -- `events` and `inventory_movements` in our domain model are designed this way
+- The table is append-only in practice -- `events` and `inventory_movements` in the domain model are designed this way
 - Updates are rare enough that the periodic full replace catches them
 
 Before committing to this pattern, check the table's actual behavior against what the source team claims. "Events are never updated" is likely a soft rule (0106). If nothing in the schema enforces immutability, someone will eventually run an UPDATE on it -- a bulk correction, a backfill, an admin fix. Your pipeline won't notice.
@@ -470,14 +440,6 @@ When the primary key is a composite (`order_id + line_num`, `warehouse_id + sku`
 #ecl-warning("Transactional to transactional corridor")[Same indexed range scan on the source. The load strategy depends on whether the source is truly immutable -- see @append-only-load for append-only and @merge-upsert for upsert.]
 
 // ---
-
-== Related Patterns
-<related-patterns-4>
-- @timestamp-extraction-foundations -- when a timestamp IS available, prefer it
-- @append-only-load -- when the source is guaranteed immutable, the load strategy simplifies further
-- @hard-delete-detection -- hard deletes are invisible to any cursor
-- @create-vs-update-separation -- when you need inserts AND updates but only have a cursor for inserts
-- @hard-rules-soft-rules -- "this table is append-only" is a soft rule until the schema enforces it
 
 // ---
 
@@ -587,14 +549,6 @@ In SAP B1, removing a single `invoice_line` triggers a delete+reinsert of ALL su
 #ecl-warning("Transactional to transactional corridor")[Both sides are cheap for ID extraction if the primary key is indexed (it always is). The comparison can run in either system. `DELETE FROM destination WHERE id IN (...)` is a natural fit here -- transactional engines handle point deletes efficiently.]
 
 // ---
-
-== Related Patterns
-<related-patterns-5>
-- @timestamp-extraction-foundations -- periodic full replace as the ultimate safety net for undetected deletes
-- @cursor-based-timestamp-extraction -- the cursor that can't see deletes
-- @cursor-from-another-table -- blind to detail-level deletes when the header doesn't change
-- @openclosed-documents -- open documents are the ones most likely to get hard-deleted
-- @reconciliation-patterns -- count and hash reconciliation as ongoing health checks
 
 // ---
 
@@ -741,16 +695,6 @@ In systems with long-lived open documents -- consulting invoices open for months
 
 // ---
 
-== Related Patterns
-<related-patterns-6>
-- @cursor-from-another-table -- the simpler pattern that teases this one; this is where its blind spots get resolved
-- @hard-delete-detection -- open documents are the ones most likely to get hard-deleted; closed-side deletes need this
-- @cursor-based-timestamp-extraction -- the cursor for the closed-document side
-- @stateless-window-extraction -- absorbs the reopen gap if the window is wide enough
-- @detail-without-timestamp -- when even the open/closed split can't cover detail changes
-- @hard-rules-soft-rules -- "closed invoices are immutable" is backed by law in most jurisdictions
-- @scoped-full-replace -- the alternative when the open set grows too large
-
 // ---
 
 = Detail Without Timestamp
@@ -838,7 +782,7 @@ See 0208 for the full hash-based pattern, including how to store and compare has
 
 == Strategy 3: Accept the Blind Spot
 <strategy-3-accept-the-blind-spot>
-Some detail changes are invisible to every cursor-based approach, and the periodic full replace from 0301 is the only thing that catches them. If the SLA tolerates the lag between the mutation and the next full replace, this is the cheapest approach -- and the one we use most often.
+Some detail changes are invisible to every cursor-based approach, and the periodic full replace from 0301 is the only thing that catches them. If the SLA tolerates the lag between the mutation and the next full replace, this is the cheapest approach -- and the one I use most often.
 
 How often do independent detail mutations happen, and how long can the destination be wrong?
 
@@ -878,14 +822,6 @@ Since the header cursor misses these changes entirely, two responses are worth c
 #ecl-warning("Transactional to transactional corridor")[Hash comparison can run as a cross-database query if both systems are accessible, or via staging tables. Strategy 1 (re-extract all details for changed headers) is the simplest default here -- see 0403 for the upsert mechanics.]
 
 // ---
-
-== Related Patterns
-<related-patterns-7>
-- @cursor-from-another-table -- the simpler case where header cursor is sufficient
-- @hard-delete-detection -- detail rows can also be hard-deleted independently
-- @openclosed-documents -- document lifecycle split applied to headers; can also apply to detail tables independently
-- @hash-based-change-detection -- the full hash-based pattern
-- @timestamp-extraction-foundations -- periodic full replace as the safety net
 
 // ---
 
@@ -962,7 +898,7 @@ The overlap is a correctness parameter, not a performance parameter. Size it for
 
 The 0303 pattern has overlap built in by design -- a 7-day window already covers 7 days of late arrivals, with no overlap parameter to configure and no cursor to worry about. This is one of the strongest arguments for defaulting to stateless windows: the window size itself is the overlap, and the late-arriving data problem largely disappears. The only case it doesn't cover is rows that land with timestamps older than the window, which requires either a wider window or the periodic full replace. The 0302 pattern needs the overlap added explicitly to the boundary condition.
 
-How large can a window get? We run a 90-day stateless window on a client's transactions because their back-office team routinely edits orders weeks after the fact, backdates corrections, and re-opens closed periods without notice. A 7-day window missed data constantly; 30 days still wasn't enough. At 90 days the source query is heavier, but the table is indexed on `updated_at` and the alternative -- constant reconciliation and manual fixes -- was more expensive in engineering time.
+How large can a window get? I run a 90-day stateless window on a client's transactions because their back-office team routinely edits orders weeks after the fact, backdates corrections, and re-opens closed periods without notice. A 7-day window missed data constantly; 30 days still wasn't enough. At 90 days the source query is heavier, but the table is indexed on `updated_at` and the alternative -- constant reconciliation and manual fixes -- was more expensive in engineering time.
 
 // ---
 
@@ -988,11 +924,11 @@ Late-arriving data is one of the hardest pipeline problems to explain to non-tec
 
 #strong[The three questions they'll ask:]
 
-+ #strong["Can't you just get everything?"] Yes -- that's a full replace. It's the most correct approach but the slowest and most expensive. We do it periodically as a safety net. The incremental extraction runs between full replaces to keep the data fresh.
++ #strong["Can't you just get everything?"] Yes -- that's a full replace. It's the most correct approach but the slowest and most expensive. I do it periodically as a safety net. The incremental extraction runs between full replaces to keep the data fresh.
 
-+ #strong["How much data are we missing?"] Depends on the table and the source system. For well-behaved transactional tables, almost nothing -- seconds of lag at most. For tables fed by batch jobs or ERP period closes, the gap can be days. We size the overlap window to cover the worst case we've measured, and the periodic full replace catches anything beyond that.
++ #strong["How much data are we missing?"] Depends on the table and the source system. For well-behaved transactional tables, almost nothing -- seconds of lag at most. For tables fed by batch jobs or ERP period closes, the gap can be days. I size the overlap window to cover the worst case I've measured, and the periodic full replace catches anything beyond that.
 
-+ #strong["Why can't the data just be right?"] Because "right" has a cost. A 7-day overlap window on a table with 100 million rows re-extracts 7 days of data on every run to catch the rare late arrival. A 30-day overlap re-extracts 30 days. At some point, the cost of absolute correctness exceeds the cost of the occasional missing row. The overlap window is where we draw that line, and the full replace is the safety net behind it.
++ #strong["Why can't the data just be right?"] Because "right" has a cost. A 7-day overlap window on a table with 100 million rows re-extracts 7 days of data on every run to catch the rare late arrival. A 30-day overlap re-extracts 30 days. At some point, the cost of absolute correctness exceeds the cost of the occasional missing row. The overlap window is where I draw that line, and the full replace is the safety net behind it.
 
 #ecl-tip("Frame it as a tradeoff")[Stakeholders respond better to \"we chose a 7-day safety margin that catches 99% of late arrivals, with a weekly full reload as a backstop\" than to \"our pipeline might miss some rows.\" Both are true, but the first version communicates a deliberate engineering decision. See @sla-management for how to formalize these guarantees into measurable SLAs.]
 
@@ -1005,14 +941,6 @@ Late-arriving data is one of the hardest pipeline problems to explain to non-tec
 #ecl-info("Transactional to transactional corridor")[Both sides scale with batch size, not table size, so wider overlaps are cheap. A 7-day overlap on a table with 1,000 changes per day re-extracts \~7,000 rows per run -- negligible for a transactional upsert.]
 
 // ---
-
-== Related Patterns
-<related-patterns-8>
-- @timestamp-extraction-foundations -- the periodic full replace as the ultimate safety net for anything the overlap misses
-- @cursor-based-timestamp-extraction -- boundary handling buffer is the same mechanism at small scale
-- @stateless-window-extraction -- the stateless window has overlap built in by design
-- @purity-vs-freshness -- the tradeoff between correctness and cost that drives overlap sizing
-- @scoped-full-replace -- when the overlap grows large enough that a scoped full replace is simpler
 
 // ---
 
@@ -1214,13 +1142,5 @@ In all cases, the periodic full replace from 0301 catches anything the workaroun
 #ecl-info("Transactional to transactional corridor")[Both cursors should be cheap indexed range scans on the source. The destination upsert (`ON CONFLICT ... DO UPDATE`) absorbs overlap duplicates naturally -- see @merge-upsert.]
 
 // ---
-
-== Related Patterns
-<related-patterns-9>
-- @timestamp-extraction-foundations -- the "trigger fires on UPDATE only" failure mode that leads here
-- @cursor-based-timestamp-extraction -- the standard cursor that works once the source is fixed
-- @sequential-id-cursor -- the insert-only cursor used in the dual-cursor approach when `created_at` doesn't exist
-- @late-arriving-data -- overlap buffer on both cursors absorbs the same class of timing problems
-- @merge-upsert -- handles the duplicate rows from dual-cursor overlap
 
 // ---

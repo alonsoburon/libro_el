@@ -63,12 +63,6 @@ When the business logic changes -- a new product category, a different grouping,
 
 #ecl-danger("Don't compute derived columns at extraction")[`revenue = quantity \* unit_price` in the extraction query is a business calculation baked into the pipeline. When the formula changes -- and it will -- every historical row is wrong and the only fix is a full backfill of the entire table. Land the raw columns, compute downstream.]
 
-== Related Patterns
-- @what-is-conforming -- the conforming boundary that this pattern defends
-- @pre-built-views -- the right place for consumer-facing aggregations
-- @point-in-time-from-events -- reconstructing state from movements downstream
-- @append-and-materialize -- the load pattern that preserves every version for downstream use
-
 // ---
 
 = Partitioning, Clustering, and Pruning
@@ -155,15 +149,6 @@ The rebuild is a full table rewrite, so it costs bytes scanned on the read and b
 #ecl-warning("Don't partition by updated_at")[A row that gets updated lands in a different partition than its previous version. The MERGE touches both partitions -- the old one to find the existing row and the new one to write the updated version. In BigQuery, both partitions are fully rewritten. The cost scales with how scattered the updates are across dates, not with how many rows changed.]
 
 #ecl-danger("Don't cluster by _extracted_at")[Pipeline metadata isn't a consumer filter. Cluster by business columns that appear in downstream WHERE clauses.]
-
-== Related Patterns
-<related-patterns-1>
-- @columnar-destinations -- per-engine storage mechanics
-- @partition-swap -- partition-aligned load operations
-- @merge-upsert -- MERGE cost scales with partitions touched
-- @pre-built-views -- materialized views as an alternative when partition pruning isn't enough
-- @cost-monitoring -- partition misalignment shows up as cost spikes
-- @cost-optimization-by-engine -- partitioning and clustering as two levers among several
 
 // ---
 
@@ -259,14 +244,6 @@ When the nested schema mutates -- a new field appears, a field is renamed -- the
 #ecl-warning("Don't build consumer-specific ECL tables")[A table shaped for one dashboard is transformation. The pipeline lands data generically; the serving layer shapes it for consumption. If the dashboard needs a different shape, change the view, not the pipeline.]
 
 #ecl-danger("Don't materialize before you measure")[A materialized view for every table \"just in case\" is wasted storage and refresh compute. Materialize the views that actually get queried, based on observed cost from 0603.]
-
-== Related Patterns
-<related-patterns-2>
-- @append-and-materialize -- the dedup view that most commonly needs materialization
-- @append-and-materialize -- append logs that benefit most from materialized current-state views
-- @nested-data-and-json -- raw JSON landing that needs flattening views
-- @dont-pre-aggregate -- the boundary between serving and conforming
-- @cost-monitoring -- the signal that tells you when to materialize
 
 // ---
 
@@ -419,14 +396,6 @@ WHERE o.order_date >= '2026-03-01';
 
 #ecl-warning("Don't expect real-time destination data")[The destination reflects the source as of the last successful extraction, not as of right now. Check `_extracted_at` or the health table (0602) to know how fresh the data is. If you need live data, query the source.]
 
-== Related Patterns
-<related-patterns-3>
-- @append-and-materialize -- the dedup view analysts should query
-- @metadata-column-injection -- understanding `_extracted_at` and `_batch_id`
-- @partitioning-clustering-and-pruning -- why partition filters matter for cost
-- @pre-built-views -- views built to save consumers from the raw data
-- @sla-management -- freshness expectations and what "up to date" means
-
 // ---
 
 = Cost Optimization by Engine
@@ -526,13 +495,6 @@ Redshift bills per node per hour (provisioned) or per RPU-second (Serverless). P
 #ecl-danger("Don't optimize tables that aren't expensive")[A 10k-row lookup table costs fractions of a cent per query regardless of partitioning or clustering. Optimize what shows up in the top-10 cost report from 0603.]
 
 #ecl-warning("Don't let unlimited retries run unbound")[A retry loop on BigQuery rescans the table on every attempt. 30 retries per minute on a 100GB table is 4.3TB scanned per hour -- \$27/hour, \$216 overnight. Set retry limits and per-day cost caps before the first production run.]
-
-== Related Patterns
-<related-patterns-4>
-- @columnar-destinations -- per-engine storage and DML mechanics
-- @cost-monitoring -- measure before optimizing
-- @partitioning-clustering-and-pruning -- partition and cluster key selection
-- @pre-built-views -- materialized views as a cost reduction tool
 
 // ---
 
@@ -660,7 +622,7 @@ Tiered retention applies to all approaches: keep daily granularity for the recen
 <completeness>
 Replay is only as accurate as the event log, and event logs have gaps. The domain model's `inventory_movements` table has a soft rule: "every stock change creates a movement." But bulk import scripts that update `inventory` directly without logging a movement violate this silently (0002). The reconstructed snapshot from movements will differ from the actual `inventory` table, and the difference is the sum of all unlogged changes.
 
-We had a client whose `inventory` table and the reconstructed-from-movements inventory diverged by hundreds of units on certain SKUs. The client refused to believe our data was correct -- their expectation was that movements and inventory should always match. We had to pull both from the source, show the same discrepancy in the source system itself, and demonstrate that the gap came from bulk operations that bypassed the movement log. The pipeline was cloning faithfully; the source was inconsistent.
+I had a client whose `inventory` table and the reconstructed-from-movements inventory diverged by hundreds of units on certain SKUs. The client refused to believe my data was correct -- their expectation was that movements and inventory should always match. I had to pull both from the source, show the same discrepancy in the source system itself, and demonstrate that the gap came from bulk operations that bypassed the movement log. The pipeline was cloning faithfully; the source was inconsistent.
 
 The periodic full replace of the `inventory` table catches the drift -- it reflects the source's current state, including unlogged changes. The event-based reconstruction doesn't. When both exist in the destination, consumers should understand which one to trust: the `inventory` table for current state (it's what the source says right now), the movement log for historical reconstruction (it's what the source recorded happening). When they disagree, the source has unlogged changes -- that's a source data quality problem, not a pipeline problem.
 
@@ -671,14 +633,6 @@ The periodic full replace of the `inventory` table catches the drift -- it refle
 #ecl-warning("Don't replay without knowing completeness")[If the event log has gaps (bulk operations that bypass it, the soft rule from the domain model), the reconstructed state is wrong. Document which event sources are incomplete and surface the discrepancy rather than hiding it.]
 
 #ecl-danger("Don't compact without considering consumers")[Compacting the append log to latest-only destroys version history. If consumers depend on point-in-time queries against the log, the compaction retention window must be longer than their lookback requirement.]
-
-== Related Patterns
-<related-patterns-5>
-- @append-and-materialize -- append log as version history when compaction is deferred
-- @append-and-materialize -- extraction log as an implicit event trail
-- @dont-pre-aggregate -- land movements, build photos downstream
-- @pre-built-views -- materialized tables for pre-computed daily running totals
-- @activity-driven-extraction -- `inventory_movements` as the activity signal
 
 // ---
 
@@ -744,7 +698,7 @@ The cost is that five sources produce five different conventions in the same des
 
 The cost is irreversibility. Once `OrderID` becomes `order_id`, the original casing is gone -- and if two source columns normalize to the same string (`OrderID` and `Order_ID` both become `order_id`), you have a collision to detect and resolve at load time.
 
-For most pipelines, snake\_case is still the better default -- it reads clean, requires no quoting on case-insensitive engines, and it's what analysts expect to find. We use it across the board and it's never been the wrong call. But we've also worked with clients whose upstream teams live in the source system and send us queries daily, and for those cases preserve-source-names would have saved us hours of translation work every week.
+For most pipelines, snake\_case is still the better default -- it reads clean, requires no quoting on case-insensitive engines, and it's what analysts expect to find. I use it across the board and it's never been the wrong call. But I've also worked with clients whose upstream teams live in the source system and send us queries daily, and for those cases preserve-source-names would have saved us hours of translation work every week.
 
 === Lowercase only
 <lowercase-only>
@@ -812,7 +766,7 @@ Prefixing schemas with `raw_`, `bronze_`, or `landing_` marks the data layer: `r
 <opaque-sources-and-layered-schemas>
 Systems like SAP name every table with codes that mean nothing outside the source -- `OACT`, `OINV`, `INV1`. The temptation to rename `OACT` to `chart_of_accounts` at load time is strong, especially when your analysts keep asking "what's OACT?", but that rename is a semantic transformation that crosses the conforming boundary. Land the source name, use table metadata (column descriptions, table comments) to explain what it means, and let consumers discover the mapping without a separate lookup table.
 
-We run a SAP B1 deployment where we landed everything raw at first -- one schema, hundreds of opaque tables. It worked until it didn't scale. The approach that survived:
+I run a SAP B1 deployment where I landed everything raw at first -- one schema, hundreds of opaque tables. It worked until it didn't scale. The approach that survived:
 
 #figure(
   align(center)[#table(
@@ -839,13 +793,13 @@ Staging tables need their own namespace to avoid colliding with production. Tabl
 <per-table-overrides>
 The convention should be configurable at two levels: a destination-wide default that covers the common case, and per-table overrides for the exceptions. Collisions from character stripping are the most common reason you'll need them.
 
-We learned this the hard way with a client who had `ProductStock` and `ProductStock$` in the same source -- identical structure, one holding unit quantities and the other monetary values. Our stripping rule removed the `$`, both tables landed as `product_stock`, and whichever loaded second silently overwrote the first. We didn't catch it until the numbers stopped making sense downstream. The fix was a per-table override renaming one to `product_stock_value` -- a borderline transformation, but better than losing data. The general rule works until it doesn't, and when it doesn't, the alternative to a per-table escape hatch is rewriting the entire convention.
+I learned this the hard way with a client who had `ProductStock` and `ProductStock$` in the same source -- identical structure, one holding unit quantities and the other monetary values. My stripping rule removed the `$`, both tables landed as `product_stock`, and whichever loaded second silently overwrote the first. I didn't catch it until the numbers stopped making sense downstream. The fix was a per-table override renaming one to `product_stock_value` -- a borderline transformation, but better than losing data. The general rule works until it doesn't, and when it doesn't, the alternative to a per-table escape hatch is rewriting the entire convention.
 
 0609 treats the naming convention as a schema contract -- any change to it, including per-table overrides, is a breaking change that should go through the contract process.
 
 == Migrating a Convention
 <migrating-a-convention>
-We've done this once. It was a week of hell -- rebuilding tables, rewriting queries, repointing every report and dashboard that referenced the old names. We thought we were done by Friday. We weren't. For three months afterward, people came back from vacation to broken dashboards, scheduled exports failed silently because nobody had updated the column references, and ad-hoc queries saved in personal notebooks kept surfacing the old names. Every time we thought we'd caught the last one, someone opened a ticket.
+I've done this once. It was a week of hell -- rebuilding tables, rewriting queries, repointing every report and dashboard that referenced the old names. I thought I was done by Friday. I wasn't. For three months afterward, people came back from vacation to broken dashboards, scheduled exports failed silently because nobody had updated the column references, and ad-hoc queries saved in personal notebooks kept surfacing the old names. Every time I thought I'd caught the last one, someone opened a ticket.
 
 Don't do it if you can avoid it. If you can't, treat it as a formal breaking change: announce a cutover window, run a deprecation period where both conventions coexist (old names as views over new tables), and set a hard deadline for tearing down the aliases. And budget three months of intermittent cleanup after the deadline, because you will need them.
 
@@ -856,12 +810,5 @@ Don't do it if you can avoid it. If you can't, treat it as a formal breaking cha
 #ecl-warning("Don't rename source tables for readability")[`OACT` → `chart_of_accounts` is a semantic rename that crosses the conforming boundary. The pipeline lands what the source calls it. If consumers need readable names, build an alias layer downstream.]
 
 #ecl-danger("Don't mix conventions in one destination")[Tables from source A in snake\_case and tables from source B in camelCase within the same dataset confuses every consumer. Avoid when possible.]
-
-== Related Patterns
-<related-patterns-6>
-- @charset-and-encoding -- encoding of identifier names, not just data values
-- @data-contracts -- naming convention as a schema contract
-- @staging-swap -- staging table naming
-- @columnar-destinations -- per-engine identifier behavior
 
 // ---

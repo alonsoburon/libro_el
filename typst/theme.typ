@@ -27,9 +27,9 @@
 
 // Part title page -- the heading creates the PDF outline entry,
 // and the show rule (level 1) renders it as a centered title page.
-#let ecl-part-page(num, title) = {
+#let ecl-part-page(part-num, num, title) = {
   ecl-part.update(n => n + 1)
-  counter(heading).update(0)
+  counter(heading).update(part-num)  // set level-1 counter to the Part number
   pagebreak()
   heading(level: 1, numbering: none, outlined: true, bookmarked: true)[Part #num: #title]
 }
@@ -60,15 +60,17 @@
   )
   set text(font: "Libertinus Serif", size: 11pt, fill: p.fg)
 
-  // Heading numbering: Part.Pattern.Section (e.g. 2.3.1)
-  // Level 1 = Parts (no numbering, handled by ecl-part-page)
-  // Level 2+ = Patterns and sections (Part.N.M format)
-  // Front matter (part = 0) gets no numbers.
-  set heading(numbering: (..nums) => context {
-    let part = ecl-part.get()
-    if part > 0 and nums.pos().len() > 0 {
-      // Skip the first level (Part heading) — number from level 2 onward
-      numbering("1.1", part, ..nums.pos())
+  // Heading numbering: Level 1 = Parts (no number shown).
+  // Level 2+ = patterns/sections, numbered as Part.Pattern.Section (e.g. 1.2.3).
+  // The heading counter's level-1 value IS the Part number (from the Part heading).
+  // Front matter headings (level-1 counter = 0) get no numbers.
+  set heading(numbering: (..nums) => {
+    let n = nums.pos()
+    // Level 1 (Parts): no visible number
+    if n.len() <= 1 { return }
+    // Level 2+: only if Part > 0 (skip front matter)
+    if n.first() > 0 {
+      numbering("1.1", ..n)
     }
   })
 
@@ -98,15 +100,14 @@
   show heading: set block(below: 1em, above: 1.4em, sticky: true)
 
   // Cross-references: show "1.2 -- Name" instead of "Section 1.2"
-  // Front matter headings (part = 0) show just the title.
+  // Front matter headings (level-1 counter = 0) show just the title.
   show ref: it => {
     let el = it.element
     if el != none and el.func() == heading {
       link(el.location())[#context {
         let nums = counter(heading).at(el.location())
-        let part = ecl-part.at(el.location())
-        if part > 0 {
-          [#numbering("1.1", part, ..nums) -- #el.body]
+        if nums.len() >= 2 and nums.first() > 0 {
+          [#numbering("1.1", ..nums) -- #el.body]
         } else {
           el.body
         }
@@ -135,5 +136,12 @@
   )
   show strong: set text(fill: p.fg-bright)
   show emph: set text(fill: p.fg-quote)
+
+  // Highlight the core concept -- subtle orange tint, not a shout
+  let c-tint = color.mix((p.orange, 30%), (p.fg, 70%))
+  show "ECL": [E#text(fill: c-tint)[C]L]
+  show "Conforming": text(fill: c-tint, "Conforming")
+  show "conforming": text(fill: c-tint, "conforming")
+
   body
 }

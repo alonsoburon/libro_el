@@ -1,4 +1,4 @@
-#import "theme.typ": palette, ecl-tip, ecl-warning, ecl-danger, ecl-info
+#import "theme.typ": ecl-danger, ecl-info, ecl-tip, ecl-warning, palette
 #let p = palette
 
 // ============================================================
@@ -7,9 +7,9 @@
 #page(header: none, footer: none)[
   #v(1fr)
   #align(center)[
-    #text(fill: p.fg-bright, size: 36pt, weight: "bold")[ECL Patterns]
+    #text(fill: p.fg-bright, size: 36pt, weight: "bold")[Battle-Tested Data Pipelines]
     #v(8pt)
-    #text(fill: p.fg-dim, size: 14pt)[A practical guide to moving data between systems\ without losing your mind]
+    #text(fill: p.fg-dim, size: 14pt)[The step ELT forgot -- patterns for extraction, conforming, and loading]
     #v(40pt)
     #text(fill: p.fg-subtle, size: 14pt)[Alonso Burón]
   ]
@@ -22,8 +22,8 @@
 #page(header: none, footer: none)[
   #v(1fr)
   #set text(size: 9pt, fill: p.fg-dim)
-  *ECL Patterns*\
-  A practical guide to moving data between systems without losing your mind
+  *Battle-Tested Data Pipelines*\
+  The step ELT forgot -- patterns for extraction, conforming, and loading
 
   Copyright © 2026 Alonso Burón. All rights reserved.
 
@@ -44,8 +44,7 @@
   #v(2fr)
   #align(right)[
     #text(fill: p.fg-quote, size: 12pt, style: "italic")[
-      // Placeholder -- replace with your dedication
-      To everyone who has inherited a pipeline\ and wondered what the previous engineer was thinking.
+      To my lovely feyoncé, whose patience is beaten by no saint, and whose light willed this book into existence.
     ]
   ]
   #v(3fr)
@@ -59,16 +58,11 @@
 ]
 
 // ============================================================
-// PREFACE
+// WHAT THIS BOOK COVERS (context first, then motivation)
 // ============================================================
-= Preface
-<preface>
-
-War stories and patterns to simplify your life when you (or your boss) decide to clone data from a transactional source to an analytical destination -- or between transactional systems. The patterns are about getting the data there correctly, efficiently, and without losing your mind.
-
 == What This Book Covers
 <what-this-book-covers>
-This book is about the space between source and destination. Specifically:
+This book is about the space between source and destination -- the step that ELT skips over and ETL buries inside a monolith. Specifically:
 
 #figure(
   align(center)[#table(
@@ -90,11 +84,32 @@ This book is about the space between source and destination. Specifically:
 
 #ecl-tip(
   "Two corridors, different tradeoffs",
-)[Every pattern in this book plays out differently depending on where the data is going. We call these #strong[corridors]: Transactional -> Columnar (e.g. SQL Server -> BigQuery) and Transactional -> Transactional (e.g. PostgreSQL -> PostgreSQL). Same pattern, different trade-offs. We show both.]
+)[Every pattern in this book plays out differently depending on where the data is going. I call these #strong[corridors]: Transactional -> Columnar (e.g. SQL Server -> BigQuery) and Transactional -> Transactional (e.g. PostgreSQL -> PostgreSQL). Same pattern, different trade-offs. I show both.]
 
 #ecl-info(
   "Tool-agnostic patterns, opinionated appendix",
-)[The patterns in this book use generic orchestrator language -- "your orchestrator," "a scheduled job," "a downstream dependency" -- because they work regardless of whether you run Dagster, Airflow, Prefect, or cron. The same applies to extractors, loaders, and destination engines. Specific tool recommendations, feature comparisons, and the author's opinionated picks live in the Appendix (0805--0807).]
+)[The patterns in this book use generic orchestrator language -- "your orchestrator," "a scheduled job," "a downstream dependency" -- because they work regardless of whether you run Dagster, Airflow, Prefect, or cron. The same applies to extractors, loaders, and destination engines. Specific tool recommendations, feature comparisons, and my opinionated picks live in the Appendix (0805--0807).]
+
+= Why This Book
+<why-this-book>
+
+One Tuesday morning I woke up to a wall of email alerts -- row count mismatches across dozens of pipelines. I spent the rest of the day fixing them by hand: re-running extractions, reconciling counts against source, patching cursors that had drifted overnight. By the time I was done, I sat back and realized two things. First, the system I had built was complex enough that in a couple of years I wouldn't be able to recreate it without having it written down somewhere. Second, when I went looking for references to categorize what I had built into an existing strategy, I couldn't find any. There were no strategy books for what I was doing.
+
+So I started writing down the patterns I used. Just for future reference, at first. But as I organized them, they split naturally into extraction patterns and loading patterns -- and then I found myself with a collection of small but critical transformations that didn't belong in either category. Type casts, null handling, timezone tagging, key synthesis. They weren't business logic. They weren't the T in ELT. But they were unavoidable, and nobody had a name for them. That was the moment ECL took shape: Extract, Conform, Load. The C names the work that every pipeline does but no framework acknowledges.
+
+In my job, the T belonged to the analysts downstream. My responsibility was to deliver the data exactly as it was in the source, but in a place where they could actually reach it. Conforming was the bridge -- everything the data needed to survive the crossing without changing what it meant.
+
+You might have seen the term EtLT -- Extract, "tiny-t" Load, Transform. It acknowledges that some work happens before the big T, but its focus is still on making downstream transformation easier. This book takes the opposite angle. The C in ECL is about getting massive, often dirty data to the destination as faithfully and efficiently as possible. If it changes business meaning, it doesn't belong here. If it makes the data land correctly, it does.
+
+== Who This Is For
+
+This book is for the engineer who inherited a pile of pipelines that work most of the time -- the ones with no monitoring, no validation, and a cloud bill that spikes because someone scheduled a full refresh every 30 minutes on a table that didn't need it.
+
+It's for the first-time data engineer who's building their first pipeline and assumes everything should be incremental and it should just work. (It won't. This book explains why, and what to do about it.)
+
+It's for the senior who has been doing this for years and needs a framework to teach it to their team, or to finally name the patterns they've been applying by instinct.
+
+This is not a tutorial or a tool guide. This book won't set up your orchestrator from scratch. This is a pattern language -- the decisions, tradeoffs, and failure modes that repeat across every pipeline regardless of stack, and the ways to monitor them, surface them, and fix them.
 
 // ---
 
