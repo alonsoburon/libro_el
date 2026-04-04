@@ -67,7 +67,7 @@ def detect_theme(svg_content):
     """Detect if SVG is dark or light themed."""
     if "#1d2021" in svg_content or "#181825" in svg_content:
         return "dark"
-    elif "#fbf1c7" in svg_content:
+    elif "#fbf1c7" in svg_content or "#ffffff" in svg_content:
         return "light"
     return "unknown"
 
