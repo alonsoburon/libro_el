@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="230" viewBox="0 0 720 230">
+  <rect x="0" y="0" width="720" height="230" fill="#ffffff" rx="6"/>
+  <text x="360" y="22" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Partial column loading — what crosses and what stays behind</text>
+
+  <!-- Left table: Source (all columns) -->
+  <rect x="20" y="44" width="310" height="122" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <text x="175" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Source (customers)</text>
+  <rect x="20" y="44" width="310" height="28" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="66" width="310" height="6" fill="#ebdbb2"/>
+  <text x="42" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">id</text>
+  <text x="86" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">name</text>
+  <text x="132" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">email</text>
+  <text x="182" y="58" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">national_id</text>
+  <text x="240" y="58" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">id_photo</text>
+  <text x="298" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">is_active</text>
+
+  <!-- Source Row 1 -->
+  <line x1="28" y1="72" x2="322" y2="72" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="42" y="87" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1</text>
+  <text x="86" y="87" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Alice</text>
+  <text x="132" y="87" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">a@co.cl</text>
+  <text x="182" y="87" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">12.345.678-9</text>
+  <text x="240" y="87" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">[2.1 MB]</text>
+  <text x="298" y="87" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">true</text>
+
+  <!-- Source Row 2 -->
+  <line x1="28" y1="102" x2="322" y2="102" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="42" y="117" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">2</text>
+  <text x="86" y="117" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Bob</text>
+  <text x="132" y="117" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">b@co.cl</text>
+  <text x="182" y="117" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">11.222.333-4</text>
+  <text x="240" y="117" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">[1.8 MB]</text>
+  <text x="298" y="117" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">true</text>
+
+  <!-- Source Row 3 -->
+  <line x1="28" y1="132" x2="322" y2="132" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="42" y="147" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">3</text>
+  <text x="86" y="147" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Carol</text>
+  <text x="132" y="147" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">c@co.cl</text>
+  <text x="182" y="147" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">15.666.777-K</text>
+  <text x="240" y="147" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">[3.0 MB]</text>
+  <text x="298" y="147" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">false</text>
+
+  <!-- Excluded column shading -->
+  <rect x="157" y="73" width="108" height="90" fill="#9d0006" opacity="0.06"/>
+  <!-- X marks on excluded columns -->
+  <line x1="157" y1="44" x2="157" y2="166" stroke="#9d0006" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="265" y1="44" x2="265" y2="166" stroke="#9d0006" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Arrow -->
+  <line x1="342" y1="105" x2="370" y2="105" stroke="#928374" stroke-width="1.5"/>
+  <polygon points="370,101 378,105 370,109" fill="#928374"/>
+
+  <!-- Right table: Destination (partial) -->
+  <rect x="390" y="44" width="220" height="122" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <text x="500" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Destination (customers)</text>
+  <rect x="390" y="44" width="220" height="28" fill="#ebdbb2" rx="4"/>
+  <rect x="390" y="66" width="220" height="6" fill="#ebdbb2"/>
+  <text x="415" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">id</text>
+  <text x="460" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">name</text>
+  <text x="515" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">email</text>
+  <text x="575" y="58" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">is_active</text>
+
+  <!-- Dest Row 1 -->
+  <line x1="398" y1="72" x2="602" y2="72" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="415" y="87" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1</text>
+  <text x="460" y="87" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Alice</text>
+  <text x="515" y="87" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">a@co.cl</text>
+  <text x="575" y="87" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">true</text>
+
+  <!-- Dest Row 2 -->
+  <line x1="398" y1="102" x2="602" y2="102" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="415" y="117" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">2</text>
+  <text x="460" y="117" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Bob</text>
+  <text x="515" y="117" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">b@co.cl</text>
+  <text x="575" y="117" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">true</text>
+
+  <!-- Dest Row 3 -->
+  <line x1="398" y1="132" x2="602" y2="132" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="415" y="147" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">3</text>
+  <text x="460" y="147" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Carol</text>
+  <text x="515" y="147" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">c@co.cl</text>
+  <text x="575" y="147" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">false</text>
+
+  <!-- Exclusion labels -->
+  <rect x="625" y="65" width="85" height="24" fill="#9d0006" opacity="0.08" rx="3"/>
+  <text x="667" y="78" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">GDPR Art. 9</text>
+  <line x1="625" y1="77" x2="611" y2="77" stroke="#9d0006" stroke-width="0.75" stroke-dasharray="3,2"/>
+
+  <rect x="625" y="95" width="85" height="24" fill="#9d0006" opacity="0.08" rx="3"/>
+  <text x="667" y="108" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">BLOB ~2 MB</text>
+  <line x1="625" y1="107" x2="611" y2="107" stroke="#9d0006" stroke-width="0.75" stroke-dasharray="3,2"/>
+
+  <!-- Legend -->
+  <rect x="20" y="180" width="10" height="10" fill="#9d0006" opacity="0.15" rx="2"/>
+  <text x="34" y="188" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">excluded — documented in pipeline + table description</text>
+
+  <!-- Annotation -->
+  <text x="360" y="215" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">The destination is no longer a complete clone — document what's missing and why</text>
+</svg>

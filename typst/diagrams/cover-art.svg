@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
+  <rect width="595" height="842" fill="#ffffff"/>
+
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="595" height="5" fill="#076678"/>
+
+  <!-- ═══════════ Title area (top third) ═══════════ -->
+  <text x="297" y="140" text-anchor="middle" fill="#282828" font-family="'Libertinus Serif', Georgia, serif" font-size="44" font-weight="700">Battle-Tested</text>
+  <text x="297" y="195" text-anchor="middle" fill="#282828" font-family="'Libertinus Serif', Georgia, serif" font-size="44" font-weight="700">Data Pipelines</text>
+
+  <line x1="140" y1="220" x2="455" y2="220" stroke="#d5c4a1" stroke-width="1"/>
+
+  <text x="297" y="252" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="15">The step ELT forgot</text>
+  <text x="297" y="278" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="12">Patterns for extraction, conforming, and loading</text>
+
+  <!-- ═══════════ Three ECL blocks (center, large) ═══════════ -->
+
+  <!-- EXTRACT block -->
+  <rect x="42" y="340" width="150" height="180" rx="8" fill="none" stroke="#458588" stroke-width="2.5"/>
+  <rect x="52" y="350" width="130" height="160" rx="5" fill="#458588" opacity="0.04"/>
+  <!-- Data grid: rows of dots -->
+  <g fill="#458588">
+    <g opacity="0.45">
+      <circle cx="75" cy="378" r="4"/><circle cx="95" cy="378" r="4"/><circle cx="115" cy="378" r="4"/><circle cx="135" cy="378" r="4"/><circle cx="155" cy="378" r="4"/><circle cx="168" cy="378" r="3"/>
+    </g>
+    <g opacity="0.4">
+      <circle cx="75" cy="402" r="4"/><circle cx="95" cy="402" r="4"/><circle cx="115" cy="402" r="4"/><circle cx="135" cy="402" r="4"/><circle cx="155" cy="402" r="4"/><circle cx="168" cy="402" r="3"/>
+    </g>
+    <g opacity="0.35">
+      <circle cx="75" cy="426" r="4"/><circle cx="95" cy="426" r="4"/><circle cx="115" cy="426" r="4"/><circle cx="135" cy="426" r="4"/><circle cx="155" cy="426" r="4"/><circle cx="168" cy="426" r="3"/>
+    </g>
+    <g opacity="0.3">
+      <circle cx="75" cy="450" r="4"/><circle cx="95" cy="450" r="4"/><circle cx="115" cy="450" r="4"/><circle cx="135" cy="450" r="4"/><circle cx="155" cy="450" r="3"/><circle cx="168" cy="450" r="2"/>
+    </g>
+    <g opacity="0.2">
+      <circle cx="75" cy="474" r="3.5"/><circle cx="95" cy="474" r="3.5"/><circle cx="115" cy="474" r="3"/><circle cx="135" cy="474" r="2.5"/><circle cx="155" cy="474" r="2"/>
+    </g>
+    <g opacity="0.12">
+      <circle cx="75" cy="494" r="3"/><circle cx="95" cy="494" r="2.5"/><circle cx="115" cy="494" r="2"/>
+    </g>
+  </g>
+  <!-- Faint row lines -->
+  <g opacity="0.1" stroke="#458588" stroke-width="0.5">
+    <line x1="62" y1="390" x2="180" y2="390"/>
+    <line x1="62" y1="414" x2="180" y2="414"/>
+    <line x1="62" y1="438" x2="180" y2="438"/>
+    <line x1="62" y1="462" x2="180" y2="462"/>
+    <line x1="62" y1="484" x2="180" y2="484"/>
+  </g>
+
+  <!-- Arrow E → C -->
+  <line x1="202" y1="430" x2="216" y2="430" stroke="#928374" stroke-width="2"/>
+  <polygon points="216,425 226,430 216,435" fill="#928374"/>
+
+  <!-- CONFORM block (center, taller) -->
+  <rect x="230" y="320" width="135" height="220" rx="8" fill="none" stroke="#d65d0e" stroke-width="3"/>
+  <rect x="240" y="330" width="115" height="200" rx="5" fill="#d65d0e" opacity="0.04"/>
+  <!-- Funnel: wide top narrowing down -->
+  <polygon points="260,355 335,355 318,410 277,410" fill="none" stroke="#d65d0e" stroke-width="1.5" opacity="0.25"/>
+  <polygon points="260,355 335,355 318,410 277,410" fill="#d65d0e" opacity="0.05"/>
+  <!-- Small arrows converging down inside funnel -->
+  <g stroke="#d65d0e" stroke-width="1.2" opacity="0.3" fill="none">
+    <line x1="275" y1="370" x2="285" y2="390"/>
+    <line x1="297" y1="365" x2="297" y2="390"/>
+    <line x1="320" y1="370" x2="310" y2="390"/>
+  </g>
+  <g fill="#d65d0e" opacity="0.3">
+    <polygon points="283,390 287,390 285,395"/>
+    <polygon points="295,390 299,390 297,395"/>
+    <polygon points="308,390 312,390 310,395"/>
+  </g>
+  <!-- Output: uniform bars (conformed data) -->
+  <g fill="#d65d0e" opacity="0.2">
+    <rect x="272" y="425" width="52" height="7" rx="2"/>
+    <rect x="272" y="438" width="52" height="7" rx="2"/>
+    <rect x="272" y="451" width="52" height="7" rx="2"/>
+    <rect x="272" y="464" width="52" height="7" rx="2"/>
+    <rect x="272" y="477" width="52" height="7" rx="2"/>
+    <rect x="272" y="490" width="52" height="7" rx="2"/>
+  </g>
+  <!-- + dots on the left (metadata injected) -->
+  <g fill="#d65d0e" opacity="0.2">
+    <circle cx="264" cy="429" r="2.5"/>
+    <circle cx="264" cy="442" r="2.5"/>
+    <circle cx="264" cy="455" r="2.5"/>
+    <circle cx="264" cy="468" r="2.5"/>
+    <circle cx="264" cy="481" r="2.5"/>
+    <circle cx="264" cy="494" r="2.5"/>
+  </g>
+
+  <!-- Arrow C → L -->
+  <line x1="375" y1="430" x2="389" y2="430" stroke="#928374" stroke-width="2"/>
+  <polygon points="389,425 399,430 389,435" fill="#928374"/>
+
+  <!-- LOAD block -->
+  <rect x="403" y="340" width="150" height="180" rx="8" fill="none" stroke="#79740e" stroke-width="2.5"/>
+  <rect x="413" y="350" width="130" height="160" rx="5" fill="#79740e" opacity="0.04"/>
+  <!-- Columnar partitions -->
+  <g fill="#79740e">
+    <rect x="424" y="370" width="24" height="65" rx="3" opacity="0.2"/>
+    <rect x="454" y="370" width="24" height="65" rx="3" opacity="0.2"/>
+    <rect x="484" y="370" width="24" height="65" rx="3" opacity="0.2"/>
+    <rect x="514" y="370" width="18" height="65" rx="3" opacity="0.12"/>
+    <rect x="424" y="445" width="24" height="45" rx="3" opacity="0.14"/>
+    <rect x="454" y="445" width="24" height="45" rx="3" opacity="0.14"/>
+    <rect x="484" y="445" width="24" height="45" rx="3" opacity="0.1"/>
+    <rect x="514" y="445" width="18" height="45" rx="3" opacity="0.06"/>
+  </g>
+  <!-- Check marks above top partitions -->
+  <g stroke="#79740e" stroke-width="1.5" fill="none" opacity="0.3">
+    <polyline points="430,362 434,367 442,358"/>
+    <polyline points="460,362 464,367 472,358"/>
+    <polyline points="490,362 494,367 502,358"/>
+  </g>
+
+  <!-- ═══════════ Author (bottom) ═══════════ -->
+  <text x="297" y="620" text-anchor="middle" fill="#504945" font-family="'Segoe UI', system-ui, sans-serif" font-size="16">Alonso Burón Ardiles</text>
+
+  <!-- Decorative scatter -->
+  <g opacity="0.05">
+    <polygon points="30,310 35,320 30,330 25,320" fill="#458588"/>
+    <polygon points="565,310 570,320 565,330 560,320" fill="#79740e"/>
+    <polygon points="30,560 35,570 30,580 25,570" fill="#d65d0e"/>
+    <polygon points="565,560 570,570 565,580 560,570" fill="#458588"/>
+    <rect x="22" y="420" width="8" height="8" fill="#d65d0e" rx="1"/>
+    <rect x="565" y="430" width="8" height="8" fill="#458588" rx="1"/>
+    <circle cx="25" cy="380" r="4" fill="#79740e"/>
+    <circle cx="570" cy="380" r="4" fill="#d65d0e"/>
+  </g>
+
+  <!-- Bottom accent line -->
+  <rect x="0" y="837" width="595" height="5" fill="#076678"/>
+
+  <!-- Corner marks -->
+  <g stroke="#d5c4a1" stroke-width="1">
+    <line x1="20" y1="25" x2="20" y2="50"/><line x1="20" y1="25" x2="45" y2="25"/>
+    <line x1="575" y1="25" x2="575" y2="50"/><line x1="575" y1="25" x2="550" y2="25"/>
+    <line x1="20" y1="817" x2="20" y2="792"/><line x1="20" y1="817" x2="45" y2="817"/>
+    <line x1="575" y1="817" x2="575" y2="792"/><line x1="575" y1="817" x2="550" y2="817"/>
+  </g>
+</svg>

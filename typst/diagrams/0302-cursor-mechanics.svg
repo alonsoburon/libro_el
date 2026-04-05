@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270">
+  <rect x="0" y="0" width="720" height="270" fill="#ffffff" rx="6"/>
+  <text x="360" y="20" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Cursor mechanics — each run picks up where the last confirmed load left off</text>
+
+  <!-- Timeline axis -->
+  <line x1="55" y1="48" x2="690" y2="48" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="690,45 698,48 690,51" fill="#d5c4a1"/>
+
+  <!-- Date ticks -->
+  <g fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">
+    <text x="100" y="42" text-anchor="middle">Feb 27</text>
+    <text x="220" y="42" text-anchor="middle">Feb 28</text>
+    <text x="380" y="42" text-anchor="middle">Mar 1</text>
+    <text x="540" y="42" text-anchor="middle">Mar 2</text>
+    <text x="670" y="42" text-anchor="middle">Mar 3</text>
+  </g>
+  <g stroke="#d5c4a1" stroke-width="1">
+    <line x1="100" y1="45" x2="100" y2="51"/>
+    <line x1="220" y1="45" x2="220" y2="51"/>
+    <line x1="380" y1="45" x2="380" y2="51"/>
+    <line x1="540" y1="45" x2="540" y2="51"/>
+    <line x1="670" y1="45" x2="670" y2="51"/>
+  </g>
+
+  <!-- Cursor N -->
+  <line x1="220" y1="54" x2="220" y2="128" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="220" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="193" y="59" width="54" height="13" fill="#ffffff" rx="2"/>
+  <text x="220" y="69" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">cursor N</text>
+
+  <!-- Cursor N+1 -->
+  <line x1="430" y1="54" x2="430" y2="200" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="430" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="399" y="59" width="62" height="13" fill="#ffffff" rx="2"/>
+  <text x="430" y="69" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">cursor N+1</text>
+
+  <!-- Cursor N+2 -->
+  <line x1="630" y1="54" x2="630" y2="200" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="630" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="599" y="59" width="62" height="13" fill="#ffffff" rx="2"/>
+  <text x="630" y="69" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">cursor N+2</text>
+
+  <!-- ══ Overlap background band (spans both runs vertically) ══ -->
+  <rect x="374" y="76" width="62" height="122" fill="#d79921" opacity="0.07" rx="3"/>
+
+  <!-- ══ Already loaded ══ -->
+  <rect x="110" y="80" width="104" height="38" fill="#928374" opacity="0.05" rx="4"/>
+  <text x="162" y="103" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">already loaded</text>
+
+  <!-- ══════ RUN N ══════ -->
+  <text x="50" y="97" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N</text>
+  <text x="50" y="110" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">06:00 Mar 1</text>
+
+  <rect x="220" y="80" width="216" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="220" y="80" width="216" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+
+  <!-- Run N rows: r1-r7, each 24px wide, 6px gap -->
+  <rect x="226" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="238" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r1</text>
+
+  <rect x="256" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="268" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r2</text>
+
+  <rect x="286" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="298" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r3</text>
+
+  <rect x="316" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="328" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r4</text>
+
+  <rect x="346" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="358" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r5</text>
+
+  <!-- Overlap rows in Run N -->
+  <rect x="376" y="86" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="388" y="103" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r6</text>
+
+  <rect x="406" y="86" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="418" y="103" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r7</text>
+
+  <!-- Load confirmed arrow -->
+  <path d="M 430,122 L 430,140" stroke="#d65d0e" stroke-width="1.2"/>
+  <polygon points="427,139 430,145 433,139" fill="#d65d0e"/>
+  <text x="444" y="137" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">load confirmed → advance</text>
+
+  <!-- ══════ RUN N+1 ══════ -->
+  <text x="50" y="169" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N+1</text>
+  <text x="50" y="182" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">18:00 Mar 2</text>
+
+  <!-- Run N+1 bar starts BEFORE cursor N+1 (the buffer!) -->
+  <rect x="370" y="152" width="266" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="370" y="152" width="266" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+
+  <!-- Overlap rows in Run N+1 (same r6, r7) -->
+  <rect x="376" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="388" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r6</text>
+
+  <rect x="406" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="418" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r7</text>
+
+  <!-- New rows in Run N+1 -->
+  <rect x="446" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="458" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r8</text>
+
+  <rect x="476" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="488" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r9</text>
+
+  <rect x="506" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="518" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r10</text>
+
+  <rect x="536" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="548" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r11</text>
+
+  <rect x="566" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="578" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r12</text>
+
+  <rect x="596" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="608" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r13</text>
+
+  <!-- Legend -->
+  <rect x="60" y="214" width="14" height="10" fill="#458588" opacity="0.14" rx="2"/>
+  <text x="80" y="222" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">extracted row</text>
+
+  <rect x="195" y="214" width="14" height="10" fill="#d79921" opacity="0.25" rx="2"/>
+  <text x="215" y="222" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">overlap — same rows in both runs, upsert deduplicates</text>
+
+  <!-- Bottom annotation -->
+  <text x="360" y="255" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">Cursor only advances after the load is confirmed. Partial load + premature advance = permanent gap.</text>
+</svg>

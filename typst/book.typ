@@ -12,16 +12,8 @@
   // ============================================================
   // TITLE PAGE
   // ============================================================
-  #page(header: none, footer: none)[
-    #v(1fr)
-    #align(center)[
-      #text(fill: p.fg-bright, size: 36pt, weight: "bold")[Battle-Tested Data Pipelines]
-      #v(8pt)
-      #text(fill: p.fg-dim, size: 14pt)[The step ELT forgot -- patterns for extraction, conforming, and loading]
-      #v(40pt)
-      #text(fill: p.fg-subtle, size: 14pt)[Alonso Burón]
-    ]
-    #v(1fr)
+  #page(header: none, footer: none, margin: 0pt)[
+    #image("diagrams/cover-art.svg", width: 100%, height: 100%)
   ]
 
   // ============================================================
@@ -1872,7 +1864,7 @@
 
   == The Mechanics
   <the-mechanics-2>
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0205-scoped-replace.svg", width: 90%))
 
   #strong[Declare the scope.] `scope_start` is a parameter the pipeline receives at runtime, not a constant baked into SQL. Externalizing it lets you widen the scope for backfills without touching extraction logic.
 
@@ -1924,7 +1916,7 @@
 
   #figure(
     align(center)[#table(
-      columns: (4.48%, 2.99%, 92.54%),
+      columns: (20%, 10%, 70%),
       align: (auto, auto, auto),
       table.header([Table], [Fits?], [Why]),
       table.hline(),
@@ -2032,7 +2024,7 @@
 
   == The Mechanics
   <the-mechanics-3>
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0206-rolling-window.svg", width: 90%))
 
   #strong[Extract by `updated_at`.] The filter is on the metadata field that reflects when a row last changed, not when it was created. A 3-year-old order that got its status updated yesterday is inside the 30-day window. A 3-week-old order that hasn't changed is also inside it -- you pull it again regardless, because within the window you replace everything, not just what changed.
 
@@ -2214,7 +2206,7 @@
 
   == The Mechanics
   <the-mechanics-4>
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0207-sparse-table.svg", width: 90%))
 
   #strong[Step 1: get active combos from movements.]
 
@@ -2310,11 +2302,13 @@
 
   A full replace every run is correct but expensive when only a small fraction of rows actually change. A 10-million-row products table where 50 rows change per day doesn't need 10 million destination writes nightly. Hash-based change detection threads the needle: read the full source, but write only the rows that are actually different.
 
+  The savings depend on the destination. On transactional engines, upsert cost scales with batch size -- writing 50 rows instead of 10 million is a direct win. On columnar engines, it only pays off when the changed rows cluster in a few partitions that you can swap individually (see @partition-swap); an unpartitioned MERGE that touches 50 rows still rewrites the entire table, so the hash comparison saves nothing on the write side.
+
   This is a last resort, not a first choice. Reach for it when there is genuinely no cursor and the table is too large or the destination too expensive to justify a full replace on every run.
 
   == The Mechanics
   <the-mechanics-5>
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0208-hash-detection.svg", width: 95%))
 
   #strong[Hash every source row.] Concatenate all data columns and compute a hash. The hash is a fingerprint of the row's current state.
 
@@ -2439,6 +2433,8 @@
 
   What doesn't justify it: filtering for "relevance." A wide table with 200 columns where analytics only uses 40 is not a reason to exclude 160. That's a transformation -- a decision about what matters -- and it belongs downstream, not at the extraction layer. Consumers don't understand the difference between "this column has nulls" and "this column was never loaded."
 
+  #figure(image("diagrams/0209-partial-columns.svg", width: 95%))
+
   == The Trap
   <the-trap>
   The danger is the silence around the exclusion.
@@ -2554,6 +2550,10 @@
 
   Two patterns build on this signal: 0302 tracks a high-water mark between runs; 0303 always re-extracts a fixed trailing window. Both fail the same way when the signal is wrong.
 
+  #figure(
+    image("diagrams/0301-cursor-blind-spots.svg", width: 95%),
+  )
+
   // ---
 
   == When `updated_at` Lies
@@ -2633,6 +2633,10 @@
 
   See 0301 for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
 
+  #figure(
+    image("diagrams/0302-cursor-mechanics.svg", width: 95%),
+  )
+
   // ---
 
   == How It Works
@@ -2696,6 +2700,10 @@
   ]
 
   See 0301 for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
+
+  #figure(
+    image("diagrams/0303-stateless-window.svg", width: 95%),
+  )
 
   // ---
 
@@ -4265,7 +4273,7 @@
 
   Consumers query `orders` and see the current state. The view abstracts the log entirely.
 
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0404-log-anatomy.svg", width: 90%))
 
   // ---
 
@@ -8934,7 +8942,7 @@
 
   == Relationships
   <relationships>
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #align(center, image("diagrams/domain-model-er.svg", width: 90%))
 
   `events`, `sessions`, and `metrics_daily` have no foreign keys into the schema above. `inventory` and `inventory_movements` connect to `products` via `sku_id` but have no `warehouses` table -- `warehouse_id` is a plain integer key.
 

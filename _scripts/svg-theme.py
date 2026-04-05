@@ -54,6 +54,8 @@ LIGHT_TO_DARK = {v: k for k, v in DARK_TO_LIGHT.items()}
 # Catppuccin colors from ecl-charts.js that also need mapping
 CATPPUCCIN_TO_GRUVBOX_DARK = {
     "#181825": "#1d2021",
+    "#1e1e34": "#1d2021",  # ecl-charts.js tableState body bg
+    "#252540": "#282828",  # ecl-charts.js tableState header bg
     "#313244": "#3c3836",
     "#585b70": "#504945",
     "#a6adc8": "#a89984",

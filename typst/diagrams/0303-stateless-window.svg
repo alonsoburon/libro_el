@@ -1,1 +1,134 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="186" viewBox="0 0 800 186"><rect x="0" y="0" width="800" height="186" fill="#ffffff" rx="6"></rect><text x="400" y="22" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Stateless window — fixed trailing window, no cursor</text><line x1="50" y1="46" x2="750" y2="46" stroke="#d5c4a1" stroke-width="1"></line><line x1="50" y1="43" x2="50" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="50" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 1</text><line x1="150" y1="43" x2="150" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="150" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 2</text><line x1="250" y1="43" x2="250" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="250" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 3</text><line x1="350" y1="43" x2="350" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="350" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 4</text><line x1="450" y1="43" x2="450" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="450" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 5</text><line x1="550" y1="43" x2="550" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="550" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 6</text><line x1="650" y1="43" x2="650" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="650" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 7</text><line x1="750" y1="43" x2="750" y2="49" stroke="#d5c4a1" stroke-width="1"></line><text x="750" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 8</text><rect x="50" y="56" width="300" height="28" fill="#6c8ebf" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-k2xjfj"><rect x="54" y="56" width="292" height="28"></rect></clipPath></defs><text x="200" y="70" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-k2xjfj)">Run on Day 3 (3-day window)</text></g><rect x="150" y="90" width="300" height="28" fill="#6c8ebf" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-vkixzd"><rect x="154" y="90" width="292" height="28"></rect></clipPath></defs><text x="300" y="104" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-vkixzd)">Run on Day 4 (3-day window)</text></g><rect x="250" y="124" width="300" height="28" fill="#6c8ebf" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-px2nd8"><rect x="254" y="124" width="292" height="28"></rect></clipPath></defs><text x="400" y="138" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-px2nd8)">Run on Day 5 (3-day window)</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270">
+  <rect x="0" y="0" width="720" height="270" fill="#ffffff" rx="6"/>
+  <text x="360" y="20" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Stateless window — no cursor, no state, always N days back from now</text>
+
+  <!-- Timeline axis: Feb 22 (x=60) to Mar 3 (x=690), 9 days = 70px/day -->
+  <line x1="55" y1="48" x2="695" y2="48" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="695,45 703,48 695,51" fill="#d5c4a1"/>
+
+  <!-- Date ticks: Feb 22=60, Feb 24=200, Feb 26=340, Feb 28=480, Mar 1=550, Mar 2=620, Mar 3=690 -->
+  <!-- Simplified: show Feb 22, Feb 25, Feb 28, Mar 1, Mar 3 -->
+  <g fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">
+    <text x="60" y="42" text-anchor="middle">Feb 22</text>
+    <text x="200" y="42" text-anchor="middle">Feb 24</text>
+    <text x="340" y="42" text-anchor="middle">Feb 26</text>
+    <text x="480" y="42" text-anchor="middle">Feb 28</text>
+    <text x="550" y="42" text-anchor="middle">Mar 1</text>
+    <text x="620" y="42" text-anchor="middle">Mar 2</text>
+    <text x="690" y="42" text-anchor="middle">Mar 3</text>
+  </g>
+  <g stroke="#d5c4a1" stroke-width="1">
+    <line x1="60" y1="45" x2="60" y2="51"/>
+    <line x1="200" y1="45" x2="200" y2="51"/>
+    <line x1="340" y1="45" x2="340" y2="51"/>
+    <line x1="480" y1="45" x2="480" y2="51"/>
+    <line x1="550" y1="45" x2="550" y2="51"/>
+    <line x1="620" y1="45" x2="620" y2="51"/>
+    <line x1="690" y1="45" x2="690" y2="51"/>
+  </g>
+
+  <!-- "now" marker for Run N (Mar 1 = x=550) -->
+  <line x1="550" y1="54" x2="550" y2="118" stroke="#458588" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <rect x="525" y="59" width="50" height="13" fill="#ffffff" rx="2"/>
+  <text x="550" y="69" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">now (N)</text>
+
+  <!-- "now" marker for Run N+1 (Mar 2 = x=655) -->
+  <line x1="655" y1="54" x2="655" y2="190" stroke="#458588" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <rect x="624" y="59" width="62" height="13" fill="#ffffff" rx="2"/>
+  <text x="655" y="69" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">now (N+1)</text>
+
+  <!-- ══════ RUN N: 7 days back from Mar 1 → Feb 22 to Mar 1 ══════ -->
+  <!-- Feb 22 = x=60, Mar 1 = x=550 → width=490 -->
+  <text x="50" y="88" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N</text>
+  <text x="50" y="100" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">06:00 Mar 1</text>
+
+  <rect x="110" y="80" width="440" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="110" y="80" width="440" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+
+  <!-- 7d window brace -->
+  <line x1="116" y1="124" x2="544" y2="124" stroke="#928374" stroke-width="0.75"/>
+  <line x1="116" y1="121" x2="116" y2="127" stroke="#928374" stroke-width="0.75"/>
+  <line x1="544" y1="121" x2="544" y2="127" stroke="#928374" stroke-width="0.75"/>
+  <text x="330" y="134" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">INTERVAL '7 days'</text>
+
+  <!-- Row blocks in Run N (8 rows, 24px wide, 32px gap, stride=56px, start x=122) -->
+  <rect x="122" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="134" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r1</text>
+
+  <rect x="178" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="190" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r2</text>
+
+  <rect x="234" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="246" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r3</text>
+
+  <rect x="290" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="302" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r4</text>
+
+  <rect x="346" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="358" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r5</text>
+
+  <rect x="402" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="414" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r6</text>
+
+  <rect x="458" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="470" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r7</text>
+
+  <rect x="514" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="526" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r8</text>
+
+  <!-- Massive overlap band (r2-r8 region, spans both runs) -->
+  <rect x="178" y="76" width="360" height="122" fill="#d79921" opacity="0.06" rx="3"/>
+
+  <!-- ══════ RUN N+1: 7 days back from Mar 2 → Feb 23 to Mar 2 ══════ -->
+  <!-- Feb 23 ≈ x=130, Mar 2 = x=620 → width=490 -->
+  <text x="50" y="160" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N+1</text>
+  <text x="50" y="172" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">06:00 Mar 2</text>
+
+  <rect x="160" y="152" width="498" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="160" y="152" width="498" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+
+  <!-- 7d window brace -->
+  <line x1="166" y1="196" x2="652" y2="196" stroke="#928374" stroke-width="0.75"/>
+  <line x1="166" y1="193" x2="166" y2="199" stroke="#928374" stroke-width="0.75"/>
+  <line x1="652" y1="193" x2="652" y2="199" stroke="#928374" stroke-width="0.75"/>
+  <text x="409" y="206" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">INTERVAL '7 days'</text>
+
+  <!-- Re-extracted rows (amber) — r2 through r8 (same x as Run N, 24px wide) -->
+  <rect x="178" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="190" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r2</text>
+
+  <rect x="234" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="246" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r3</text>
+
+  <rect x="290" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="302" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r4</text>
+
+  <rect x="346" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="358" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r5</text>
+
+  <rect x="402" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="414" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r6</text>
+
+  <rect x="458" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="470" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r7</text>
+
+  <rect x="514" y="158" width="24" height="26" fill="#d79921" opacity="0.25" rx="3"/>
+  <text x="526" y="175" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r8</text>
+
+  <!-- Genuinely new rows (same 24px width, 32px gap, stride=56px) -->
+  <rect x="570" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="582" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r9</text>
+
+  <rect x="626" y="158" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="638" y="175" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r10</text>
+
+  <!-- Legend -->
+  <rect x="60" y="222" width="14" height="10" fill="#458588" opacity="0.14" rx="2"/>
+  <text x="80" y="230" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">new row</text>
+
+  <rect x="165" y="222" width="14" height="10" fill="#d79921" opacity="0.25" rx="2"/>
+  <text x="185" y="230" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">re-extracted — most of the window overlaps, upsert deduplicates</text>
+
+  <!-- Bottom annotation -->
+  <text x="360" y="255" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">No cursor to advance, no state to corrupt. The window slides forward with the clock, not with load confirmation.</text>
+</svg>

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="310" viewBox="0 0 720 310">
+  <rect x="0" y="0" width="720" height="310" fill="#ffffff" rx="6"/>
+  <text x="360" y="22" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">The cursor's blind spots — five rows changed, only two are captured</text>
+
+  <!-- Cursor window label -->
+  <rect x="20" y="36" width="680" height="22" fill="#458588" opacity="0.08" rx="3"/>
+  <text x="360" y="51" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Cursor:  WHERE updated_at &gt;= '2026-03-01 00:00'</text>
+
+  <!-- Table -->
+  <rect x="20" y="68" width="580" height="192" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+
+  <!-- Header -->
+  <rect x="20" y="68" width="580" height="28" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="90" width="580" height="6" fill="#ebdbb2"/>
+  <text x="62" y="82" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">order_id</text>
+  <text x="175" y="82" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">what happened</text>
+  <text x="340" y="82" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">updated_at</text>
+  <text x="480" y="82" text-anchor="middle" dominant-baseline="central" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">in cursor window?</text>
+
+  <!-- Row 1: captured (green) -->
+  <rect x="21" y="97" width="4" height="30" fill="#79740e" rx="1"/>
+  <line x1="28" y1="97" x2="594" y2="97" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="62" y="112" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1001</text>
+  <text x="175" y="112" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">ORM update (trigger fired)</text>
+  <text x="340" y="112" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">2026-03-01 14:00</text>
+  <!-- Checkmark -->
+  <g stroke="#79740e" stroke-width="2" fill="none">
+    <polyline points="468,112 474,118 486,106"/>
+  </g>
+  <text x="500" y="112" dominant-baseline="central" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">yes</text>
+
+  <!-- Row 2: missed — NULL (red) -->
+  <rect x="21" y="128" width="4" height="30" fill="#9d0006" rx="1"/>
+  <line x1="28" y1="128" x2="594" y2="128" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="62" y="143" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1002</text>
+  <text x="175" y="143" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Row inserted (no trigger)</text>
+  <text x="340" y="143" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">NULL</text>
+  <!-- X mark -->
+  <g stroke="#9d0006" stroke-width="2">
+    <line x1="470" y1="137" x2="482" y2="149"/>
+    <line x1="482" y1="137" x2="470" y2="149"/>
+  </g>
+  <text x="500" y="143" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">no</text>
+
+  <!-- Row 3: missed — stale (red) -->
+  <rect x="21" y="159" width="4" height="30" fill="#9d0006" rx="1"/>
+  <line x1="28" y1="159" x2="594" y2="159" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="62" y="174" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1003</text>
+  <text x="175" y="174" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Bulk import (500 rows)</text>
+  <text x="340" y="174" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">2026-02-15 10:00</text>
+  <!-- X mark -->
+  <g stroke="#9d0006" stroke-width="2">
+    <line x1="470" y1="168" x2="482" y2="180"/>
+    <line x1="482" y1="168" x2="470" y2="180"/>
+  </g>
+  <text x="500" y="174" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">no</text>
+
+  <!-- Row 4: missed — backdated (red) -->
+  <rect x="21" y="190" width="4" height="30" fill="#9d0006" rx="1"/>
+  <line x1="28" y1="190" x2="594" y2="190" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="62" y="205" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1004</text>
+  <text x="175" y="205" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Manual correction (backdated)</text>
+  <text x="340" y="205" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">2026-01-10 09:00</text>
+  <!-- X mark -->
+  <g stroke="#9d0006" stroke-width="2">
+    <line x1="470" y1="199" x2="482" y2="211"/>
+    <line x1="482" y1="199" x2="470" y2="211"/>
+  </g>
+  <text x="500" y="205" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">no</text>
+
+  <!-- Row 5: captured (green) -->
+  <rect x="21" y="221" width="4" height="30" fill="#79740e" rx="1"/>
+  <line x1="28" y1="221" x2="594" y2="221" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="62" y="236" text-anchor="middle" dominant-baseline="central" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">1005</text>
+  <text x="175" y="236" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">ORM update (trigger fired)</text>
+  <text x="340" y="236" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">2026-03-01 14:02</text>
+  <!-- Checkmark -->
+  <g stroke="#79740e" stroke-width="2" fill="none">
+    <polyline points="468,236 474,242 486,230"/>
+  </g>
+  <text x="500" y="236" dominant-baseline="central" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">yes</text>
+
+  <!-- Right-side annotations for missed rows -->
+  <rect x="610" y="125" width="100" height="20" fill="#9d0006" opacity="0.08" rx="3"/>
+  <text x="660" y="136" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">no trigger on INS</text>
+  <line x1="610" y1="135" x2="535" y2="143" stroke="#9d0006" stroke-width="0.75" stroke-dasharray="3,2"/>
+
+  <rect x="610" y="155" width="100" height="20" fill="#9d0006" opacity="0.08" rx="3"/>
+  <text x="660" y="166" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">bypassed trigger</text>
+  <line x1="610" y1="165" x2="535" y2="174" stroke="#9d0006" stroke-width="0.75" stroke-dasharray="3,2"/>
+
+  <rect x="610" y="185" width="100" height="20" fill="#9d0006" opacity="0.08" rx="3"/>
+  <text x="660" y="196" text-anchor="middle" dominant-baseline="central" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">set to past date</text>
+  <line x1="610" y1="195" x2="535" y2="205" stroke="#9d0006" stroke-width="0.75" stroke-dasharray="3,2"/>
+
+  <!-- Legend -->
+  <rect x="20" y="272" width="4" height="12" fill="#79740e" rx="1"/>
+  <text x="30" y="280" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">captured by cursor</text>
+
+  <rect x="155" y="272" width="4" height="12" fill="#9d0006" rx="1"/>
+  <text x="165" y="280" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">changed but invisible — purity debt accumulating silently</text>
+
+  <!-- Bottom summary -->
+  <text x="360" y="300" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">All five rows changed. The cursor found two. The periodic full replace catches the other three.</text>
+</svg>

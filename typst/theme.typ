@@ -10,7 +10,7 @@
 // Semantic callout blocks -- colored left border, bold title + body
 // Usage: #ecl-warning("Title here")[Body text with `code` and *markup*.]
 #let ecl-callout(title, color: p.blue-accent, body) = block(
-  fill: p.surface, inset: 12pt, radius: 4pt,
+  fill: p.surface, inset: 12pt, radius: 4pt, breakable: false,
   stroke: (left: 3pt + color),
 )[
   #text(fill: color, weight: "bold", size: 10pt, title)
@@ -118,7 +118,7 @@
   }
 
   show raw.where(block: true): it => block(
-    fill: p.code-bg, inset: 12pt, radius: 4pt, width: 100%,
+    fill: p.code-bg, inset: 12pt, radius: 4pt, width: 100%, breakable: false,
     text(fill: p.code-fg, size: 9pt, it)
   )
   show raw.where(block: false): set text(fill: p.inline-code, size: 1em)
