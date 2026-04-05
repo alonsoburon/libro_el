@@ -781,9 +781,9 @@
   ```sql
   -- source: transactional
   -- Verify that the claimed PK actually produces unique rows
-  SELECT id, COUNT(*) AS occurrences
+  SELECT order_id, COUNT(*) AS occurrences
   FROM orders
-  GROUP BY id
+  GROUP BY order_id
   HAVING COUNT(*) > 1
   ORDER BY occurrences DESC
   LIMIT 20;
@@ -1404,13 +1404,13 @@
   -- engine: postgresql
   -- Chunk 1: rows 1 -- 100000
   SELECT * FROM order_lines
-  WHERE id BETWEEN 1 AND 100000
-  ORDER BY id;
+  WHERE line_id BETWEEN 1 AND 100000
+  ORDER BY line_id;
 
   -- Chunk 2: rows 100001 -- 200000
   SELECT * FROM order_lines
-  WHERE id BETWEEN 100001 AND 200000
-  ORDER BY id;
+  WHERE line_id BETWEEN 100001 AND 200000
+  ORDER BY line_id;
   ```
 
   The chunk size is a tunable parameter -- start at 100k rows and adjust based on query time and memory pressure. Most orchestrators let you parameterize this per asset or per source.
@@ -1422,7 +1422,7 @@
   # SQLAlchemy yield_per: stream results without loading full result set into memory
   with engine.connect() as conn:
       result = conn.execution_options(yield_per=10_000).execute(
-          text("SELECT * FROM order_lines ORDER BY id")
+          text("SELECT * FROM order_lines ORDER BY line_id")
       )
       for chunk in result.partitions():
           stage_chunk(chunk)  # append to staging, not to final table
@@ -1924,7 +1924,7 @@
       [Old dates only change during explicit recalculations. Treat those as one-off backfills.],
       [`invoices`],
       [Yes],
-      [Closed invoices are frozen. Open invoices are recent.If this soft rule is broken, there could be some legal trouble.],
+      [Closed invoices are frozen. Open invoices are recent. If this soft rule is broken, there could be some legal trouble.],
       [`orders`], [Usually], [Most old orders are done. Verify with the source team whether support can reopen them.],
       [`customers`],
       [No],
@@ -2039,7 +2039,7 @@
   ```sql
   -- engine: postgresql
   BEGIN;
-  DELETE FROM orders WHERE id IN (SELECT id FROM stg_orders);
+  DELETE FROM orders WHERE order_id IN (SELECT order_id FROM stg_orders);
   INSERT INTO orders SELECT * FROM stg_orders;
   COMMIT;
   ```
@@ -2050,7 +2050,7 @@
   -- engine: postgresql
   INSERT INTO orders
   SELECT * FROM stg_orders
-  ON CONFLICT (id) DO UPDATE SET
+  ON CONFLICT (order_id) DO UPDATE SET
       customer_id = EXCLUDED.customer_id,
       status      = EXCLUDED.status,
       updated_at  = EXCLUDED.updated_at;
@@ -2102,7 +2102,7 @@
 
   #ecl-info(
     "Transactional to Transactional",
-  )[Natural fit (e.g.~PostgreSQL → PostgreSQL). DELETE by PK from staging, then INSERT -- or upsert with `ON CONFLICT (id) DO UPDATE`. Precise, no partition mismatch, no overshoot. The destination PK constraint is the safety net. See mechanics above for the full SQL.]
+  )[Natural fit (e.g.~PostgreSQL → PostgreSQL). DELETE by PK from staging, then INSERT -- or upsert with `ON CONFLICT (order_id) DO UPDATE`. Precise, no partition mismatch, no overshoot. The destination PK constraint is the safety net. See mechanics above for the full SQL.]
 
   // ---
 
@@ -5250,7 +5250,7 @@
   ```sql
   -- destination: any
   -- Quick canary check after load
-  SELECT customer_name
+  SELECT name
   FROM customers
   WHERE name LIKE '%ñ%'
      OR name LIKE '%ü%'
@@ -5752,7 +5752,7 @@
 
   #strong[Storage costs] are predictable but sneaky at scale. Append logs grow with every run, and without compaction that growth is unbounded (0404 covers compaction). Staging tables that outlive their load job are dead weight, though in practice orphaned staging is more of a schema hygiene issue than a cost problem -- at \~\$0.02/GB/month in BigQuery, a few hundred GB of staging is annoying but not alarming. The compute cost of accidentally querying unpartitioned staging is usually worse than storing it.
 
-  #strong[Extraction costs] are easy to forget because querying your own PostgreSQL is free. But some sources meter reads: API rate limits, licensed query slots (SAP HANA, some SaaS platforms), or egress charges from cloud-hosted sources. Also sometimes extracting over VPNs incurs in bandwidth costs. Overlapping extraction windows in stateless patterns (0303) re-extract the same rows deliberately -- the overlap is correct, but its cost in time and source-side load should be visible and known
+  #strong[Extraction costs] are easy to forget because querying your own PostgreSQL is free. But some sources meter reads: API rate limits, licensed query slots (SAP HANA, some SaaS platforms), or egress charges from cloud-hosted sources. Also sometimes extracting over VPNs incurs in bandwidth costs. Overlapping extraction windows in stateless patterns (0303) re-extract the same rows deliberately -- the overlap is correct, but its cost in time and source-side load should be visible and known.
 
   === Cost Attribution
   <cost-attribution>
@@ -6361,7 +6361,7 @@
 
   === Hot (Intraday)
   <hot-intraday>
-  Tables or partitions with actively changing data: today's `orders`, open `invoices`, recent `events`. Refreshed multiple times per day via incremental extraction when neccesary (0302). The actual interval depends on the table's volume, source capacity, and consumer SLA -- a 500-row lookup table can refresh every few minutes while a 50M-row fact table might only sustain hourly.
+  Tables or partitions with actively changing data: today's `orders`, open `invoices`, recent `events`. Refreshed multiple times per day via incremental extraction when necessary (0302). The actual interval depends on the table's volume, source capacity, and consumer SLA -- a 500-row lookup table can refresh every few minutes while a 50M-row fact table might only sustain hourly.
 
   The hot tier tolerates impurity. Slight gaps from late-arriving data or cursor lag aren't catastrophic here because the warm tier catches them on the next pass. This is where you accept a tradeoff: the data is fresh but might not be perfectly pure, and that's fine because purity comes later.
 
@@ -6923,9 +6923,9 @@
 
   ```sql
   -- destination: columnar
-  SELECT id, COUNT(*) AS dupes
+  SELECT order_id, COUNT(*) AS dupes
   FROM orders
-  GROUP BY id
+  GROUP BY order_id
   HAVING COUNT(*) > 1;
   ```
 
@@ -6950,12 +6950,12 @@
   MERGE INTO orders AS tgt
   USING (
       SELECT * EXCEPT(_rn) FROM (
-          SELECT *, ROW_NUMBER() OVER (PARTITION BY id ORDER BY _extracted_at DESC) AS _rn
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) AS _rn
           FROM orders
       )
       WHERE _rn = 1
   ) AS deduped
-  ON tgt.id = deduped.id
+  ON tgt.order_id = deduped.order_id
   WHEN MATCHED THEN
       UPDATE SET tgt._extracted_at = deduped._extracted_at
   WHEN NOT MATCHED BY SOURCE THEN
@@ -6977,7 +6977,7 @@
   CREATE VIEW orders AS
   SELECT * FROM (
       SELECT *, ROW_NUMBER() OVER (
-          PARTITION BY id ORDER BY _extracted_at DESC
+          PARTITION BY order_id ORDER BY _extracted_at DESC
       ) AS _rn
       FROM orders_raw
   ) WHERE _rn = 1;
@@ -8862,24 +8862,24 @@
       [Broken cursor showcase],
       [0301, 0303, 0310],
       [`order_lines`],
-      [`id`],
+      [`line_id`],
       [`order_id`, `product_id`, `line_num`, `quantity`, `unit_price`],
       [Detail with no timestamp],
       [0304, 0308],
-      [`customers`], [`id`], [`name`, `email`, `is_active`], [Soft-delete dimension], [0201, 0106],
-      [`products`], [`id`], [`name`, `price`, `category`], [Schema drift case], [0201, 0105, 0209],
+      [`customers`], [`customer_id`], [`name`, `email`, `is_active`], [Soft-delete dimension], [0201, 0106],
+      [`products`], [`product_id`], [`name`, `price`, `category`], [Schema drift case], [0201, 0105, 0209],
       [`invoices`],
-      [`id`],
-      [`order_id`, `status`, `total_amount`, `created_at`, `updated_at`],
+      [`invoice_id`],
+      [`customer_id`, `status`, `doc_status`, `created_at`, `updated_at`],
       [Open/closed + hard deletes],
       [0306, 0307],
       [`invoice_lines`],
-      [`id`],
-      [`invoice_id`, `description`, `amount`, `status`],
+      [`line_id`],
+      [`invoice_id`, `product_id`, `quantity`, `unit_price`, `status`],
       [Independent detail lifecycle],
       [0308, 0306],
       [`events`], [`event_id`], [`event_type`, `event_date`, `payload`], [Append-only, partitioned], [0305, 0402],
-      [`sessions`], [(implicit)], [`session_id`, `user_id`, `start_time`], [Late-arriving data], [0309],
+      [`sessions`], [(implicit)], [`session_id`, `user_id`, `started_at`], [Late-arriving data], [0309],
       [`metrics_daily`],
       [(composite)],
       [`metric_date`, `metric_name`, `value`],
@@ -8887,8 +8887,8 @@
       [0202, 0204],
       [`inventory`], [(`sku_id`, `warehouse_id`)], [`on_hand`, `on_order`], [Sparse cross-product], [0206, 0207],
       [`inventory_movements`],
-      [`id`],
-      [`sku_id`, `warehouse_id`, `movement_type`, `quantity`, `created_at`],
+      [`movement_id`],
+      [`sku_id`, `warehouse_id`, `movement_type`, `quantity`, `movement_date`],
       [Activity signal, append-only],
       [0207, 0402, 0706],
     )],
