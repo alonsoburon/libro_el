@@ -2818,6 +2818,10 @@
 
   See 0301 for the shared `updated_at` reliability concerns.
 
+  #figure(
+    image("diagrams/0304-cursor-from-header.svg", width: 95%),
+  )
+
   // ---
 
   == The Problem
@@ -2934,6 +2938,10 @@
   #quote(block: true)[
     #strong[One-liner:] No `updated_at` anywhere, but the PK is monotonically increasing. `WHERE id > :last_id` detects inserts only -- updates are invisible by design.
   ]
+
+  #figure(
+    image("diagrams/0305-sequential-id-cursor.svg", width: 95%),
+  )
 
   // ---
 
