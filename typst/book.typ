@@ -52,7 +52,15 @@
     #v(2fr)
     #align(right)[
       #text(fill: p.fg-quote, size: 12pt, style: "italic")[
-        To my lovely feyoncé, whose patience is beaten by no saint, and whose light willed this book into existence.
+        To my lovely fiancée, whose patience is beaten by no saint, and whose light willed this book into existence.
+
+        #v(8pt)
+
+        Thank you for enduring the nights I spent glued to my screen muttering about broken pipelines, for listening to unsolicited explanations about cursors and timestamps, and for believing in this project when I wasn't sure anyone would read it.
+
+        #v(8pt)
+
+        This book exists because you gave me the space, the confidence, and the coffee to write it.
       ]
     ]
     #v(3fr)
@@ -632,7 +640,9 @@
       table.hline(),
       [BigQuery], [`JSON` type (native)], [Cannot load from Parquet. Use JSONL.],
       [Snowflake], [`VARIANT` type], [Parquet loads produce string, needs `PARSE_JSON`],
-      [ClickHouse], [`JSON` (native since v25.3) or `String`], [Native `JSON` type is recent -- legacy tables use `String` with `JSONExtract*`],
+      [ClickHouse],
+      [`JSON` (native since v25.3) or `String`],
+      [Native `JSON` type is recent -- legacy tables use `String` with `JSONExtract*`],
       [Redshift], [`SUPER` type], [Semi-structured queries use PartiQL syntax],
     )],
     kind: table,
@@ -762,7 +772,7 @@
 
   If this returns anything above zero, your incremental extraction is already incomplete.
 
-  #strong[Set by the application, not the database.] Application code that does `UPDATE orders SET ..., updated_at = NOW() WHERE id = :id`. A direct SQL edit from a back-office script, a database migration, or a developer with `psql` open doesn't go through the application layer. Those rows don't get a new `updated_at`. Your pipeline never sees them change.
+  #strong[Set by the application, not the database.] Application code that does `UPDATE orders SET ..., updated_at = NOW() WHERE order_id = :order_id`. A direct SQL edit from a back-office script, a database migration, or a developer with `psql` open doesn't go through the application layer. Those rows don't get a new `updated_at`. Your pipeline never sees them change.
 
   #strong[The index isn't there.] `updated_at` exists but nobody put an index on it. Your incremental query runs a full table scan on every execution. For a table with 50M rows, that's a multi-second query just to find the 200 rows that changed. On a transactional system under concurrent load, that scan will get you a complaint (or a ban) from the DBA.
 
@@ -958,7 +968,7 @@
       align: (auto, auto, auto),
       table.header([constraint\_type], [constraint\_name], [column\_name]),
       table.hline(),
-      [PRIMARY KEY], [orders\_pkey], [id],
+      [PRIMARY KEY], [orders\_pkey], [order\_id],
       [FOREIGN KEY], [orders\_customer\_id\_fkey], [customer\_id],
       [NOT NULL], [(column constraint)], [created\_at],
     )],
@@ -2312,7 +2322,7 @@
   -- source: transactional
   -- engine: postgresql
   SELECT
-      id,
+      product_id,
       name,
       price,
       category,
@@ -2470,7 +2480,7 @@
   -- source: transactional
   -- engine: postgresql
   SELECT
-      id,
+      customer_id,
       name,
       email,
       is_active,
@@ -2507,7 +2517,7 @@
   FROM information_schema.columns
   WHERE table_name = 'customers'
     AND column_name NOT IN (
-        'id', 'name', 'email', 'is_active', 'created_at', 'updated_at',
+        'customer_id', 'name', 'email', 'is_active', 'created_at', 'updated_at',
         'national_id',  -- excluded: GDPR
         'id_photo'      -- excluded: BLOB
     );
@@ -8571,7 +8581,10 @@
       table.hline(),
       [BigQuery], [`JSON`], [No -- use JSONL or Avro], [`JSON_VALUE(col, '$.key')`, dot notation],
       [Snowflake], [`VARIANT`], [Lands as string, needs `PARSE_JSON`], [`col:key::type`, `:` path notation],
-      [ClickHouse], [`JSON` (v25.3+) or `String`], [Yes (as string)], [`JSONExtractString(col, 'key')` or native path access on `JSON` type],
+      [ClickHouse],
+      [`JSON` (v25.3+) or `String`],
+      [Yes (as string)],
+      [`JSONExtractString(col, 'key')` or native path access on `JSON` type],
       [Redshift], [`SUPER`], [Yes], [PartiQL syntax: `col.key`],
       [PostgreSQL], [`JSONB` / `JSON`], [N/A (not a bulk load format)], [`col->>'key'`, `col @> '{}'` operators],
       [MySQL], [`JSON`], [N/A], [`JSON_EXTRACT(col, '$.key')`, `col->>'$.key'`],
