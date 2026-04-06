@@ -1,120 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="250" viewBox="0 0 720 250">
-  <rect x="0" y="0" width="720" height="250" fill="#ffffff" rx="6"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="230" viewBox="0 0 720 230">
+  <rect x="0" y="0" width="720" height="230" fill="#ffffff" rx="6"/>
   <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Sequential ID cursor — inserts only, updates are invisible</text>
 
   <!-- ID axis -->
-  <line x1="55" y1="48" x2="695" y2="48" stroke="#d5c4a1" stroke-width="1"/>
-  <polygon points="695,45 703,48 695,51" fill="#d5c4a1"/>
+  <line x1="40" y1="48" x2="700" y2="48" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="700,45 708,48 700,51" fill="#d5c4a1"/>
 
-  <!-- ID ticks -->
+  <!-- ID ticks at cursor positions -->
   <g fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">
-    <text x="100" y="42" text-anchor="middle">id 100</text>
-    <text x="220" y="42" text-anchor="middle">id 200</text>
-    <text x="340" y="42" text-anchor="middle">id 300</text>
-    <text x="460" y="42" text-anchor="middle">id 400</text>
-    <text x="580" y="42" text-anchor="middle">id 500</text>
-    <text x="680" y="42" text-anchor="middle">id 600</text>
+    <text x="120" y="42" text-anchor="middle">id 200</text>
+    <text x="360" y="42" text-anchor="middle">id 206</text>
+    <text x="600" y="42" text-anchor="middle">id 212</text>
   </g>
   <g stroke="#d5c4a1" stroke-width="1">
-    <line x1="100" y1="45" x2="100" y2="51"/>
-    <line x1="220" y1="45" x2="220" y2="51"/>
-    <line x1="340" y1="45" x2="340" y2="51"/>
-    <line x1="460" y1="45" x2="460" y2="51"/>
-    <line x1="580" y1="45" x2="580" y2="51"/>
-    <line x1="680" y1="45" x2="680" y2="51"/>
+    <line x1="120" y1="45" x2="120" y2="51"/>
+    <line x1="360" y1="45" x2="360" y2="51"/>
+    <line x1="600" y1="45" x2="600" y2="51"/>
   </g>
 
   <!-- Cursor N: id 200 -->
-  <line x1="220" y1="54" x2="220" y2="128" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <circle cx="220" cy="54" r="3.5" fill="#d65d0e"/>
-  <rect x="183" y="59" width="74" height="13" fill="#ffffff" rx="2"/>
-  <text x="220" y="69" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">last_id = 200</text>
+  <line x1="120" y1="54" x2="120" y2="118" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="120" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="83" y="57" width="74" height="13" fill="#ffffff" rx="2"/>
+  <text x="120" y="67" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">last_id = 200</text>
 
-  <!-- Cursor N+1: id 400 -->
-  <line x1="460" y1="54" x2="460" y2="195" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <circle cx="460" cy="54" r="3.5" fill="#d65d0e"/>
-  <rect x="423" y="59" width="74" height="13" fill="#ffffff" rx="2"/>
-  <text x="460" y="69" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">last_id = 400</text>
+  <!-- Cursor N+1: id 206 -->
+  <line x1="360" y1="54" x2="360" y2="185" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="360" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="323" y="57" width="74" height="13" fill="#ffffff" rx="2"/>
+  <text x="360" y="67" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">last_id = 206</text>
 
-  <!-- Cursor N+2: id 560 -->
-  <line x1="640" y1="54" x2="640" y2="195" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <circle cx="640" cy="54" r="3.5" fill="#d65d0e"/>
-  <rect x="603" y="59" width="74" height="13" fill="#ffffff" rx="2"/>
-  <text x="640" y="69" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">last_id = 560</text>
+  <!-- Cursor N+2: id 212 -->
+  <line x1="600" y1="54" x2="600" y2="185" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="600" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="563" y="57" width="74" height="13" fill="#ffffff" rx="2"/>
+  <text x="600" y="67" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">last_id = 212</text>
 
-  <!-- Already loaded -->
-  <rect x="72" y="80" width="142" height="38" fill="#928374" opacity="0.05" rx="4"/>
-  <text x="130" y="103" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">already loaded</text>
+  <!-- ══════ RUN N: x=120 to x=360, bar width=240 ══════ -->
+  <text x="40" y="93" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N</text>
+  <text x="40" y="106" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">id &gt; 200</text>
 
-  <!-- ══════ RUN N ══════ -->
-  <text x="50" y="97" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N</text>
-  <text x="50" y="110" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">id &gt; 200</text>
+  <rect x="120" y="76" width="240" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="120" y="76" width="240" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
 
-  <rect x="220" y="80" width="240" height="38" fill="#458588" opacity="0.06" rx="4"/>
-  <rect x="220" y="80" width="240" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <!-- 6 blocks, 24px wide, stride=38px (24+14 gap), centered in 240px -->
+  <!-- 6*24 + 5*14 = 144+70 = 214px content, pad = (240-214)/2 = 13px each side -->
+  <rect x="133" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="145" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">201</text>
 
-  <!-- Run N rows (24px wide, 6px gap) -->
-  <rect x="226" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="238" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">201</text>
+  <rect x="171" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="183" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">202</text>
 
-  <rect x="256" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="268" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">215</text>
+  <rect x="209" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="221" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">203</text>
 
-  <rect x="290" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="302" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">280</text>
+  <rect x="247" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="259" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">204</text>
 
-  <rect x="330" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="342" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">310</text>
+  <rect x="285" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="297" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">205</text>
 
-  <rect x="370" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="382" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">355</text>
-
-  <rect x="420" y="86" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="432" y="103" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">400</text>
-
-  <!-- Updated row (invisible, behind cursor) -->
-  <rect x="160" y="86" width="24" height="26" fill="#9d0006" opacity="0.12" rx="3" stroke="#9d0006" stroke-width="0.75" stroke-dasharray="3,2"/>
-  <text x="172" y="103" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">150</text>
-  <text x="172" y="79" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">updated!</text>
-
-  <!-- Gap annotation -->
-  <text x="278" y="79" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">gap (ok)</text>
+  <rect x="323" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="335" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">206</text>
 
   <!-- Advance arrow -->
-  <path d="M 460,122 L 460,138" stroke="#d65d0e" stroke-width="1.2"/>
-  <polygon points="457,137 460,143 463,137" fill="#d65d0e"/>
-  <text x="474" y="135" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">advance last_id</text>
+  <path d="M 360,118 L 360,134" stroke="#d65d0e" stroke-width="1.2"/>
+  <polygon points="357,133 360,139 363,133" fill="#d65d0e"/>
 
-  <!-- ══════ RUN N+1 ══════ -->
-  <text x="50" y="165" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N+1</text>
-  <text x="50" y="178" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">id &gt; 400</text>
+  <!-- ══════ RUN N+1: x=360 to x=600, bar width=240 ══════ -->
+  <text x="40" y="157" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N+1</text>
+  <text x="40" y="170" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">id &gt; 206</text>
 
-  <rect x="460" y="150" width="186" height="38" fill="#458588" opacity="0.06" rx="4"/>
-  <rect x="460" y="150" width="186" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <rect x="360" y="142" width="240" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="360" y="142" width="240" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
 
-  <!-- Run N+1 rows -->
-  <rect x="466" y="156" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="478" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">401</text>
+  <!-- 6 blocks, same stride -->
+  <rect x="373" y="148" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="385" y="165" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">207</text>
 
-  <rect x="496" y="156" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="508" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">430</text>
+  <rect x="411" y="148" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="423" y="165" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">208</text>
 
-  <rect x="530" y="156" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="542" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">489</text>
+  <rect x="449" y="148" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="461" y="165" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">209</text>
 
-  <rect x="570" y="156" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="582" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">510</text>
+  <rect x="487" y="148" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="499" y="165" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">210</text>
 
-  <rect x="610" y="156" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
-  <text x="622" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">560</text>
+  <rect x="525" y="148" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="537" y="165" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">211</text>
 
-  <!-- Legend -->
-  <rect x="60" y="206" width="14" height="10" fill="#458588" opacity="0.14" rx="2"/>
-  <text x="80" y="214" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">new insert (captured)</text>
+  <rect x="563" y="148" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="575" y="165" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">212</text>
 
-  <rect x="260" y="206" width="14" height="10" fill="#9d0006" opacity="0.12" rx="2" stroke="#9d0006" stroke-width="0.5" stroke-dasharray="2,2"/>
-  <text x="280" y="214" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">updated row (invisible to id cursor)</text>
-
-  <!-- Bottom annotation -->
-  <text x="360" y="240" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">Gaps in the sequence are harmless. Updates behind the cursor are permanently missed.</text>
+  <!-- Legend + annotation on one line -->
+  <rect x="40" y="200" width="14" height="10" fill="#458588" opacity="0.14" rx="2"/>
+  <text x="60" y="208" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">new insert (captured)</text>
+  <text x="250" y="208" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">Gaps in the sequence are harmless. Updates behind the cursor are permanently missed.</text>
 </svg>

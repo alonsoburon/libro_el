@@ -96,7 +96,7 @@
 
   #ecl-info(
     "Tool-agnostic patterns, opinionated appendix",
-  )[The patterns in this book use generic orchestrator language -- "your orchestrator," "a scheduled job," "a downstream dependency" -- because they work regardless of whether you run Dagster, Airflow, Prefect, or cron. The same applies to extractors, loaders, and destination engines. Specific tool recommendations, feature comparisons, and my opinionated picks live in the Appendix (0805--0807).]
+  )[The patterns in this book use generic orchestrator language -- "your orchestrator," "a scheduled job," "a downstream dependency" -- because they work regardless of whether you run Dagster, Airflow, Prefect, or cron. The same applies to extractors, loaders, and destination engines. Specific tool recommendations, feature comparisons, and my opinionated picks live in the Appendix (@glossary through @destinations).]
 
   = Why This Book
   <why-this-book>
@@ -1295,9 +1295,9 @@
   <incremental-has-to-earn-it>
   Incremental pipelines accumulate state across runs: a cursor position, a set of previously loaded keys, a log of appended rows. That state creates surface area for idempotency violations. The most common ones:
 
-  #strong[Cursor advances before load confirms.] The high-water mark moves forward, but the data it points past never made it to the destination. The next run starts from the new position and the gap is permanent (unless a lookback window covers it -- see 0406). Fix: advance the cursor only after the destination confirms the load.
+  #strong[Cursor advances before load confirms.] The high-water mark moves forward, but the data it points past never made it to the destination. The next run starts from the new position and the gap is permanent (unless a lookback window covers it -- see @reliable-loads). Fix: advance the cursor only after the destination confirms the load.
 
-  #strong[Append without dedup.] A retry appends the same batch again, and now the destination has two copies of every row. The pipeline "succeeded" both times, but the destination is wrong. Fix: use a dedup mechanism -- `INSERT ... ON CONFLICT` on transactional engines, a `ROW_NUMBER()` dedup view on columnar engines (0404).
+  #strong[Append without dedup.] A retry appends the same batch again, and now the destination has two copies of every row. The pipeline "succeeded" both times, but the destination is wrong. Fix: use a dedup mechanism -- `INSERT ... ON CONFLICT` on transactional engines, a `ROW_NUMBER()` dedup view on columnar engines (@append-and-materialize).
 
   #strong[Stateful staging that doesn't clean up.] The pipeline writes to a staging table, then loads from it. If the staging table isn't truncated before each run, a retry loads the previous batch plus the new one. Fix: truncate staging at the start of every run, not the end.
 
@@ -1387,7 +1387,7 @@
   <the-two-shapes-of-full-scan>
   #strong[Full table, every run.] Extract all rows, replace the destination completely on every execution. The simplest pipeline that exists and the most reliable. No state, no checkpoints, no drift. This should be your default for any table that fits the window.
 
-  #strong[Full table, periodic + incremental between.] Run a full scan nightly or weekly to reset state, run incremental extractions intraday to get freshness. The full scan is the safety net that catches everything the incremental misses -- soft rule violations, missed timestamps, retroactive corrections. The incremental is the performance optimization that gives you sub-daily freshness without scanning the whole table every hour. See 0301 for how to design the incremental so it plays well with the periodic full reset.
+  #strong[Full table, periodic + incremental between.] Run a full scan nightly or weekly to reset state, run incremental extractions intraday to get freshness. The full scan is the safety net that catches everything the incremental misses -- soft rule violations, missed timestamps, retroactive corrections. The incremental is the performance optimization that gives you sub-daily freshness without scanning the whole table every hour. See @timestamp-extraction-foundations for how to design the incremental so it plays well with the periodic full reset.
 
   == Source Load and Extraction Etiquette
   <source-load-and-extraction-etiquette>
@@ -1986,7 +1986,7 @@
 
   #ecl-warning(
     "Tiered freshness goes further",
-  )[The building blocks are this pattern, partition swap (0202), and incremental merge (0403). The hybrid strategy is introduced in 0108. For the full architecture -- how to wire the three zones together operationally -- see @tiered-freshness.]
+  )[The building blocks are this pattern, partition swap (@partition-swap), and incremental merge (@merge-upsert). The hybrid strategy is introduced in @purity-vs-freshness. For the full architecture -- how to wire the three zones together operationally -- see @tiered-freshness.]
 
   == By Corridor
   <by-corridor-2>
@@ -2016,11 +2016,11 @@
   <distinction-from-scoped-full-replace>
   Both patterns maintain a managed zone and a frozen zone. The difference is in how the boundary is defined and what the filter operates on.
 
-  0204 uses a calendar anchor -- Jan 1 of last year, or a fixed migration date. The boundary is a business date: a fiscal year, a known cutover point. The filter typically operates on `created_at` or `doc_date`. The managed zone grows over the year and resets annually.
+  @scoped-full-replace uses a calendar anchor -- Jan 1 of last year, or a fixed migration date. The boundary is a business date: a fiscal year, a known cutover point. The filter typically operates on `created_at` or `doc_date`. The managed zone grows over the year and resets annually.
 
   Rolling window uses a metadata anchor -- `updated_at` or `created_at` relative to today. The window is always the same width. It advances daily. There's no natural hard boundary like a fiscal year close; N is a judgment call based on how long corrections typically take to arrive in the source.
 
-  Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than 0204's "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See @tiered-freshness.
+  Rolling window also freezes data more aggressively. A 30-day window freezes anything older than a month. That's a much shorter guarantee than @scoped-full-replace's "everything since last January." This also makes it composable into more stages -- a 7-day daily window, a 90-day weekly window, a yearly scoped replace -- each tier running at the cadence that matches its data's volatility. See @tiered-freshness.
 
   == The Mechanics
   <the-mechanics-3>
@@ -2071,15 +2071,15 @@
 
   #ecl-warning(
     "N is not set-and-forget",
-  )[A new bulk update script in the source, a change in how corrections are posted, a migration that backdates rows -- any of these can push changes outside your current window and you won't know until a reconciliation catches the drift. Review N when anything significant changes upstream. Complement with a periodic full scan (weekly or monthly) to reset accumulated drift in the frozen zone. See 0201.]
+  )[A new bulk update script in the source, a change in how corrections are posted, a migration that backdates rows -- any of these can push changes outside your current window and you won't know until a reconciliation catches the drift. Review N when anything significant changes upstream. Complement with a periodic full scan (weekly or monthly) to reset accumulated drift in the frozen zone. See @full-scan-strategies.]
 
   == The Assumption You're Making
   <the-assumption-youre-making-1>
-  Every row older than N days is either immutable or stale-by-design. The frozen zone grows continuously -- a row that was last updated 31 days ago is frozen forever in a 30-day window. Unlike 0204, there's no fiscal year close or business invariant backing this up. N is purely a statistical bet on source behavior.
+  Every row older than N days is either immutable or stale-by-design. The frozen zone grows continuously -- a row that was last updated 31 days ago is frozen forever in a 30-day window. Unlike @scoped-full-replace, there's no fiscal year close or business invariant backing this up. N is purely a statistical bet on source behavior.
 
   #ecl-warning(
     "Document the window for consumers",
-  )[Consumers querying this table should know that data older than N days may not reflect current source state. The destination is not a complete mirror -- it's a rolling-correct-within-window, frozen-outside table. Treat this the same as 0204's scope boundary documentation.]
+  )[Consumers querying this table should know that data older than N days may not reflect current source state. The destination is not a complete mirror -- it's a rolling-correct-within-window, frozen-outside table. Treat this the same as @scoped-full-replace's scope boundary documentation.]
 
   == Validation
   <validation-1>
@@ -2100,7 +2100,7 @@
 
   #ecl-warning(
     "Transactional to Columnar",
-  )[E.g.~PostgreSQL → BigQuery. Columnar destinations should partition by a stable (hopefully unchangeable) business date -- `created_at`, `doc_date`, `event_date`. Never by `updated_at`: a row that gets updated moves to a different partition on each edit, creating duplicates across partition boundaries -- deduplication requires a full table scan to resolve. This means the filter field (`updated_at`) and the partition key are misaligned. An order created two years ago that was updated yesterday lives in a two-year-old partition -- to replace it, you'd need to replace that partition too. Without scanning the whole table, you can't know which historical partitions are affected. The pattern becomes expensive and unpredictable in columnar. Prefer 0204 for columnar destinations.]
+  )[E.g.~PostgreSQL → BigQuery. Columnar destinations should partition by a stable (hopefully unchangeable) business date -- `created_at`, `doc_date`, `event_date`. Never by `updated_at`: a row that gets updated moves to a different partition on each edit, creating duplicates across partition boundaries -- deduplication requires a full table scan to resolve. This means the filter field (`updated_at`) and the partition key are misaligned. An order created two years ago that was updated yesterday lives in a two-year-old partition -- to replace it, you'd need to replace that partition too. Without scanning the whole table, you can't know which historical partitions are affected. The pattern becomes expensive and unpredictable in columnar. Prefer @scoped-full-replace for columnar destinations.]
 
   #ecl-info(
     "Transactional to Transactional",
@@ -2186,9 +2186,9 @@
 
   == Relation to Activity-Driven Extraction
   <relation-to-activity-driven-extraction>
-  0207 solves a related problem differently. Sparse table extraction still scans the full source table -- it just drops most rows before loading. Activity-driven extraction avoids scanning the sparse table at all: it uses recent transaction history to determine which dimension combinations are worth pulling, then queries only those.
+  @activity-driven-extraction solves a related problem differently. Sparse table extraction still scans the full source table -- it just drops most rows before loading. Activity-driven extraction avoids scanning the sparse table at all: it uses recent transaction history to determine which dimension combinations are worth pulling, then queries only those.
 
-  This pattern (0206) is simpler and works for any sparse table. 0207 is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, 0207 is the next step.
+  This pattern (@sparse-table-extraction) is simpler and works for any sparse table. @activity-driven-extraction is more surgical -- it trades source query complexity for a much smaller extraction scope. If your sparse table is large enough that even the filtered extraction is slow, @activity-driven-extraction is the next step.
 
   // ---
 
@@ -2200,7 +2200,7 @@
 
   == The Problem
   <the-problem-4>
-  0206 reduces transfer volume by filtering zeros at extraction. The source still scans the full table -- it just drops most rows before sending them. For a 10-million-row inventory table that's 95% zeros, you're still reading 10 million rows on the source every run and discarding 9.5 million of them. On a busy production ERP at peak hours, that scan may be a problem.
+  @sparse-table-extraction reduces transfer volume by filtering zeros at extraction. The source still scans the full table -- it just drops most rows before sending them. For a 10-million-row inventory table that's 95% zeros, you're still reading 10 million rows on the source every run and discarding 9.5 million of them. On a busy production ERP at peak hours, that scan may be a problem.
 
   Activity-driven extraction skips the scan entirely. Instead of asking the sparse table "which of your rows are non-zero?", it asks the transaction table "which dimension combinations have been active recently?" -- then pulls only those specific rows from the sparse table. The source reads a few thousand rows instead of millions.
 
@@ -2256,11 +2256,11 @@
 
   == Solving Blind Spots: Tiered Windows
   <solving-blind-spots-tiered-windows>
-  A single activity window can't cover all cases without growing large enough to approach a full scan. The solution is the same as 0608: tier the cadences.
+  A single activity window can't cover all cases without growing large enough to approach a full scan. The solution is the same as @tiered-freshness: tier the cadences.
 
   - #strong[Daily];: short window (e.g.~30 days) -- catches everything that moved recently, fast and cheap
   - #strong[Weekly];: wider window (e.g.~180 days) -- catches slow movers, more expensive but still targeted
-  - #strong[Monthly];: full scan via 0201 -- catches everything the activity windows missed, resets any accumulated drift
+  - #strong[Monthly];: full scan via @full-scan-strategies -- catches everything the activity windows missed, resets any accumulated drift
 
   The monthly full scan is the safety net. It's expensive but infrequent. The daily and weekly runs are fast because their active sets are small. Don't try to size a single window to cover slow movers -- a 365-day window defeats the purpose of the pattern.
 
@@ -2272,7 +2272,7 @@
   <by-corridor-3>
   #ecl-info(
     "Transactional to Columnar",
-  )[E.g.~any source → BigQuery. Columnar destinations don't enforce PKs or maintain useful indexes for point lookups. MERGE is expensive without them. Inventory tables also rarely have a natural partition key -- a stock snapshot has no obvious business date to partition by. If the filtered set is small enough after activity-driven extraction, the cleanest option is a full staging swap (0203): replace the entire destination table, which is now small. The monthly full scan runs the same way. The destination stays small because the extraction is always activity-filtered -- the staging swap cost scales with active rows, not total rows.]
+  )[E.g.~any source → BigQuery. Columnar destinations don't enforce PKs or maintain useful indexes for point lookups. MERGE is expensive without them. Inventory tables also rarely have a natural partition key -- a stock snapshot has no obvious business date to partition by. If the filtered set is small enough after activity-driven extraction, the cleanest option is a full staging swap (@staging-swap): replace the entire destination table, which is now small. The monthly full scan runs the same way. The destination stays small because the extraction is always activity-filtered -- the staging swap cost scales with active rows, not total rows.]
 
   #ecl-warning(
     "Transactional to Transactional",
@@ -2298,7 +2298,7 @@
 
   == The Problem
   <the-problem-5>
-  Every incremental pattern in this book assumes the source has a cursor -- an `updated_at`, a sequence, a changelog. When that signal doesn't exist or can't be trusted (see 0105), the standard incremental approach fails silently. You either miss changes or you load everything every run.
+  Every incremental pattern in this book assumes the source has a cursor -- an `updated_at`, a sequence, a changelog. When that signal doesn't exist or can't be trusted (see @the-lies-sources-tell), the standard incremental approach fails silently. You either miss changes or you load everything every run.
 
   A full replace every run is correct but expensive when only a small fraction of rows actually change. A 10-million-row products table where 50 rows change per day doesn't need 10 million destination writes nightly. Hash-based change detection threads the needle: read the full source, but write only the rows that are actually different.
 
@@ -2336,7 +2336,7 @@
   <full-source-scan-avoidable-with-scoping>
   The naive implementation reads every source row to compute hashes -- the same cost as a full replace at source. The win is on the destination side: fewer writes, less DML cost, smaller staging loads.
 
-  Combined with 0204, the source scan shrinks too. Scope the hash comparison to the managed zone -- rows within `scope_start → today`. Frozen history is never read or compared. You get the source-side savings of scoped replace and the destination-side savings of hash filtering in one pipeline.
+  Combined with @scoped-full-replace, the source scan shrinks too. Scope the hash comparison to the managed zone -- rows within `scope_start → today`. Frozen history is never read or compared. You get the source-side savings of scoped replace and the destination-side savings of hash filtering in one pipeline.
 
   == Where Hash State Lives
   <where-hash-state-lives>
@@ -2394,7 +2394,7 @@
 
   == Combining With Scoped Replace
   <combining-with-scoped-replace>
-  Hash detection and 0204 compose cleanly. Define `scope_start`, scan only the managed zone at source, compute hashes for those rows, compare against stored hashes, load only changed rows within the scope. Frozen history is never touched.
+  Hash detection and @scoped-full-replace compose cleanly. Define `scope_start`, scan only the managed zone at source, compute hashes for those rows, compare against stored hashes, load only changed rows within the scope. Frozen history is never touched.
 
   The frozen zone's hashes don't need to be maintained -- those rows are immutable by definition. If you ever widen the scope backwards, treat the newly included historical rows as "new" (no stored hash) on the first run and load them fully.
 
@@ -2403,7 +2403,7 @@
   #ecl-warning(
     "Transactional to Columnar",
   )[E.g.~PostgreSQL → BigQuery. Hash comparison reduces the set of rows you need to write -- but it does not reduce the cost of writing them. On BigQuery, a MERGE that touches 10 rows still rewrites the entire partition containing those rows. On Snowflake, a MERGE still consumes warehouse time proportional to the scan, not the row count. The win from hash detection in columnar is narrowing #strong[which partitions] you touch, not the cost per partition once you do.
-    The practical approach: after hash comparison, identify which partitions contain changed rows, then use partition swap (0202) to replace only those partitions via staging. You avoid the DML concurrency constraints (BigQuery's 2-concurrent MERGE limit) and replace entire partitions cleanly rather than doing in-place mutations. Reach for MERGE only when the changed rows span too many partitions to swap individually, and accept the cost explicitly.
+    The practical approach: after hash comparison, identify which partitions contain changed rows, then use partition swap (@partition-swap) to replace only those partitions via staging. You avoid the DML concurrency constraints (BigQuery's 2-concurrent MERGE limit) and replace entire partitions cleanly rather than doing in-place mutations. Reach for MERGE only when the changed rows span too many partitions to swap individually, and accept the cost explicitly.
 
     If using `_source_hash` on the destination for comparison, reading that column on BigQuery costs bytes scanned. For large tables, storing hashes in an orchestrator state store is cheaper.]
 
@@ -2548,7 +2548,7 @@
   == The Problem
   Incremental extraction needs a signal: which rows changed since the last run? `updated_at` is the obvious answer -- it's on most tables, queryable, and cheap to filter. The difficulty is that it's maintained by the application layer, not the database. That means it works only if every write path remembers to update it -- triggers, ORMs, admin scripts, bulk imports. In practice, at least one always forgets.
 
-  Two patterns build on this signal: 0302 tracks a high-water mark between runs; 0303 always re-extracts a fixed trailing window. Both fail the same way when the signal is wrong.
+  Two patterns build on this signal: @cursor-based-timestamp-extraction tracks a high-water mark between runs; @stateless-window-extraction always re-extracts a fixed trailing window. Both fail the same way when the signal is wrong.
 
   #figure(
     image("diagrams/0301-cursor-blind-spots.svg", width: 95%),
@@ -2631,7 +2631,7 @@
     #strong[One-liner:] Track a cursor -- the high-water mark of the last successful run. Each run extracts only rows updated after that point.
   ]
 
-  See 0301 for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
+  See @timestamp-extraction-foundations for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
 
   #figure(
     image("diagrams/0302-cursor-mechanics.svg", width: 95%),
@@ -2670,7 +2670,7 @@
 
   #ecl-warning(
     "Advance cursor after confirmed load",
-  )[A partial load followed by a cursor advance is a permanent gap. The rows in the failed batch will never be re-extracted. Treat cursor advancement as the final step of the pipeline, gated on load confirmation -- not something that happens at the start of the next run.]
+  )[A partial load followed by a cursor advance is a permanent gap. The rows in the failed batch will #strong[never be re-extracted.] Treat cursor advancement as the final step of the pipeline, gated on load confirmation -- not something that happens at the start of the next run.]
 
   === Boundary Handling
   <boundary-handling>
@@ -2699,7 +2699,7 @@
     #strong[One-liner:] Extract a fixed trailing window on every run. No cursor, no state between runs. This is how I run most of my incremental tables.
   ]
 
-  See 0301 for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
+  See @timestamp-extraction-foundations for when `updated_at` lies, how to validate it, and when to run a periodic full replace.
 
   #figure(
     image("diagrams/0303-stateless-window.svg", width: 95%),
@@ -2786,13 +2786,13 @@
   WHERE invoice_date >= CURRENT_DATE - INTERVAL '90 days';
   ```
 
-  Every source that rewrites history has a horizon -- the furthest back a correction can reach. "Sales figures finalize after 60 days." "Invoices can be disputed within 90 days." That horizon defines your window size. If the business says 60 days, extract 90. The stated horizon is a soft rule (0106) -- verify it against actual data before trusting it.
+  Every source that rewrites history has a horizon -- the furthest back a correction can reach. "Sales figures finalize after 60 days." "Invoices can be disputed within 90 days." That horizon defines your window size. If the business says 60 days, extract 90. The stated horizon is a soft rule (@hard-rules-soft-rules) -- verify it against actual data before trusting it.
 
   Rows outside the mutable window are immutable by definition. They stay in the destination untouched between runs. Only the window gets re-extracted.
 
   The key difference from a timestamp-based window: you're extracting #emph[every] row in the window, not just rows that changed. A 7-day `updated_at` window returns only rows modified in the last 7 days. A 90-day business-date window returns all 90 days of rows regardless of whether they changed. The append volume is higher, but there's no filtering assumption to get wrong -- you're guaranteed to capture every correction within the horizon.
 
-  Load with append-and-materialize (0404) to keep the per-run cost near zero. At intra-day frequency, this is significantly cheaper than a scoped full replace (0204) which would require a partition rewrite on every run.
+  Load with append-and-materialize (@append-and-materialize) to keep the per-run cost near zero. At intra-day frequency, this is significantly cheaper than a scoped full replace (@scoped-full-replace) which would require a partition rewrite on every run.
 
   // ---
 
@@ -2816,7 +2816,7 @@
     #strong[One-liner:] When a detail table has no `updated_at`, borrow the header's timestamp to scope the extraction.
   ]
 
-  See 0301 for the shared `updated_at` reliability concerns.
+  See @timestamp-extraction-foundations for the shared `updated_at` reliability concerns.
 
   #figure(
     image("diagrams/0304-cursor-from-header.svg", width: 95%),
@@ -2901,7 +2901,7 @@
 
   === The header doesn't know the line changed
   <the-header-doesnt-know-the-line-changed>
-  `invoice_lines.status` changes from `approved` to `disputed` -- the invoice header's `updated_at` never fires. An admin script reprices 10,000 order lines without touching the header. In SAP B1, the header `UpdateDate` is a DATE field with no time component, though with a stateless window measured in days (0303) this particular issue is absorbed.
+  `invoice_lines.status` changes from `approved` to `disputed` -- the invoice header's `updated_at` never fires. An admin script reprices 10,000 order lines without touching the header. In SAP B1, the header `UpdateDate` is a DATE field with no time component, though with a stateless window measured in days (@stateless-window-extraction) this particular issue is absorbed.
 
   The common thread: the line mutated, the header didn't, and the cursor is blind to it.
 
@@ -2966,12 +2966,12 @@
 
   == The Tradeoff You Accept
   <the-tradeoff-you-accept>
-  This cursor detects inserts only. An existing row that gets modified will never be re-extracted. You accept this when:
+  This cursor detects inserts only. An existing row that gets modified will #strong[never be re-extracted.] You accept this when:
 
   - The table is append-only in practice -- `events` and `inventory_movements` in the domain model are designed this way
   - Updates are rare enough that the periodic full replace catches them
 
-  Before committing to this pattern, check the table's actual behavior against what the source team claims. "Events are never updated" is likely a soft rule (0106). If nothing in the schema enforces immutability, someone will eventually run an UPDATE on it -- a bulk correction, a backfill, an admin fix. Your pipeline won't notice.
+  Before committing to this pattern, check the table's actual behavior against what the source team claims. "Events are never updated" is likely a soft rule (@hard-rules-soft-rules). If nothing in the schema enforces immutability, someone will eventually run an UPDATE on it -- a bulk correction, a backfill, an admin fix. Your pipeline won't notice.
 
   // ---
 
@@ -2989,7 +2989,7 @@
     "Out-of-order inserts are permanent misses",
   )[A row with `id = 500` inserted after the cursor has passed `id = 600` will never be extracted. The periodic full replace is the only safety net.]
 
-  If you suspect out-of-order inserts are happening (multi-session `CACHE` is the usual cause), add a small overlap buffer the same way 0302 handles clock skew:
+  If you suspect out-of-order inserts are happening (multi-session `CACHE` is the usual cause), add a small overlap buffer the same way @cursor-based-timestamp-extraction handles clock skew:
 
   ```sql
   -- source: transactional
@@ -2998,7 +2998,7 @@
   WHERE event_id >= :last_id - 100;
   ```
 
-  The overlap re-extracts, at a minimum, the last 100 IDs on every run. The upsert handles duplicates. Size the buffer to your worst observed out-of-order gap -- 100 covers most `CACHE` configurations.
+  The overlap re-extracts, at a minimum, the last 100 IDs on every run. With an append-only load (@append-only-load), the duplicates land in the log and the dedup view or next compaction collapses them. With a merge load, the destination upsert handles them directly. Size the buffer to your worst observed out-of-order gap -- 100 covers most `CACHE` configurations.
 
   Hard deletes are invisible too, same as with any cursor -- see @hard-delete-detection.
 
@@ -3029,6 +3029,10 @@
   #quote(block: true)[
     #strong[One-liner:] The row was there yesterday, today it's gone. A cursor never sees a deleted row -- you need a separate mechanism.
   ]
+
+  #figure(
+    image("diagrams/0306-full-id-comparison.svg", width: 95%),
+  )
 
   // ---
 
@@ -3096,7 +3100,7 @@
 
   #ecl-warning(
     "Count reconciliation as a gate",
-  )[Run `COUNT(\*)` on every incremental extraction as a cheap health check. It adds seconds to the run and catches drift early -- before it accumulates into a reconciliation problem. See @reconciliation-patterns.]
+  )[Run `COUNT(*)` on every incremental extraction as a cheap health check. It adds seconds to the run and catches drift early -- before it accumulates into a reconciliation problem. See @reconciliation-patterns.]
 
   // ---
 
@@ -3118,8 +3122,8 @@
   <invoices-invoice_lines>
   The domain model case: open `invoices` get hard-deleted regularly. `invoice_lines` get hard-deleted independently of their header -- not just via cascade. This creates two detection scopes:
 
-  - #strong[Header deletes:] compare `invoice_id` sets between source and destination. The open/closed split from 0307 helps -- the open-side full extract naturally reveals missing headers.
-  - #strong[Line deletes:] for each header that still exists, compare `line_num` sets. A header that hasn't changed can still have lines removed underneath it -- the header cursor from 0304 is blind to this.
+  - #strong[Header deletes:] compare `invoice_id` sets between source and destination. The open/closed split from @openclosed-documents helps -- the open-side full extract naturally reveals missing headers.
+  - #strong[Line deletes:] for each header that still exists, compare `line_num` sets. A header that hasn't changed can still have lines removed underneath it -- the header cursor from @cursor-from-another-table is blind to this.
 
   In SAP B1, removing a single `invoice_line` triggers a delete+reinsert of ALL surviving lines with new `LineNum` values. The old line numbers are gone, the new ones look like fresh inserts. A full ID comparison catches this while a cursor never will.
 
@@ -3145,7 +3149,7 @@
     #strong[One-liner:] Mutable drafts vs immutable posted documents. Extraction strategy should differ based on document lifecycle state.
   ]
 
-  See 0304 for when the header cursor is enough. This pattern picks up where 0304's "when the header cursor lies" leaves off.
+  See @cursor-from-another-table for when the header cursor is enough. This pattern picks up where @cursor-from-another-table's "when the header cursor lies" leaves off.
 
   // ---
 
@@ -3162,65 +3166,59 @@
   Two extraction strategies for one table:
 
   - #strong[Open documents:] re-extract the full set on every run. They're mutable -- lines change, statuses shift, amounts adjust. The only way to be sure you have the current state is to pull it again.
-  - #strong[Closed documents:] extract only the recently closed. Once posted, a closed invoice is frozen. In many jurisdictions, modifying a closed invoice is illegal -- this is one of the rare cases where a soft rule ("we never edit closed invoices") is backed by a hard rule (the law). See 0106.
+  - #strong[Closed documents:] extract only the recently closed. Once posted, a closed invoice is frozen. In many jurisdictions, modifying a closed invoice is illegal -- this is one of the rare cases where a soft rule ("we never edit closed invoices") is backed by a hard rule (the law). See @hard-rules-soft-rules.
 
   // ---
 
   == The Combination Query
   <the-combination-query>
-  Two queries against the #strong[source];, combined into one extraction:
+  Query against the #strong[source];, combined into one extraction:
 
   ```sql
   -- source: transactional
-  -- Open side: full set of currently open documents
-  SELECT *
-  FROM invoices
-  WHERE status = 'open';
+  SELECT * FROM invoices
+    WHERE status = 'open'
+
+  UNION ALL
+
+  SELECT * FROM invoices
+    WHERE status <> 'open'
+      AND updated_at >= :last_run;
   ```
 
-  ```sql
-  -- source: transactional
-  -- Closed side: recently closed only
-  SELECT *
-  FROM invoices
-  WHERE status = 'closed'
-    AND updated_at >= :last_run;
-  ```
+  `UNION ALL`, not `OR`. An `OR` across different columns forces the planner to merge index scans (BitmapOr in PostgreSQL, Index Merge in MySQL) -- mechanisms that are fragile, statistics-sensitive, and frequently fall back to a full table scan. `UNION ALL` lets each branch use its own optimal index independently: the open branch seeks on `status`, the closed branch seeks on `updated_at` (or a composite `(status, updated_at)`). The branches are mutually exclusive by construction, so no duplicates.
 
-  UNION the results and load (see 0403 for load options). The open set covers all mutations and line changes -- everything the header cursor in 0304 couldn't see. The closed set is cheap because closed documents don't change.
+  The open set covers all mutations and line changes -- everything the header cursor in @cursor-from-another-table couldn't see. The closed set is cheap because closed documents don't change.
 
-  The #strong[destination] still has documents that were open last run but have since closed or been deleted at the source. The open-side extract no longer includes them. The closed-side cursor catches transitions (the document appears with `status = 'closed'` and a recent `updated_at`). Deletes need 0306.
+  The #strong[destination] still has documents that were open last run but have since closed or been deleted at the source. The open-side extract no longer includes them. The closed-side cursor catches transitions (the document appears with `status = 'closed'` and a recent `updated_at`). Deletes need @hard-delete-detection.
 
   // ---
 
   == Extending to Detail Tables
   <extending-to-detail-tables>
-  The same split applies to `invoice_lines`: re-extract all lines for open invoices, cursor-only for closed.
+  The same split applies to `invoice_lines`: re-extract all lines for open invoices, cursor-only for closed. Same `UNION ALL` structure:
 
   ```sql
   -- source: transactional
-  -- All lines for open invoices
   SELECT il.*
-  FROM invoice_lines il
-  JOIN invoices i ON il.invoice_id = i.invoice_id
-  WHERE i.status = 'open';
+    FROM invoice_lines il
+    JOIN invoices i ON il.invoice_id = i.invoice_id
+    WHERE i.status = 'open'
+
+  UNION ALL
+
+  SELECT il.*
+    FROM invoice_lines il
+    JOIN invoices i ON il.invoice_id = i.invoice_id
+    WHERE i.status <> 'open'
+      AND i.updated_at >= :last_run;
   ```
 
-  ```sql
-  -- source: transactional
-  -- Lines for recently closed invoices only
-  SELECT il.*
-  FROM invoice_lines il
-  JOIN invoices i ON il.invoice_id = i.invoice_id
-  WHERE i.status = 'closed'
-    AND i.updated_at >= :last_run;
-  ```
-
-  The line extraction query joins to the header's status, not just its timestamp. This is the answer to 0304's blind spot: open documents get full line coverage regardless of whether the header's `updated_at` fired.
+  The line extraction joins to the header's status, not just its timestamp. This is the answer to @cursor-from-another-table's blind spot: open documents get full line coverage regardless of whether the header's `updated_at` fired.
 
   #ecl-warning(
     "Line status can diverge from header",
-  )[`invoice_lines` can have their own `status` -- a line marked `disputed` on an otherwise open invoice, or a line already `approved` while the header is still `open`. The split here is on the #strong[header's] lifecycle, not the line's. An open invoice with a mix of approved and disputed lines is still in the open set and gets fully re-extracted. If the line status changes independently after the header closes, neither side of this pattern sees it -- that's 0308 territory.]
+  )[`invoice_lines` can have their own `status` -- a line marked `disputed` on an otherwise open invoice, or a line already `approved` while the header is still `open`. The split here is on the #strong[header's] lifecycle, not the line's. An open invoice with a mix of approved and disputed lines is still in the open set and gets fully re-extracted. If the line status changes independently after the header closes, neither side of this pattern sees it -- @detail-without-timestamp covers the options.]
 
   // ---
 
@@ -3244,7 +3242,7 @@
 
   When it does happen (support manually reopens one, or the system allows it), a reopened document appears in the open set on the next run -- caught naturally.
 
-  The gap is between close and reopen: the document was in neither set (closed cursor already passed it, open set didn't include it yet). The stateless window approach from 0303 absorbs this if the window covers the gap. If the reopen happens within days and the window is 7 days, the document is already covered.
+  The gap is between close and reopen: the document was in neither set (closed cursor already passed it, open set didn't include it yet). The stateless window approach from @stateless-window-extraction absorbs this if the window covers the gap. If the reopen happens within days and the window is 7 days, the document is already covered.
 
   // ---
 
@@ -3252,19 +3250,33 @@
   <hard-deletes-on-open-documents>
   Open `invoices` get hard-deleted regularly -- the domain model case.
 
-  The open-side extract from the #strong[source] gives you the current set of open IDs. The #strong[destination] has the previous set, which includes documents deleted since the last run. The diff between destination open IDs and source open IDs reveals candidates -- but that diff also includes documents that transitioned to closed. Filter out the newly closed (they appear in the closed-side extract) to isolate the actual deletes.
+  You already have everything you need from the combination query. The extracted batch contains all currently open documents and all recently changed non-open documents. Query the #strong[destination] for the set of keys currently marked as open, then compare against the extracted batch:
+
+  - Key is in the batch with `status = 'open'` → still open, normal upsert
+  - Key is in the batch with `status <> 'open'` → recently closed, upsert updates the status
+  - Key is #strong[not in the batch at all] → hard-deleted from source, propagate the delete
+
+  No extra staging tables, no second source query. The extracted batch is the source of truth for what exists right now.
 
   ```sql
   -- destination: columnar
-  -- IDs in destination marked as open, minus source open IDs, minus newly closed
+  -- Keys marked open in destination that don't appear anywhere in the batch
   SELECT d.invoice_id
   FROM invoices d
+  LEFT JOIN _stg_extracted_batch b ON d.invoice_id = b.invoice_id
   WHERE d.status = 'open'
-    AND d.invoice_id NOT IN (SELECT invoice_id FROM _stg_source_open_ids)
-    AND d.invoice_id NOT IN (SELECT invoice_id FROM _stg_source_closed_recent);
+    AND b.invoice_id IS NULL;
   ```
 
-  Closed documents that get hard-deleted -- the soft rule violation from 0106 -- need the general mechanism from 0306.
+  #ecl-danger(
+    "This assumes the cursor fires on close",
+  )[The logic above depends on recently closed documents appearing in the batch -- which only happens if `updated_at` fires when the status changes. If closing a document doesn't bump `updated_at`, a closed document disappears from the open set without appearing in the closed-side cursor. The diff incorrectly classifies it as a hard delete, and the pipeline removes a row that still exists in the source. Verify that status transitions update the cursor before enabling delete propagation.]
+
+  #ecl-info(
+    "Alternative: cursor + open + destination keys",
+  )[If the cursor is unreliable on close, a safer extraction is `UNION ALL` of three branches: the normal cursor (`updated_at >= :last_run`), all open documents (`status = 'open'`), and the set of IDs currently marked open in the destination. The destination-side IDs ensure that anything the pipeline previously loaded as open gets re-checked against the source. The tradeoff: the branches are no longer mutually exclusive -- a row can appear in multiple branches -- so the load must handle duplicates (dedup view, `QUALIFY`, or upsert).]
+
+  Closed documents that get hard-deleted -- the soft rule violation from @hard-rules-soft-rules -- need the general mechanism from @hard-delete-detection.
 
   // ---
 
@@ -3272,7 +3284,7 @@
   <the-cost-equation>
   The cost is relative to the alternative. The ratio of open to total matters more than the absolute number: 50,000 open invoices is 0.05% of a 100-million-row table -- a fraction of a full replace. The same 50,000 against a 60,000-row table is 83% -- at that point, a full replace is simpler.
 
-  In systems with long-lived open documents -- consulting invoices open for months, construction contracts open for years -- the open set grows and the cost advantage over a scoped full replace (0204) shrinks. Evaluate case by case.
+  In systems with long-lived open documents -- consulting invoices open for months, construction contracts open for years -- the open set grows and the cost advantage over a scoped full replace (@scoped-full-replace) shrinks. Evaluate case by case.
 
   // ---
 
@@ -3280,7 +3292,7 @@
   <by-corridor-5>
   #ecl-warning(
     "Transactional to columnar corridor",
-  )[Both queries run on the source as indexed scans (`status` should be indexed, or at least selective enough). The open set is small relative to the table, so the source cost is low. The destination load cost depends on the load strategy -- see 0403. The delete detection query runs entirely in the destination and is cheap (single-column scans).]
+  )[Both queries run on the source as indexed scans (`status` should be indexed, or at least selective enough). The open set is small relative to the table, so the source cost is low. The destination load cost depends on the load strategy -- see @merge-upsert. The delete detection query runs entirely in the destination and is cheap (single-column scans).]
 
   #ecl-info(
     "Transactional to transactional corridor",
@@ -3296,115 +3308,25 @@
     #strong[One-liner:] `order_lines` and `invoice_lines` have no `updated_at`. They depend on the header for change detection -- but what if the detail changes without the header changing?
   ]
 
-  See 0304 for the simpler case where the header cursor is sufficient. This pattern covers what happens when the detail mutates independently of the header.
+  @cursor-from-another-table handles this for most tables. The header's `updated_at` scopes the detail extraction, and the periodic full replace (@full-scan-strategies) catches anything the cursor missed. The blind spot -- a detail row that mutates without the header changing -- is real but usually narrow enough that the full replace absorbs it.
+
+  When the blind spot is too wide, two responses work better than building detection mechanisms:
+
+  #strong[Widen the stateless window.] A 7-day window on the header might miss a line that changed 10 days ago without touching the header. A 30-day window re-extracts more lines but captures those silent mutations -- the cost is proportional to window size, not table size, and the upsert or dedup handles the redundancy.
+
+  #strong[Increase the full replace cadence.] A daily full replace of `order_lines` is often cheaper and simpler than any detection mechanism. Detail tables are bounded by header count × lines per header -- they're typically smaller than they look.
 
   // ---
 
-  == The Problem
-  <the-problem-5>
-  0304 extracts detail rows by joining to the header's `updated_at`, which only works when every detail change also touches the header. When it doesn't:
-
-  - `invoice_lines.status` changes from `approved` to `disputed` -- the header's `updated_at` never fires
-  - An admin script reprices 10,000 `order_lines` without touching the header
-  - A line gets hard-deleted and the header doesn't register the event (see 0306)
-
-  The header cursor is blind to all of these because the signal it depends on never fired.
-
-  // ---
-
-  == The Default: 0304
-  <the-default-0304>
-  When independent detail mutations are rare, the 0304 approach is still the right default -- just with the explicit acknowledgment that it only catches detail changes that coincide with header changes, and the periodic full replace catches the rest. The strategies below apply when that blind spot is too wide.
-
-  // ---
-
-  == Strategy 1: Computed Column Signals
+  == Computed Column Signals
   <strategy-1-computed-column-signals>
-  Some transactional systems maintain computed columns on the header that change when detail rows mutate -- `PaidToDate`, `DocTotal`, `GrossProfitPercent` in SAP B1, for example. These columns are recalculated by the engine whenever a line is added, removed, or modified, even if `updated_at` doesn't fire.
-
-  If such a column exists, use it as a change signal on the header: compare the current value against the last extracted value, and re-extract all detail lines for headers where it differs.
-
-  ```sql
-  -- source: transactional
-  SELECT ol.*
-  FROM order_lines ol
-  WHERE ol.order_id IN (
-    SELECT o.order_id
-    FROM orders o
-    WHERE o.doc_total != :last_known_doc_total
-       OR o.updated_at >= :last_run
-  );
-  ```
-
-  This turns a header-level computed column into an indirect change detection signal for the detail table, without hashing anything yourself. The limitation is that it only detects changes that affect the computed column -- a line status change that doesn't alter the total remains invisible.
+  Some ERPs maintain computed columns on the header (`DocTotal`, `PaidToDate` in SAP B1) that change when detail rows mutate, even if `updated_at` doesn't fire. If such a column exists, you can detect detail changes after loading the headers: compare the freshly loaded `doc_total` against the previous value at the destination, then go back to the source for detail lines of headers where it differs. This is a two-pass orchestration pattern -- earned complexity for tables too large to full-replace where the mutation rate justifies it.
 
   #ecl-warning(
     "Audit computed columns before trusting them",
-  )[Verify which detail-level changes actually trigger a recalculation. In SAP B1, `DocTotal` changes when quantities or prices change, but `PaidToDate` only changes on payment linkage. Match the column to the mutations you care about.]
+  )[Verify which detail-level changes actually trigger a recalculation. `DocTotal` changes on quantity/price changes but not on line status changes. A line marked `disputed` without a price change remains invisible.]
 
-  // ---
-
-  == Strategy 2: Hash-Based Change Detection
-  <strategy-2-hash-based-change-detection>
-  Hash every detail row at the source, compare against stored hashes in the destination, and only extract rows where the hash differs.
-
-  ```sql
-  -- source: transactional
-  SELECT ol.*,
-         MD5(CONCAT(ol.order_id, ol.line_num, ol.quantity, ol.unit_price, ol.status)) AS _row_hash
-  FROM order_lines ol;
-  ```
-
-  ```sql
-  -- destination: columnar
-  -- Compare against stored hashes
-  SELECT s._row_hash, d._row_hash, s.order_id, s.line_num
-  FROM _stg_source_hashes s
-  LEFT JOIN order_lines d ON s.order_id = d.order_id AND s.line_num = d.line_num
-  WHERE s._row_hash != d._row_hash
-     OR d._row_hash IS NULL;
-  ```
-
-  This detects every change at the row level -- mutations, inserts, even columns that changed without the header knowing -- but requires extracting and hashing every row from the source on every run. For a detail table with millions of rows, that's a full scan just to compute hashes, and the extraction cost approaches a full replace.
-
-  Hash all columns -- the goal is to detect any change, and deciding which columns "matter" is a business decision that breaks the conforming boundary (0102). If a column changed at the source, the destination should reflect it.
-
-  See 0208 for the full hash-based pattern, including how to store and compare hashes efficiently.
-
-  // ---
-
-  == Strategy 3: Accept the Blind Spot
-  <strategy-3-accept-the-blind-spot>
-  Some detail changes are invisible to every cursor-based approach, and the periodic full replace from 0301 is the only thing that catches them. If the SLA tolerates the lag between the mutation and the next full replace, this is the cheapest approach -- and the one I use most often.
-
-  How often do independent detail mutations happen, and how long can the destination be wrong?
-
-  #figure(
-    align(center)[#table(
-      columns: (33.33%, 33.33%, 33.33%),
-      align: (auto, auto, auto),
-      table.header([Mutation frequency], [Full replace cadence], [Verdict]),
-      table.hline(),
-      [Rare (admin fixes, one-off corrections)], [Weekly], [Accept the blind spot],
-      [Occasional (line-level status changes)], [Daily], [Probably fine -- evaluate per table],
-      [Frequent (line repricing, bulk updates)], [Any], [Need Strategy 1 or 2],
-    )],
-    kind: table,
-  )
-
-  This maps naturally to the tiered freshness model from 0608: the incremental layer handles what the cursor can see, and a slower full replace layer catches everything else -- including detail mutations the cursor missed.
-
-  // ---
-
-  == Independent Detail Mutations
-  <independent-detail-mutations>
-  `invoice_lines.status` can change independently of `invoices.status` -- a line marked `disputed` while the header is still `open`, or a line `approved` while other lines on the same invoice are not. In some systems this is a soft rule violation (0106), in others the detail lifecycle is independent by design. Either way, the extraction problem is the same: the header cursor doesn't see it.
-
-  Since the header cursor misses these changes entirely, two responses are worth considering:
-
-  #strong[Apply the open/closed split from 0307 independently to the detail table.] If `invoice_lines` has its own status field with a meaningful lifecycle (open/closed, active/disputed), treat the detail table as its own document with its own split. Re-extract all "open" lines (where `status` is still mutable), cursor-only for "closed" lines. This adds complexity but gives full coverage of detail-level mutations without hashing.
-
-  #strong[Accept the lag and let the full replace correct it.] If detail-level status changes don't affect downstream consumers until the invoice itself closes, the lag is invisible to the business.
+  Hash-based detection (see @hash-based-change-detection) requires a full source scan to compute hashes -- the same cost as a full replace. If you're scanning the full table anyway, just replace it.
 
   // ---
 
@@ -3412,11 +3334,11 @@
   <by-corridor-6>
   #ecl-info(
     "Transactional to columnar corridor",
-  )[Hash-based detection requires landing hashes into a staging table in the destination for comparison -- the cost is a source-side full scan plus a staging load. If that cost approaches a full replace, the full replace is simpler. See 0403 for load cost.]
+  )[Wider stateless window is the cheapest response. Full replace of detail tables is often viable. See @merge-upsert for columnar load cost.]
 
   #ecl-warning(
     "Transactional to transactional corridor",
-  )[Hash comparison can run as a cross-database query if both systems are accessible, or via staging tables. Strategy 1 (re-extract all details for changed headers) is the simplest default here -- see 0403 for the upsert mechanics.]
+  )[Same responses, but the upsert handles duplicates cheaply via PK -- wider windows and more frequent full replaces have minimal load overhead. See @merge-upsert for the upsert mechanics.]
 
   // ---
 
@@ -3495,7 +3417,7 @@
 
   The overlap is a correctness parameter, not a performance parameter. Size it for the worst-case late arrival, then evaluate the cost. If the cost is too high, the answer is to shorten the run frequency (run less often, so the overlap is a smaller fraction of total work) or accept the blind spot and let the periodic full replace catch it.
 
-  The 0303 pattern has overlap built in by design -- a 7-day window already covers 7 days of late arrivals, with no overlap parameter to configure and no cursor to worry about. This is one of the strongest arguments for defaulting to stateless windows: the window size itself is the overlap, and the late-arriving data problem largely disappears. The only case it doesn't cover is rows that land with timestamps older than the window, which requires either a wider window or the periodic full replace. The 0302 pattern needs the overlap added explicitly to the boundary condition.
+  The @stateless-window-extraction pattern has overlap built in by design -- a 7-day window already covers 7 days of late arrivals, with no overlap parameter to configure and no cursor to worry about. This is one of the strongest arguments for defaulting to stateless windows: the window size itself is the overlap, and the late-arriving data problem largely disappears. The only case it doesn't cover is rows that land with timestamps older than the window, which requires either a wider window or the periodic full replace. The @cursor-based-timestamp-extraction pattern needs the overlap added explicitly to the boundary condition.
 
   How large can a window get? I run a 90-day stateless window on a client's transactions because their back-office team routinely edits orders weeks after the fact, backdates corrections, and re-opens closed periods without notice. A 7-day window missed data constantly; 30 days still wasn't enough. At 90 days the source query is heavier, but the table is indexed on `updated_at` and the alternative -- constant reconciliation and manual fixes -- was more expensive in engineering time.
 
@@ -3509,7 +3431,7 @@
 
   == Cost of Overscanning
   <cost-of-overscanning>
-  A wider overlap re-extracts more rows that haven't changed, increasing both source query cost and destination load cost (see @merge-upsert for the load side). The tradeoff is correctness vs.~cost, framed by @purity-vs-freshness: an hours-long overlap adds negligible cost, a days-long overlap is moderate depending on mutation rate, and a weeks-long overlap starts approaching a full replace -- at which point a scoped full replace (0204) may be simpler than a cursor with a massive overlap.
+  A wider overlap re-extracts more rows that haven't changed, increasing both source query cost and destination load cost (see @merge-upsert for the load side). The tradeoff is correctness vs.~cost, framed by @purity-vs-freshness: an hours-long overlap adds negligible cost, a days-long overlap is moderate depending on mutation rate, and a weeks-long overlap starts approaching a full replace -- at which point a scoped full replace (@scoped-full-replace) may be simpler than a cursor with a massive overlap.
 
   // ---
 
@@ -3539,7 +3461,7 @@
   <by-corridor-7>
   #ecl-warning(
     "Transactional to columnar corridor",
-  )[The source-side extraction cost scales with the overlap (wider window = more rows scanned on an indexed `updated_at`). The destination-side cost depends on how many partitions the overlap touches -- see @merge-upsert and 0104 for partition rewrite behavior per engine.]
+  )[The source-side extraction cost scales with the overlap (wider window = more rows scanned on an indexed `updated_at`). The destination-side cost depends on how many partitions the overlap touches -- see @merge-upsert and @columnar-destinations for partition rewrite behavior per engine.]
 
   #ecl-info(
     "Transactional to transactional corridor",
@@ -3559,7 +3481,7 @@
 
   == The Problem
   <the-problem-7>
-  0301 documents the failure mode: a trigger maintains `updated_at` on UPDATE but not on INSERT, leaving new rows with `updated_at = NULL`. A cursor on `updated_at >= :last_run` catches every modification to existing rows while every new row is permanently invisible.
+  @timestamp-extraction-foundations documents the failure mode: a trigger maintains `updated_at` on UPDATE but not on INSERT, leaving new rows with `updated_at = NULL`. A cursor on `updated_at >= :last_run` catches every modification to existing rows while every new row is permanently invisible.
 
   This happens in `orders` when the trigger was added after the table existed and only wired to the UPDATE event -- a common pattern in legacy systems where the trigger was built for auditing, not extraction. The result is two populations in the same table: rows that have been updated at least once (visible to the cursor) and rows that were inserted but never touched again (invisible).
 
@@ -3691,7 +3613,7 @@
 
   #ecl-warning(
     "Fallback insert cursor without created_at",
-  )[When `created_at` doesn't exist, use `id > :last_id` for the insert cursor. This is 0305 applied to half the table. The same gap safety rules apply -- sequences with CACHE can produce out-of-order IDs, and a small overlap buffer absorbs them.]
+  )[When `created_at` doesn't exist, use `id > :last_id` for the insert cursor. This is @sequential-id-cursor applied to half the table. The same gap safety rules apply -- sequences with CACHE can produce out-of-order IDs, and a small overlap buffer absorbs them.]
 
   // ---
 
@@ -3716,7 +3638,7 @@
   WHERE updated_at IS NULL;
   ```
 
-  After the backfill and trigger are in place, the standard 0302 cursor works for both inserts and updates -- no dual cursor, no COALESCE, no workarounds.
+  After the backfill and trigger are in place, the standard @cursor-based-timestamp-extraction cursor works for both inserts and updates -- no dual cursor, no COALESCE, no workarounds.
 
   This is the cleanest outcome but requires three things: access to the source database, cooperation from the source team, and confidence that the trigger won't interfere with existing application logic. In practice, adding a trigger to a production table owned by another team is a conversation that can take weeks or never happen. Strategies 1 and 2 exist because Strategy 3 often isn't available.
 
@@ -3743,7 +3665,7 @@
     kind: table,
   )
 
-  In all cases, the periodic full replace from 0301 catches anything the workaround misses -- rows where both timestamps are NULL, bulk imports that bypassed both triggers, sequences that created gaps the insert cursor didn't cover.
+  In all cases, the periodic full replace (@full-scan-strategies) catches anything the workaround misses -- rows where both timestamps are NULL, bulk imports that bypassed both triggers, sequences that created gaps the insert cursor didn't cover.
 
   // ---
 
@@ -3805,7 +3727,7 @@
 
   The validation step between load and swap is the key advantage over truncate + insert. If the extraction returned garbage -- zero rows from a silent failure, a schema change that dropped columns, a type mismatch that cast everything to NULL -- you catch it before it reaches production.
 
-  The swap mechanism varies by engine: Snowflake has `ALTER TABLE SWAP WITH` (atomic, metadata-only), PostgreSQL uses `ALTER TABLE RENAME` inside a transaction, BigQuery uses `bq cp` or DDL rename. See 0203 for the per-engine mechanics, including the parallel schema convention for managing staging tables at scale.
+  The swap mechanism varies by engine: Snowflake has `ALTER TABLE SWAP WITH` (atomic, metadata-only), PostgreSQL uses `ALTER TABLE RENAME` inside a transaction, BigQuery uses `bq cp` or DDL rename. See @staging-swap for the per-engine mechanics, including the parallel schema convention for managing staging tables at scale.
 
   // ---
 
@@ -3830,7 +3752,7 @@
     project:dataset.events$20260307
   ```
 
-  The cost advantage is proportional to the scope: replacing 7 partitions out of 3,000 touches 0.2% of the table, while a full staging swap rewrites the entire thing. See 0202 for extraction-side mechanics, per-engine atomicity guarantees, and the partition alignment pitfalls.
+  The cost advantage is proportional to the scope: replacing 7 partitions out of 3,000 touches 0.2% of the table, while a full staging swap rewrites the entire thing. See @partition-swap for extraction-side mechanics, per-engine atomicity guarantees, and the partition alignment pitfalls.
 
   // ---
 
@@ -3880,7 +3802,7 @@
     kind: table,
   )
 
-  All three are idempotent -- rerunning the same extraction and load produces the same destination state regardless of how many times you run it, with no accumulated state, no cursor, and no merge logic (see 0109). The shared failure mode is loading bad data into production before catching the problem, which only staging swap prevents through its validation step.
+  All three are idempotent -- rerunning the same extraction and load produces the same destination state regardless of how many times you run it, with no accumulated state, no cursor, and no merge logic (see @idempotency). The shared failure mode is loading bad data into production before catching the problem, which only staging swap prevents through its validation step.
 
   // ---
 
@@ -3914,7 +3836,7 @@
   // ---
 
   == The Pattern
-  The extraction side uses a sequential ID cursor (0305) or a `created_at` timestamp cursor (0302) to scope the new rows:
+  The extraction side uses a sequential ID cursor (@sequential-id-cursor) or a `created_at` timestamp cursor (@cursor-based-timestamp-extraction) to scope the new rows:
 
   ```sql
   -- source: transactional
@@ -3943,7 +3865,7 @@
 
   #ecl-warning(
     "Verify the source is actually immutable",
-  )[Before committing to this pattern, confirm that \"events are never updated\" is a hard rule, not a soft one (0106). Unless the schema enforces it, someone will eventually run an UPDATE on `events` -- a bulk correction, an admin fix, a backfill that modifies existing rows -- and the append-only load will miss the change entirely. Check with the source team, and keep the periodic full replace from 0301 as a safety net.]
+  )[Before committing to this pattern, confirm that \"events are never updated\" is a hard rule, not a soft one (@hard-rules-soft-rules). Unless the schema enforces it, someone will eventually run an UPDATE on `events` -- a bulk correction, an admin fix, a backfill that modifies existing rows -- and the append-only load will miss the change entirely. Check with the source team, and keep the periodic full replace (@full-scan-strategies) as a safety net.]
 
   // ---
 
@@ -3953,7 +3875,7 @@
 
   #strong[Pipeline retry.] The extraction succeeded and the load partially completed, but the cursor didn't advance because the run was marked as failed. The retry re-extracts the same batch, and the rows that already loaded appear again.
 
-  #strong[Overlap buffer.] 0305 recommends a small overlap (`event_id >= :last_id - 100`) to absorb out-of-order sequence commits. The overlap region is extracted on every run by design.
+  #strong[Overlap buffer.] @sequential-id-cursor recommends a small overlap (`event_id >= :last_id - 100`) to absorb out-of-order sequence commits. The overlap region is extracted on every run by design.
 
   #strong[Upstream replay.] The source system replays events -- a Kafka consumer rewinds, an API returns the same batch on retry, a file is redelivered. The rows are identical to ones already loaded, but the extraction can't tell.
 
@@ -3984,7 +3906,7 @@
   QUALIFY ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY _extracted_at DESC) = 1;
   ```
 
-  BigQuery and Snowflake don't enforce primary keys, so duplicates land in the table and the deduplication happens downstream through a view or materialized table. This is the foundation of the 0404 pattern -- the difference is that 0404 applies it to mutable data (every version of a row), while here the duplicates are accidental copies of the same immutable row.
+  BigQuery and Snowflake don't enforce primary keys, so duplicates land in the table and the deduplication happens downstream through a view or materialized table. This is the foundation of the @append-and-materialize pattern -- the difference is that @append-and-materialize applies it to mutable data (every version of a row), while here the duplicates are accidental copies of the same immutable row.
 
   #ecl-warning(
     "Don't MERGE to deduplicate immutable data",
@@ -3996,9 +3918,9 @@
   <the-fragility-of-append-only>
   The cost advantage of this pattern depends entirely on the source being immutable -- and that assumption is fragile. The moment someone runs an UPDATE on `events`, or a backfill modifies existing rows, or a correction script touches historical data, the append-only contract is broken and every row that changed sits silently wrong in the destination.
 
-  The recovery path is expensive. You either switch to 0403 (which rewrites partitions on every load), add a dedup-and-reconcile layer from 0404, or run a full replace from 0401 to reset the destination. What was the cheapest load pattern in the book becomes one of the most expensive the moment the assumption breaks, because the pipeline has no mechanism to detect or correct the mutation -- it just keeps appending new rows while the old ones stay wrong.
+  The recovery path is expensive. You either switch to @merge-upsert (which rewrites partitions on every load), add a dedup-and-reconcile layer from @append-and-materialize, or run a full replace from @full-replace-load to reset the destination. What was the cheapest load pattern in the book becomes one of the most expensive the moment the assumption breaks, because the pipeline has no mechanism to detect or correct the mutation -- it just keeps appending new rows while the old ones stay wrong.
 
-  Before choosing this pattern, ask how confident you are that the source will stay immutable -- not today, but across schema changes, team turnover, and the admin script someone will write at 2am during an incident. If the answer is "pretty confident but not certain," a periodic full replace via 0401 is the safety net, and its cadence should reflect how much damage a silent mutation would cause before the next reload.
+  Before choosing this pattern, ask how confident you are that the source will stay immutable -- not today, but across schema changes, team turnover, and the admin script someone will write at 2am during an incident. If the answer is "pretty confident but not certain," a periodic full replace via @full-replace-load is the safety net, and its cadence should reflect how much damage a silent mutation would cause before the next reload.
 
   // ---
 
@@ -4008,13 +3930,13 @@
 
   This alignment gives you three operational advantages:
 
-  - #strong[Backfill] is a partition replace: re-extract a date range, load into the corresponding partitions using 0401, done. The rest of the table is untouched.
+  - #strong[Backfill] is a partition replace: re-extract a date range, load into the corresponding partitions using @full-replace-load, done. The rest of the table is untouched.
   - #strong[Retention] is a partition drop: `ALTER TABLE events DROP PARTITION '2024-01-01'` removes a day of history without scanning or rewriting anything.
   - #strong[Cost control] in columnar engines: queries that filter on `event_date` scan only the relevant partitions. Without partition pruning, a query over yesterday's events scans the entire table.
 
   #ecl-warning(
     "Late-arriving events land in past partitions",
-  )[An event with `event_date = 2026-03-10` arriving on `2026-03-14` lands in the March 10 partition. If that partition was already "closed" by a retention policy or a downstream process that assumed it was complete, the late arrival is either lost or creates an inconsistency. See 0309 for overlap sizing that absorbs this.]
+  )[An event with `event_date = 2026-03-10` arriving on `2026-03-14` lands in the March 10 partition. If that partition was already "closed" by a retention policy or a downstream process that assumed it was complete, the late arrival is either lost or creates an inconsistency. See @late-arriving-data for overlap sizing that absorbs this.]
 
   // ---
 
@@ -4042,7 +3964,7 @@
 
   == The Problem
   <the-problem-2>
-  The extraction side (0302, 0303) produces a batch of changed rows. The destination already has prior versions of some of those rows. The load needs to reconcile: insert the new ones, update the existing ones, and leave everything else untouched.
+  The extraction side (@cursor-based-timestamp-extraction, @stateless-window-extraction) produces a batch of changed rows. The destination already has prior versions of some of those rows. The load needs to reconcile: insert the new ones, update the existing ones, and leave everything else untouched.
 
   // ---
 
@@ -4100,7 +4022,7 @@
 
   #ecl-warning(
     "BigQuery MERGE partition cost",
-  )[Every DML statement in BigQuery rewrites every partition it touches -- not just the affected rows within each partition. If your batch contains rows spread across 30 dates, that's 30 full partition rewrites. Keep load batches aligned to as few partitions as possible. See 0104 for per-engine DML behavior.]
+  )[Every DML statement in BigQuery rewrites every partition it touches -- not just the affected rows within each partition. If your batch contains rows spread across 30 dates, that's 30 full partition rewrites. Keep load batches aligned to as few partitions as possible. See @columnar-destinations for per-engine DML behavior.]
 
   Snowflake rewrites affected micro-partitions, which is more granular than BigQuery's date-partition model but still means a MERGE touching scattered micro-partitions across the table is significantly more expensive than one touching a contiguous range.
 
@@ -4112,15 +4034,15 @@
 
   #strong[Natural key] -- a column that uniquely identifies the entity at the source: `order_id`, `invoice_id`, `customer_id`. This is the default and the simplest choice when the source has a single-column primary key. Compound natural keys (`order_id + line_num`) work too but make the ON clause larger.
 
-  #strong[Surrogate key] -- a hash or synthetic key generated during extraction (see 0502). Necessary when the source has no stable primary key, when the natural key is compound and unwieldy, or when multiple sources feed the same destination table and keys can collide.
+  #strong[Surrogate key] -- a hash or synthetic key generated during extraction (see @synthetic-keys). Necessary when the source has no stable primary key, when the natural key is compound and unwieldy, or when multiple sources feed the same destination table and keys can collide.
 
   #ecl-danger(
     "Non-unique keys compound duplicates",
-  )[If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and always bad. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see 0613.]
+  )[If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and always bad. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see @duplicate-detection.]
 
   #ecl-warning(
     "Unenforced PKs cause silent data loss",
-  )[If the source has no unique constraint on what you're using as the merge key, two rows can share the same key value. The merge collapses them into one -- the second overwrites the first, and the destination ends up with fewer rows than the source. This is data loss, not duplication, and it's invisible: the pipeline reports success, row counts look close enough, and the missing rows only surface when someone reconciles at the record level. Verify uniqueness on the actual data before committing to a merge key (0105). If the source genuinely has duplicate PKs, you need a synthetic key (0502).]
+  )[If the source has no unique constraint on what you're using as the merge key, two rows can share the same key value. The merge collapses them into one -- the second overwrites the first, and the destination ends up with fewer rows than the source. This is data loss, not duplication, and it's invisible: the pipeline reports success, row counts look close enough, and the missing rows only surface when someone reconciles at the record level. Verify uniqueness on the actual data before committing to a merge key (@the-lies-sources-tell). If the source genuinely has duplicate PKs, you need a synthetic key (@synthetic-keys).]
 
   // ---
 
@@ -4141,7 +4063,7 @@
     updated_at = EXCLUDED.updated_at;
   ```
 
-  Partial updates -- `DO UPDATE SET status = EXCLUDED.status` while leaving other columns untouched -- earn their complexity only when partial column loading (0209) forces them. If you're extracting all columns, update all columns. Deciding which columns "matter" is a business decision that breaks the conforming boundary (0102).
+  Partial updates -- `DO UPDATE SET status = EXCLUDED.status` while leaving other columns untouched -- earn their complexity only when partial column loading (@partial-column-loading) forces them. If you're extracting all columns, update all columns. Deciding which columns "matter" is a business decision that breaks the conforming boundary (@what-is-conforming).
 
   // ---
 
@@ -4189,11 +4111,11 @@
     kind: table,
   )
 
-  Some loaders offer `discard_row` and `discard_value` modes that drop data silently when the schema doesn't match. These are transformation decisions -- deciding what data to keep based on schema fit -- and they break the conforming boundary (0102). If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data.
+  Some loaders offer `discard_row` and `discard_value` modes that drop data silently when the schema doesn't match. These are transformation decisions -- deciding what data to keep based on schema fit -- and they break the conforming boundary (@what-is-conforming). If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data.
 
   3. #strong[Apply] -- if the policy is `evolve`, add the column to the destination (`ALTER TABLE ADD COLUMN`) before the MERGE runs. If it's `freeze`, the pipeline stops and alerts.
 
-  The recommended production default is `evolve` for new columns and `freeze` for type changes -- new nullable columns appearing in the destination are harmless (downstream queries that don't reference them are unaffected), while type changes that silently widen a column can break downstream logic. See 0609 for formalizing schema policies into enforceable contracts, and 0104 for how each engine handles `ALTER TABLE ADD COLUMN`.
+  The recommended production default is `evolve` for new columns and `freeze` for type changes -- new nullable columns appearing in the destination are harmless (downstream queries that don't reference them are unaffected), while type changes that silently widen a column can break downstream logic. See @data-contracts for formalizing schema policies into enforceable contracts, and @columnar-destinations for how each engine handles `ALTER TABLE ADD COLUMN`.
 
   #ecl-warning(
     "Column-explicit MERGE silently freezes schema",
@@ -4203,7 +4125,7 @@
 
   == Staging Deduplication
   <staging-deduplication>
-  The extraction batch can contain duplicates: the overlap buffer from 0302, the dual cursor overlap from 0310, or simply a source that returns the same row twice within the extraction window.
+  The extraction batch can contain duplicates: the overlap buffer from @cursor-based-timestamp-extraction, the dual cursor overlap from @create-vs-update-separation, or simply a source that returns the same row twice within the extraction window.
 
   If the staging table contains two rows with the same MERGE key, the behavior is engine-dependent:
 
@@ -4230,7 +4152,7 @@
   <by-corridor-2>
   #ecl-info(
     "Transactional to columnar",
-  )[MERGE is the most expensive DML operation in columnar engines. The cost scales with the number of partitions touched, not the batch size. Minimize partition spread in each batch, consider delete-insert as an alternative, and evaluate whether 0404 (append + dedup view) is cheaper for tables with low mutation rates relative to their size.]
+  )[MERGE is the most expensive DML operation in columnar engines. The cost scales with the number of partitions touched, not the batch size. Minimize partition spread in each batch, consider delete-insert as an alternative, and evaluate whether @append-and-materialize (append + dedup view) is cheaper for tables with low mutation rates relative to their size.]
 
   #ecl-warning(
     "Transactional to transactional",
@@ -4250,7 +4172,7 @@
 
   == The Problem
   <the-problem-3>
-  MERGE cost in columnar engines scales per run: every execution reads the destination, matches keys, and rewrites the affected partitions. If a single MERGE costs $X$, running it 24 times per day costs $24 times X$ -- and the cost scales with table size and partition spread -- never batch size (see 0403). This creates a ceiling on extraction frequency: you can only afford to run as often as the MERGE budget allows.
+  MERGE cost in columnar engines scales per run: every execution reads the destination, matches keys, and rewrites the affected partitions. If a single MERGE costs $X$, running it 24 times per day costs $24 times X$ -- and the cost scales with table size and partition spread -- never batch size (see @merge-upsert). This creates a ceiling on extraction frequency: you can only afford to run as often as the MERGE budget allows.
 
   That ceiling directly limits purity. The less often you extract, the longer the destination drifts from the source between runs. Missed corrections, late-arriving data, and accumulated cursor gaps all widen with the interval. Running more often closes the gap -- but MERGE makes running more often expensive.
 
@@ -4287,7 +4209,7 @@
 
   == Why This Maximizes Purity
   <why-this-maximizes-purity>
-  The 0108 tradeoff frames purity and freshness as opposing forces -- full replace maximizes purity but caps freshness, incremental maximizes freshness but carries purity debt. Append-and-materialize shifts the balance toward both:
+  The @purity-vs-freshness tradeoff frames purity and freshness as opposing forces -- full replace maximizes purity but caps freshness, incremental maximizes freshness but carries purity debt. Append-and-materialize shifts the balance toward both:
 
   #strong[Higher frequency = less drift.] With near-zero load cost, nothing stops you from extracting every 15 minutes instead of every hour. The shorter the interval between extractions, the smaller the window where the destination can diverge from the source -- missed corrections, late-arriving rows, and cursor gaps have less time to accumulate before the next extraction picks them up.
 
@@ -4299,9 +4221,9 @@
 
   == The Duplicate Reality
   <the-duplicate-reality>
-  With a cursor-based extraction (0302), most of the batch is genuinely new or changed rows, and duplicates come from the overlap buffer -- a small fraction of each run.
+  With a cursor-based extraction (@cursor-based-timestamp-extraction), most of the batch is genuinely new or changed rows, and duplicates come from the overlap buffer -- a small fraction of each run.
 
-  With a stateless window (0303), the situation inverts. A 7-day window re-extracts 7 days of data on every run, so if the pipeline runs daily, \~6/7 of each batch is rows the destination already has from previous runs -- deliberate duplicates built into the extraction window. The append log grows proportionally to window size × run frequency.
+  With a stateless window (@stateless-window-extraction), the situation inverts. A 7-day window re-extracts 7 days of data on every run, so if the pipeline runs daily, \~6/7 of each batch is rows the destination already has from previous runs -- deliberate duplicates built into the extraction window. The append log grows proportionally to window size × run frequency.
 
   #ecl-warning(
     "Size retention to the extraction window",
@@ -4317,7 +4239,7 @@
     align(center)[#table(
       columns: (16.9%, 38.03%, 45.07%),
       align: (auto, auto, auto),
-      table.header([], [MERGE (0403)], [Append and Materialize]),
+      table.header([], [MERGE (@merge-upsert)], [Append and Materialize]),
       table.hline(),
       [#strong[Load cost];],
       [Scales with table size and partition spread, per run],
@@ -4358,7 +4280,7 @@
 
   Compaction replaces the log with the deduplicated result -- every key retains its latest version, all duplicate extractions and historical versions are gone. Storage reclaims completely and the view's `ROW_NUMBER()` scan drops to near-trivial size. Compaction frequency determines how large the log gets between runs and how heavy the dedup scan is at peak, not how stale the view is -- the view always reflects the latest version of every row in the log.
 
-  The tradeoff is that version history disappears after each compaction. If consumers need point-in-time reconstruction from the log, compaction must run less frequently than their lookback window -- or not at all. See 0706 for strategies that preserve history.
+  The tradeoff is that version history disappears after each compaction. If consumers need point-in-time reconstruction from the log, compaction must run less frequently than their lookback window -- or not at all. See @point-in-time-from-events for strategies that preserve history.
 
   #ecl-tip(
     "Partition the log by business date",
@@ -4408,7 +4330,7 @@
     "Match compression boundary to actual needs",
   )[What's the shortest period where daily granularity changes a decision? If nobody looks at daily stock levels older than 30 days, compress at 30. If finance needs daily for quarter-close reconciliation, compress at 90. Ask the consumer before picking the number -- they usually need less daily granularity than they think.]
 
-  See 0706 for the full treatment of point-in-time reconstruction from append logs, event tables, and SCD2.
+  See @point-in-time-from-events for the full treatment of point-in-time reconstruction from append logs, event tables, and SCD2.
 
   // ---
 
@@ -4436,7 +4358,7 @@
 
   == The Problem
   <the-problem-4>
-  The previous load strategies each optimize for one consumer type. 0404 gives you cheap appends and a full extraction log, but every read pays a `ROW_NUMBER()` dedup scan -- fine for analytical queries that run a few times a day, painful for an API that hits the table hundreds of times per minute. 0403 gives you a clean current-state table with zero read overhead, but MERGE in columnar engines is expensive per run, which caps your extraction frequency.
+  The previous load strategies each optimize for one consumer type. @append-and-materialize gives you cheap appends and a full extraction log, but every read pays a `ROW_NUMBER()` dedup scan -- fine for analytical queries that run a few times a day, painful for an API that hits the table hundreds of times per minute. @merge-upsert gives you a clean current-state table with zero read overhead, but MERGE in columnar engines is expensive per run, which caps your extraction frequency.
 
   If you have consumers on both sides -- analysts who want history and operational systems that need low-latency point queries on current state -- neither pattern alone covers both without a painful tradeoff on the other side.
 
@@ -4446,7 +4368,7 @@
   <the-pattern-2>
   Extract once. Load the same batch to two destinations in different engines, each playing to its strength:
 
-  + #strong[Columnar] (e.g.~BigQuery): append-only log table. Pure INSERT, near-zero load cost. History lives here -- analysts query it, and the dedup view from 0404 gives them current state when they need it. High-volume, low-frequency consumption
+  + #strong[Columnar] (e.g.~BigQuery): append-only log table. Pure INSERT, near-zero load cost. History lives here -- analysts query it, and the dedup view from @append-and-materialize gives them current state when they need it. High-volume, low-frequency consumption
 
   + #strong[Transactional] (e.g.~PostgreSQL): current-state table via `INSERT ... ON CONFLICT UPDATE`. Cheap upsert, instant point queries. Operational consumers -- APIs, application backends, services that validate state before acting (e.g.~stock check before order confirmation) -- read from here without touching the log. Best for high-frequency, low-volume consumption
 
@@ -4458,9 +4380,9 @@
 
   == Why It Only Makes Sense with Two Destinations
   <why-it-only-makes-sense-with-two-destinations>
-  On a single columnar engine, adding a current-state table means running a MERGE alongside the append -- you're paying the exact cost of 0403 plus the append, which is strictly worse than choosing one or the other. On a single transactional engine, the append log doesn't give you anything that `INSERT ... ON CONFLICT` doesn't already handle cheaply, since transactional engines do upserts and point queries well on the same table.
+  On a single columnar engine, adding a current-state table means running a MERGE alongside the append -- you're paying the exact cost of @merge-upsert plus the append, which is strictly worse than choosing one or the other. On a single transactional engine, the append log doesn't give you anything that `INSERT ... ON CONFLICT` doesn't already handle cheaply, since transactional engines do upserts and point queries well on the same table.
 
-  The pattern earns its complexity only when each destination plays to a different engine's strength. If you don't have two engines in your architecture, use 0404 for columnar or 0403 for transactional and stop there.
+  The pattern earns its complexity only when each destination plays to a different engine's strength. If you don't have two engines in your architecture, use @append-and-materialize for columnar or @merge-upsert for transactional and stop there.
 
   // ---
 
@@ -4470,7 +4392,7 @@
 
   #ecl-warning(
     "Earn this complexity per table",
-  )[Don't apply it as a default. Most tables don't have both analytical and operational consumers. Run 0404 or 0403 as the default and promote individual tables to 0405 only when a real consumer can't be served by the simpler strategy. If you find yourself putting more than a handful of tables through this pattern, reconsider whether the operational consumers truly need a separate engine or whether a compacted 0404 with a materialization schedule is good enough.]
+  )[Don't apply it as a default. Most tables don't have both analytical and operational consumers. Run @append-and-materialize or @merge-upsert as the default and promote individual tables to @hybrid-append-merge only when a real consumer can't be served by the simpler strategy. If you find yourself putting more than a handful of tables through this pattern, reconsider whether the operational consumers truly need a separate engine or whether a compacted @append-and-materialize with a materialization schedule is good enough.]
 
   // ---
 
@@ -4478,7 +4400,7 @@
   <orchestration>
   The two writes must be treated as a single pipeline unit. If the append to columnar succeeds but the upsert to transactional fails, the log has a batch that the current-state table doesn't reflect -- consumers see different versions of the truth depending on which engine they query.
 
-  #strong[Idempotency on both sides.] The append side is naturally idempotent if combined with the dedup view from 0404 -- duplicate rows in the log don't corrupt the current state. The upsert side is idempotent by design (`INSERT ... ON CONFLICT UPDATE` with the same data produces the same result). A retry of the full pipeline unit is safe as long as both writes use the same batch.
+  #strong[Idempotency on both sides.] The append side is naturally idempotent if combined with the dedup view from @append-and-materialize -- duplicate rows in the log don't corrupt the current state. The upsert side is idempotent by design (`INSERT ... ON CONFLICT UPDATE` with the same data produces the same result). A retry of the full pipeline unit is safe as long as both writes use the same batch.
 
   #strong[Failure handling.] If either write fails, the orchestrator should retry the full unit -- not just the failed half. Retrying only the failed side risks the two destinations drifting apart on `_extracted_at` or `_batch_id` if the batch is regenerated between retries.
 
@@ -4489,7 +4411,7 @@
   - You already have both a columnar and a transactional engine in your architecture
   - Operational consumers need low-latency point queries on current state (APIs, app backends, validation services) that a dedup view can't serve fast enough
   - Analytical consumers need history or replay from the append log
-  - Without both consumer types, this pattern is overhead: use 0404 for columnar-only, 0403 for transactional-only
+  - Without both consumer types, this pattern is overhead: use @append-and-materialize for columnar-only, @merge-upsert for transactional-only
 
   // ---
 
@@ -4513,7 +4435,7 @@
   <the-problem-5>
   A pipeline can die after extraction but before load, mid-load with half the batch written, or after load but before the cursor advances. Each failure point leaves different residue -- a dangling staging table, a partially written partition, a cursor pointing to data the destination never received. The extraction strategy determines what you pulled; this pattern determines whether the destination survives it.
 
-  Full replace (0401) sidesteps most of this: every run overwrites everything, so there's no residue from a prior failure to clean up. The load is idempotent by construction. The patterns below matter when you're running incremental loads -- 0403, 0404, or 0405 -- where the destination accumulates state across runs and a bad load can corrupt that state permanently.
+  Full replace (@full-replace-load) sidesteps most of this: every run overwrites everything, so there's no residue from a prior failure to clean up. The load is idempotent by construction. The patterns below matter when you're running incremental loads -- @merge-upsert, @append-and-materialize, or @hybrid-append-merge -- where the destination accumulates state across runs and a bad load can corrupt that state permanently.
 
   // ---
 
@@ -4521,11 +4443,11 @@
   <idempotency-at-the-load-step>
   A load is idempotent if running it twice with the same batch leaves the destination unchanged. This is the single most important property for reliability -- retries are always safe, and the orchestrator doesn't need to know whether the previous attempt succeeded, partially succeeded, or crashed mid-flight.
 
-  #strong[MERGE/upsert (0403)] is naturally idempotent: `INSERT ... ON CONFLICT UPDATE` with the same data produces the same result regardless of how many times it runs. The key match absorbs duplicates, and the update overwrites with identical values.
+  #strong[MERGE/upsert (@merge-upsert)] is naturally idempotent: `INSERT ... ON CONFLICT UPDATE` with the same data produces the same result regardless of how many times it runs. The key match absorbs duplicates, and the update overwrites with identical values.
 
-  #strong[Append (0404)] is idempotent at the view level but not at the table level. A retry appends the same rows again, doubling them in the log -- but the `ROW_NUMBER()` dedup view still returns the correct current state because it picks the latest `_extracted_at` per key. Storage cost goes up, correctness doesn't break. Compaction cleans up the duplicates later.
+  #strong[Append (@append-and-materialize)] is idempotent at the view level but not at the table level. A retry appends the same rows again, doubling them in the log -- but the `ROW_NUMBER()` dedup view still returns the correct current state because it picks the latest `_extracted_at` per key. Storage cost goes up, correctness doesn't break. Compaction cleans up the duplicates later.
 
-  #strong[Full replace (0401)] is idempotent by definition: the destination is rebuilt from scratch on every run, so no prior state can interfere.
+  #strong[Full replace (@full-replace-load)] is idempotent by definition: the destination is rebuilt from scratch on every run, so no prior state can interfere.
 
   #ecl-warning(
     "Test idempotency by running twice",
@@ -4539,9 +4461,9 @@
 
   Two things break statelessness:
 
-  #strong[Local cursor files.] If the high-water mark lives in a local file or an in-memory store, a new machine doesn't know where the last successful run left off. Store the cursor in the destination itself (query `MAX(_extracted_at)` from the target table) or in an external state store that survives machine replacement -- see 0302 for the tradeoffs.
+  #strong[Local cursor files.] If the high-water mark lives in a local file or an in-memory store, a new machine doesn't know where the last successful run left off. Store the cursor in the destination itself (query `MAX(_extracted_at)` from the target table) or in an external state store that survives machine replacement -- see @cursor-based-timestamp-extraction for the tradeoffs.
 
-  #strong[Local staging artifacts.] Some pipelines extract to local disk (Parquet files, CSV dumps) before loading. If the machine dies between extraction and load, the artifacts are gone and the cursor may have already advanced past the data they contained. Either re-extract on retry (stateless window via 0303 handles this naturally) or stage to durable storage (S3, GCS) before advancing any cursor.
+  #strong[Local staging artifacts.] Some pipelines extract to local disk (Parquet files, CSV dumps) before loading. If the machine dies between extraction and load, the artifacts are gone and the cursor may have already advanced past the data they contained. Either re-extract on retry (stateless window via @stateless-window-extraction handles this naturally) or stage to durable storage (S3, GCS) before advancing any cursor.
 
   #ecl-warning(
     "\"Works on my machine\" is not stateless",
@@ -4553,7 +4475,7 @@
   <checkpoint-placement>
   The checkpoint is when you declare success -- advance the cursor, mark a partition materialized. Where you place it determines what breaks when something fails:
 
-  #strong[Before load (gap risk).] The cursor advances, then the load starts. If the load fails, the cursor points past data that was never loaded. The next run starts from the new cursor position and skips the failed batch entirely -- unless the extraction uses a lookback window or overlap buffer (see 0303) that covers the gap. Even with lookback, this placement relies on the safety net catching every failure, which is the wrong default.
+  #strong[Before load (gap risk).] The cursor advances, then the load starts. If the load fails, the cursor points past data that was never loaded. The next run starts from the new cursor position and skips the failed batch entirely -- unless the extraction uses a lookback window or overlap buffer (see @stateless-window-extraction) that covers the gap. Even with lookback, this placement relies on the safety net catching every failure, which is the wrong default.
 
   #strong[After load, before confirmation (reprocessing risk).] The load completes, but the cursor update fails (network error, orchestrator crash). The next run re-extracts and re-loads the same batch. With an idempotent load strategy (MERGE or append + dedup view), this is harmless -- the data lands twice but the destination state is correct. With a non-idempotent load (raw INSERT without dedup), you get duplicates.
 
@@ -4599,7 +4521,7 @@
 
   #strong[Monitor from outside the pipeline.] The destination should be observable independently of the orchestrator. A scheduled query that checks `MAX(_extracted_at)` against the current time and alerts when it exceeds a threshold works regardless of whether the orchestrator is alive. If the orchestrator dies at 2am and the pipeline doesn't run, the freshness check fires at 8am and somebody knows.
 
-  #strong[Distinguish "0 rows extracted" from "extraction failed."] A successful run that returns 0 rows is normal for some tables (no changes since last run, empty table) and a red flag for others (a table that always has activity). 0610 covers this in detail -- gate the load on extraction status so a silent failure doesn't advance the cursor past a real gap.
+  #strong[Distinguish "0 rows extracted" from "extraction failed."] A successful run that returns 0 rows is normal for some tables (no changes since last run, empty table) and a red flag for others (a table that always has activity). @extraction-status-gates covers this in detail -- gate the load on extraction status so a silent failure doesn't advance the cursor past a real gap.
 
   #strong[Push, then alert on absence.] After each successful load, push a heartbeat (a row in a monitoring table, a metric to your observability stack, a timestamp in a health-check endpoint). Alert when the heartbeat stops arriving. This catches every failure mode: orchestrator crash, hung run, infrastructure outage, credential expiration -- anything that prevents the pipeline from completing.
 
@@ -4656,11 +4578,11 @@
 
   == `_extracted_at`
   <extracted_at>
-  The pipeline's timestamp: when your extraction ran, not when the source row was last modified. A row updated 3 days ago and extracted today has `_extracted_at = today`. This distinction matters because `updated_at` is the source's clock -- maintained by the application layer, subject to all the reliability problems covered in 0301 -- while `_extracted_at` is your clock, set by your pipeline, and always correct.
+  The pipeline's timestamp: when your extraction ran, not when the source row was last modified. A row updated 3 days ago and extracted today has `_extracted_at = today`. This distinction matters because `updated_at` is the source's clock -- maintained by the application layer, subject to all the reliability problems covered in @timestamp-extraction-foundations -- while `_extracted_at` is your clock, set by your pipeline, and always correct.
 
   Always add this. The cost is trivial (`CURRENT_TIMESTAMP` in the SELECT) and the debugging value is enormous. When something goes wrong -- and it will -- `_extracted_at` is how you answer "when did this bad data arrive?" and "which extraction run brought it?"
 
-  `_extracted_at` is also the foundation for dedup ordering in 0404. The `ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1` view depends entirely on this column to determine which version of a row is the latest. Without it, the dedup view has no ordering key and the pattern doesn't work.
+  `_extracted_at` is also the foundation for dedup ordering in @append-and-materialize. The `ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1` view depends entirely on this column to determine which version of a row is the latest. Without it, the dedup view has no ordering key and the pattern doesn't work.
 
   #ecl-warning(
     "Share one timestamp per run",
@@ -4678,7 +4600,7 @@
 
   #strong[Debugging.] "The destination has 11,998 rows but the source had 12,000. Which batch lost them?" With `_batch_id`, you can trace each row to the run that loaded it and compare batch-level counts against source-side logs.
 
-  #strong[Reconciliation.] A `_batches` table that tracks batch-level metadata -- source row count, extraction start/end time, status -- gives you an audit trail for every extraction. When 0614 compares source and destination counts, `_batch_id` is the join key.
+  #strong[Reconciliation.] A `_batches` table that tracks batch-level metadata -- source row count, extraction start/end time, status -- gives you an audit trail for every extraction. When @reconciliation-patterns compares source and destination counts, `_batch_id` is the join key.
 
   UUID or sequential integer -- consistency matters more than format. If your orchestrator already generates run IDs, reuse those.
 
@@ -4706,7 +4628,7 @@
 
   == `_source_hash`
   <source_hash>
-  A hash of the source row at extraction time. Enables 0208 (compare hashes between runs to detect changes without relying on `updated_at`) and post-load reconciliation (compare source-side hash vs destination-side hash to verify the row arrived intact).
+  A hash of the source row at extraction time. Enables @hash-based-change-detection (compare hashes between runs to detect changes without relying on `updated_at`) and post-load reconciliation (compare source-side hash vs destination-side hash to verify the row arrived intact).
 
   ```sql
   -- source: transactional
@@ -4750,7 +4672,7 @@
   == By Corridor
   #ecl-warning(
     "Transactional to columnar",
-  )[No special considerations. Columnar destinations accept new columns without issue. If you're using 0404, `_extracted_at` is the dedup ordering key -- make sure it's populated on every row.]
+  )[No special considerations. Columnar destinations accept new columns without issue. If you're using @append-and-materialize, `_extracted_at` is the dedup ordering key -- make sure it's populated on every row.]
 
   #ecl-info(
     "Transactional to transactional",
@@ -4830,7 +4752,7 @@
   ))
   ```
 
-  The sentinel (`'__NULL__'`) must be something that can't appear in real data. `'__NULL__'` works because no business column will contain that literal string. A shorter sentinel like `''` (empty string) is dangerous because empty strings #emph[do] appear in real data and you'd be conflating NULL with empty -- the exact problem 0504 warns against.
+  The sentinel (`'__NULL__'`) must be something that can't appear in real data. `'__NULL__'` works because no business column will contain that literal string. A shorter sentinel like `''` (empty string) is dangerous because empty strings #emph[do] appear in real data and you'd be conflating NULL with empty -- the exact problem @null-handling warns against.
 
   Document which columns participate in the key. Downstream consumers, reconciliation queries, and future pipeline maintainers need to know how `_source_key` is built so they can recompute it when debugging.
 
@@ -5021,7 +4943,7 @@
 
   #strong[Where it doesn't hurt:] quantities, counts, percentages, scores. If the column is an integer disguised as a decimal (`quantity = 5.000000`), `FLOAT64` is fine. If the column has meaningful decimal places but nobody aggregates it across millions of rows, `FLOAT64` is probably fine. The damage is proportional to row count × aggregation.
 
-  #strong[The pragmatic approach:] explicit `NUMERIC` in the DDL for financial columns, `FLOAT64` for everything else unless proven otherwise. Monitor aggregate differences between source and destination on the critical columns (0614) and escalate if the divergence exceeds an acceptable threshold.
+  #strong[The pragmatic approach:] explicit `NUMERIC` in the DDL for financial columns, `FLOAT64` for everything else unless proven otherwise. Monitor aggregate differences between source and destination on the critical columns (@reconciliation-patterns) and escalate if the divergence exceeds an acceptable threshold.
 
   // ---
 
@@ -5033,7 +4955,7 @@
 
   #strong[SAP HANA `NVARCHAR` vs `VARCHAR`.] HANA defaults to `NVARCHAR` (Unicode) for most string columns. When extracting to a destination that distinguishes between Unicode and non-Unicode strings (SQL Server, MySQL), you need to match the encoding or risk truncation on characters outside the ASCII range. When extracting to BigQuery or Snowflake (UTF-8 everywhere), this distinction vanishes.
 
-  #strong[Schema evolution interaction.] A new column appears in the source with a type your cast map doesn't cover. If your extraction uses `SELECT *`, the column arrives with whatever type the loader infers -- which might be wrong. If your extraction uses an explicit column list, the column is silently dropped. Both are problems. See 0403's schema evolution section for the detect → decide → apply workflow.
+  #strong[Schema evolution interaction.] A new column appears in the source with a type your cast map doesn't cover. If your extraction uses `SELECT *`, the column arrives with whatever type the loader infers -- which might be wrong. If your extraction uses an explicit column list, the column is silently dropped. Both are problems. See @merge-upsert's schema evolution section for the detect → decide → apply workflow.
 
   // ---
 
@@ -5091,7 +5013,7 @@
 
   #ecl-warning(
     "Avoid COALESCE in the conforming layer",
-  )[`COALESCE(email, '')` in the extraction query looks like cleanup. What it actually does: permanently destroys the distinction between "this field was never populated" (NULL) and "this field was explicitly set to empty" (empty string). If that distinction matters to even one consumer, you've lost it for all of them. The only justified COALESCE at the ECL level is in synthetic key hashing (see 0502), where NULL would corrupt the hash output -- and that's infrastructure, not business logic.]
+  )[`COALESCE(email, '')` in the extraction query looks like cleanup. What it actually does: permanently destroys the distinction between "this field was never populated" (NULL) and "this field was explicitly set to empty" (empty string). If that distinction matters to even one consumer, you've lost it for all of them. The only justified COALESCE at the ECL level is in synthetic key hashing (see @synthetic-keys), where NULL would corrupt the hash output -- and that's infrastructure, not business logic.]
 
   // ---
 
@@ -5099,9 +5021,9 @@
   <when-nulls-matter-at-the-ecl-level>
   NULLs don't need fixing in the ECL layer, but they do need #emph[awareness] -- three places where NULL behavior affects the pipeline itself, not downstream consumption:
 
-  #strong[NULL in synthetic key columns.] Most hash functions return NULL if any input is NULL, so a row with a NULL key column produces a NULL `_source_key` and the MERGE can't match it. COALESCE to a sentinel before hashing -- see 0502. This is the one place where COALESCE is justified because it's protecting pipeline mechanics, not making a business decision.
+  #strong[NULL in synthetic key columns.] Most hash functions return NULL if any input is NULL, so a row with a NULL key column produces a NULL `_source_key` and the MERGE can't match it. COALESCE to a sentinel before hashing -- see @synthetic-keys. This is the one place where COALESCE is justified because it's protecting pipeline mechanics, not making a business decision.
 
-  #strong[NULL in cursor columns.] A NULL `updated_at` makes the row invisible to incremental extraction -- `WHERE updated_at >= :last_run` never evaluates to true for NULL values. This is an extraction problem, not a null handling problem, and 0310 covers the strategies.
+  #strong[NULL in cursor columns.] A NULL `updated_at` makes the row invisible to incremental extraction -- `WHERE updated_at >= :last_run` never evaluates to true for NULL values. This is an extraction problem, not a null handling problem, and @create-vs-update-separation covers the strategies.
 
   #strong[NULL in partition columns.] If you partition `orders` by `order_date` and some rows have `order_date = NULL`, those rows land in a `__NULL__` partition (BigQuery), a default partition (Snowflake), or fail the insert (ClickHouse, depending on config). None of these outcomes are what you want, but the fix belongs in the extraction query (filter or assign a sentinel partition value) -- not in a blanket COALESCE policy.
 
@@ -5147,7 +5069,7 @@
 
   == The Playbook
   <the-playbook-3>
-  The rule follows the same principle as 0504: reflect the source. If the source stores timezone-aware timestamps, land timezone-aware. If the source stores naive timestamps, land them as datetime -- not as timestamp with a timezone you guessed. Converting naive to UTC without being certain of the source timezone is worse than landing naive, because a wrong UTC conversion looks correct in the destination and silently shifts every row by however many hours you got wrong.
+  The rule follows the same principle as @null-handling: reflect the source. If the source stores timezone-aware timestamps, land timezone-aware. If the source stores naive timestamps, land them as datetime -- not as timestamp with a timezone you guessed. Converting naive to UTC without being certain of the source timezone is worse than landing naive, because a wrong UTC conversion looks correct in the destination and silently shifts every row by however many hours you got wrong.
 
   Most transactional sources store naive timestamps. The application knows what timezone it means, but the column doesn't say -- and often nobody at the source team documented it either. That's the source's data quality problem. Your job is to land what the source gives you, not to retroactively assign timezone semantics that weren't there.
 
@@ -5206,7 +5128,7 @@
 
   #strong[Fall back (the hour that repeats).] Clocks fall from 2:00 AM back to 1:00 AM. A timestamp like `2026-11-01 01:30:00 America/New_York` could refer to two different instants -- the first 1:30 AM or the second 1:30 AM. Without an offset, there's no way to distinguish them.
 
-  Both of these are reasons to prefer landing naive timestamps as naive rather than converting to UTC at extraction time. A conversion during the ambiguous fall-back hour has a 50% chance of being wrong, and you won't know which rows are affected. A stateless extraction window (0303) helps here -- the overlap naturally re-extracts the ambiguous rows on the next run, and if the source eventually clarifies (some applications write a second-pass correction), the later extraction picks it up.
+  Both of these are reasons to prefer landing naive timestamps as naive rather than converting to UTC at extraction time. A conversion during the ambiguous fall-back hour has a 50% chance of being wrong, and you won't know which rows are affected. A stateless extraction window (@stateless-window-extraction) helps here -- the overlap naturally re-extracts the ambiguous rows on the next run, and if the source eventually clarifies (some applications write a second-pass correction), the later extraction picks it up.
 
   // ---
 
@@ -5232,7 +5154,7 @@
 
   #ecl-info(
     "Transactional to transactional",
-  )[If source is naive PostgreSQL and destination is naive PostgreSQL, no conversion needed -- the naive value transfers as-is. Document the assumption but don't add complexity. If the destination is a different engine (PostgreSQL to MySQL), check whether the naive type behavior differs -- PostgreSQL's `TIMESTAMP WITHOUT TIME ZONE` and MySQL's `DATETIME` are equivalent in practice, but SQL Server's `DATETIME2` has different precision (see 0503).]
+  )[If source is naive PostgreSQL and destination is naive PostgreSQL, no conversion needed -- the naive value transfers as-is. Document the assumption but don't add complexity. If the destination is a different engine (PostgreSQL to MySQL), check whether the naive type behavior differs -- PostgreSQL's `TIMESTAMP WITHOUT TIME ZONE` and MySQL's `DATETIME` are equivalent in practice, but SQL Server's `DATETIME2` has different precision (see @type-casting-and-normalization).]
 
   // ---
 
@@ -5334,7 +5256,7 @@
 
   #strong[What the ECL layer should do.] Normalize identifiers for #emph[safety];: lowercase, replace spaces with underscores, strip characters that require quoting on the destination engine. This isn't semantic renaming (`OACT` → `chart_of_accounts`) -- it's making sure the identifier doesn't break SQL on the other side. `[Order Lines]` → `order_lines`, `@Status` → `status`, `Column Name With Spaces` → `column_name_with_spaces`.
 
-  This deserves its own full treatment -- see 0707 for the complete naming convention discussion, including when to rename vs.~preserve, schema prefixes, and how to handle identifiers that are reserved words on the destination.
+  This deserves its own full treatment -- see @sql-dialect-reference for the complete naming convention discussion, including when to rename vs.~preserve, schema prefixes, and how to handle identifiers that are reserved words on the destination.
 
   // ---
 
@@ -5417,7 +5339,7 @@
 
   But here's the thing: the same consumers who can't handle JSON often can't handle joins either. Normalizing the JSON into 5 relational tables and expecting a business analyst to JOIN `order` → `order__details` → `order__details__items` correctly is optimistic. You've traded one problem (they can't query JSON) for another (they can't join tables), and the second problem is arguably worse because wrong joins produce silently incorrect results while failing to query JSON produces an error.
 
-  If the consumer truly can't work with JSON, the answer is a downstream transformation -- a view or materialized table that flattens the JSON into the shape the consumer needs. That's a serving concern (0703), not an ECL concern. The ECL layer lands the data; the serving layer shapes it for consumption.
+  If the consumer truly can't work with JSON, the answer is a downstream transformation -- a view or materialized table that flattens the JSON into the shape the consumer needs. That's a serving concern (@query-patterns-for-analysts), not an ECL concern. The ECL layer lands the data; the serving layer shapes it for consumption.
 
   #ecl-warning(
     "Flattening views are cheap and reversible",
@@ -5437,7 +5359,7 @@
 
   #strong[Use a schema-on-read type.] Snowflake `VARIANT` accepts arbitrary JSON without a predefined schema. PostgreSQL `JSONB` does the same. These types give you native JSON query syntax without the rigidity of `STRUCT`. If your destination supports schema-on-read, prefer it over `STRING` for the better query ergonomics.
 
-  If you must use a typed `STRUCT` (because the destination requires it or because query performance on `STRING` is unacceptable), a full replace (0401) with an updated `STRUCT` definition handles the schema change cleanly -- drop and rebuild the table with the new field included.
+  If you must use a typed `STRUCT` (because the destination requires it or because query performance on `STRING` is unacceptable), a full replace (@full-replace-load) with an updated `STRUCT` definition handles the schema change cleanly -- drop and rebuild the table with the new field included.
 
   // ---
 
@@ -5496,7 +5418,7 @@
   <run-health>
   The basics: did the pipeline run, did it succeed, and how long did it take? Every orchestrator tracks this natively -- run status, duration, dependency graphs -- so there's rarely anything to build here. What the orchestrator gives you for free is already enough.
 
-  The one thing worth adding is trend tracking on duration. A 3-minute job that creeps to 30 minutes is a signal even when it still succeeds, because it tells you the table is growing or the source is degrading before either becomes an emergency. I had a table silently grow enough that its extraction started overlapping with the next scheduled run, causing 3 PM crashes for weeks before I charted duration and saw it had been climbing steadily for months -- the fix was moving heavy tables to a less frequent schedule (0608), but the signal was in the health table long before the failure. Without duration trends, you discover these problems when jobs start timing out, which is too late to fix gracefully.
+  The one thing worth adding is trend tracking on duration. A 3-minute job that creeps to 30 minutes is a signal even when it still succeeds, because it tells you the table is growing or the source is degrading before either becomes an emergency. I had a table silently grow enough that its extraction started overlapping with the next scheduled run, causing 3 PM crashes for weeks before I charted duration and saw it had been climbing steadily for months -- the fix was moving heavy tables to a less frequent schedule (@tiered-freshness), but the signal was in the health table long before the failure. Without duration trends, you discover these problems when jobs start timing out, which is too late to fix gracefully.
 
   Retry counts are worth recording if your pipeline retries on transient failures. A job that succeeds on the third retry every day is masking an unstable connection or a source system under load.
 
@@ -5504,7 +5426,7 @@
   <data-health>
   This is where monitoring earns its keep. Run Health tells you the pipeline executed; Data Health tells you what the pipeline produced.
 
-  #strong[Row counts] are the single most useful metric. Track three numbers: `source_rows` (counted at the source before extraction), `rows_extracted` (returned by the extraction query), and `destination_rows` (counted at the destination after load). Each pair tells you something different. On a full replace, `rows_extracted` should equal `destination_rows` -- you pulled N rows and loaded them, so the destination should have N. If it doesn't, something was lost or duplicated during the load. `source_rows` vs `destination_rows` over time is a drift indicator for incremental tables -- if the totals diverge across runs, you're accumulating missed rows or orphaned deletes. A 50% drop in any of the three is a signal worth investigating, but row counts have a blind spot: they measure volume, not composition. I had a client whose `invoices` table hard-deleted draft invoices regularly while new ones replaced them at roughly the same rate -- the count stayed stable, but the destination accumulated stale drafts the source had already removed. Only a daily PK comparison (0614) caught the problem, because row counts told us the right #emph[number] of rows existed without revealing they were the wrong rows.
+  #strong[Row counts] are the single most useful metric. Track three numbers: `source_rows` (counted at the source before extraction), `rows_extracted` (returned by the extraction query), and `destination_rows` (counted at the destination after load). Each pair tells you something different. On a full replace, `rows_extracted` should equal `destination_rows` -- you pulled N rows and loaded them, so the destination should have N. If it doesn't, something was lost or duplicated during the load. `source_rows` vs `destination_rows` over time is a drift indicator for incremental tables -- if the totals diverge across runs, you're accumulating missed rows or orphaned deletes. A 50% drop in any of the three is a signal worth investigating, but row counts have a blind spot: they measure volume, not composition. I had a client whose `invoices` table hard-deleted draft invoices regularly while new ones replaced them at roughly the same rate -- the count stayed stable, but the destination accumulated stale drafts the source had already removed. Only a daily PK comparison (@reconciliation-patterns) caught the problem, because row counts told us the right #emph[number] of rows existed without revealing they were the wrong rows.
 
   For incremental tables specifically, `rows_extracted` over time is revealing. It shows big moments of change -- month-end closes, batch corrections, seasonal spikes -- where you may want to widen your extraction window or shift the schedule to avoid overlapping with the source system's heaviest period.
 
@@ -5512,21 +5434,21 @@
     "Alert on row count spikes",
   )[If an incremental that usually returns 2k `rows_extracted` suddenly returns 50k, the source had a large batch operation -- month-end close, bulk import, data migration. That spike means there may be more rows changed than your window caught. Consider triggering a full replace that night to reset state and catch anything the incremental missed.]
 
-  #strong[Freshness] is the other critical data health metric: when was this table last successfully loaded? The health table records `extracted_at` on every run (complementing the per-row `_extracted_at` from 0501, which tags individual records rather than pipeline runs), so staleness is a simple aggregation -- 0604 covers the query and the SLA thresholds that give the number meaning.
+  #strong[Freshness] is the other critical data health metric: when was this table last successfully loaded? The health table records `extracted_at` on every run (complementing the per-row `_extracted_at` from @metadata-column-injection, which tags individual records rather than pipeline runs), so staleness is a simple aggregation -- @sla-management covers the query and the SLA thresholds that give the number meaning.
 
-  #strong[Schema fingerprints and null rates] are worth tracking here as changes between runs, but enforcement -- what to do when they change -- belongs in 0609.
+  #strong[Schema fingerprints and null rates] are worth tracking here as changes between runs, but enforcement -- what to do when they change -- belongs in @data-contracts.
 
   === 3. Source Health
   <source-health>
   Source health metrics are less about your pipeline and more about the system you're extracting from. Query duration at the source, isolated from load performance, tells you whether the source database is degrading or whether your extraction query needs tuning. Timeout frequency -- queries that hit the threshold even when they eventually return on retry -- reveals instability before it becomes a failure.
 
-  Source system load impact is worth tracking for a less obvious reason: it's a sales tool. If you can demonstrate that your extraction uses less than 1% of the source database's capacity, you can sell the pipeline as a lightweight, non-invasive solution to more technical stakeholders who are nervous about letting you query their production system. See 0607 for the full treatment.
+  Source system load impact is worth tracking for a less obvious reason: it's a sales tool. If you can demonstrate that your extraction uses less than 1% of the source database's capacity, you can sell the pipeline as a lightweight, non-invasive solution to more technical stakeholders who are nervous about letting you query their production system. See @source-system-etiquette for the full treatment.
 
   === 4. Load Health
   <load-health>
-  Load #strong[cost] generally matters more than load duration. Duration tends to be stable for a given table size and load strategy -- it's predictable and boring. Cost is the variable that shifts under your feet: a MERGE on BigQuery at 100k rows costs differently than at 10M, DML pricing changes without warning, and switching from full replace to incremental changes the operation type entirely. Tracking `load_seconds` is still useful for spotting bottlenecks, but if you had to pick one dimension to watch on the load side, it's cost -- and 0603 covers how to capture and attribute it.
+  Load #strong[cost] generally matters more than load duration. Duration tends to be stable for a given table size and load strategy -- it's predictable and boring. Cost is the variable that shifts under your feet: a MERGE on BigQuery at 100k rows costs differently than at 10M, DML pricing changes without warning, and switching from full replace to incremental changes the operation type entirely. Tracking `load_seconds` is still useful for spotting bottlenecks, but if you had to pick one dimension to watch on the load side, it's cost -- and @cost-monitoring covers how to capture and attribute it.
 
-  The destination row count after load closes the loop on reconciliation. On a full replace, `destination_rows` should match `rows_extracted` -- if it doesn't, rows were lost or duplicated during the load. On an incremental, tracking `source_rows` vs `destination_rows` over time reveals whether the totals are drifting apart across runs, which is the signal that your incremental is accumulating missed rows or undetected deletes. See 0614 for the full treatment.
+  The destination row count after load closes the loop on reconciliation. On a full replace, `destination_rows` should match `rows_extracted` -- if it doesn't, rows were lost or duplicated during the load. On an incremental, tracking `source_rows` vs `destination_rows` over time reveals whether the totals are drifting apart across runs, which is the signal that your incremental is accumulating missed rows or undetected deletes. See @reconciliation-patterns for the full treatment.
 
   == The Morning Routine
   <the-morning-routine>
@@ -5536,17 +5458,17 @@
     "Four numbers you check first",
   )[(1) How many tables failed overnight. (2) Which tables are stale beyond their SLA. (3) Any row count anomalies -- spikes, drops, or reconciliation deltas above threshold. (4) Cost per day. Everything else is drill-down from one of these four.]
 
-  In a single-orchestrator setup, the orchestrator's native UI covers items 1 and 2 well enough. Items 3 and 4 come from the health table and the cost monitoring layer from 0603. In a multi-orchestrator setup, the health table is the only place where all four numbers converge -- which is why it exists.
+  In a single-orchestrator setup, the orchestrator's native UI covers items 1 and 2 well enough. Items 3 and 4 come from the health table and the cost monitoring layer from @cost-monitoring. In a multi-orchestrator setup, the health table is the only place where all four numbers converge -- which is why it exists.
 
   == The Pattern
   // TODO: Convert mermaid diagram to Typst or embed as SVG
 
-  The pattern is straightforward: after every pipeline run, append a row to a health table. One row per table per run, with the raw measurements needed to answer the four morning questions. Everything else -- dashboards, alerts, SLA reports -- is a query on top of this table. 0602 covers the schema, the column-by-column rationale, and how to populate it.
+  The pattern is straightforward: after every pipeline run, append a row to a health table. One row per table per run, with the raw measurements needed to answer the four morning questions. Everything else -- dashboards, alerts, SLA reports -- is a query on top of this table. @the-health-table covers the schema, the column-by-column rationale, and how to populate it.
 
   == Anti-Patterns
   #ecl-warning(
     "Don't confuse monitoring with alerting",
-  )[Monitoring is the dashboard you look at; alerting is the pager that wakes you up. They share data, but the threshold for "worth recording" is much lower than "worth paging someone." Record everything in the health table. Alert on a carefully tuned subset. See 0605 for how to calibrate the boundary.]
+  )[Monitoring is the dashboard you look at; alerting is the pager that wakes you up. They share data, but the threshold for "worth recording" is much lower than "worth paging someone." Record everything in the health table. Alert on a carefully tuned subset. See @alerting-and-notifications for how to calibrate the boundary.]
 
   #ecl-danger(
     "Don't track everything equally",
@@ -5558,7 +5480,7 @@
 
   == What Comes Next
   <what-comes-next>
-  0602 covers the health table implementation -- the schema, column rationale, derived metrics, and how to populate it reliably. From there, 0603 extends it with cost attribution, 0604 builds freshness SLAs on the staleness data, and 0605 draws the line between what's worth recording and what's worth paging someone about.
+  @the-health-table covers the health table implementation -- the schema, column rationale, derived metrics, and how to populate it reliably. From there, @cost-monitoring extends it with cost attribution, @sla-management builds freshness SLAs on the staleness data, and @alerting-and-notifications draws the line between what's worth recording and what's worth paging someone about.
 
   // ---
 
@@ -5570,7 +5492,7 @@
 
   == The Problem
   <the-problem-1>
-  The four layers from 0601 tell you #emph[what] to watch. This pattern is the #emph[how];: a single append-only table that captures raw measurements from every pipeline run, giving you a queryable history of everything your orchestrator doesn't track natively. Without it, monitoring lives in scattered logs, orchestrator UIs, and tribal knowledge -- none of which you can `SELECT` from at 7 AM when something is wrong.
+  The four layers from @monitoring-and-observability tell you #emph[what] to watch. This pattern is the #emph[how];: a single append-only table that captures raw measurements from every pipeline run, giving you a queryable history of everything your orchestrator doesn't track natively. Without it, monitoring lives in scattered logs, orchestrator UIs, and tribal knowledge -- none of which you can `SELECT` from at 7 AM when something is wrong.
 
   == The Pattern
   <the-pattern-1>
@@ -5614,19 +5536,19 @@
 
   === Critical Columns
   <critical-columns>
-  `status` and `error_message` tell you what failed and why without leaving the health table. Without `error_message`, "12 tables failed overnight" sends you digging through orchestrator logs, job UIs, and possibly multiple systems to find out why each one broke. With it, you can triage severity from a single query -- a connection timeout is different from a schema mismatch, and you want to know which you're dealing with before you start investigating. The subtler case is `status = 'SUCCESS'` with `rows_extracted = 0` -- normal when an incremental cursor is caught up, alarming when the source table was silently dropped or permissions changed. 0610 covers how to gate the load on extraction status so these two scenarios don't look identical in your health table.
+  `status` and `error_message` tell you what failed and why without leaving the health table. Without `error_message`, "12 tables failed overnight" sends you digging through orchestrator logs, job UIs, and possibly multiple systems to find out why each one broke. With it, you can triage severity from a single query -- a connection timeout is different from a schema mismatch, and you want to know which you're dealing with before you start investigating. The subtler case is `status = 'SUCCESS'` with `rows_extracted = 0` -- normal when an incremental cursor is caught up, alarming when the source table was silently dropped or permissions changed. @extraction-status-gates covers how to gate the load on extraction status so these two scenarios don't look identical in your health table.
 
   `source_rows` is counted at the source before extraction starts -- a snapshot of the total at the moment you begin pulling. `destination_rows` is counted at the destination after the load finishes. `rows_extracted` is the number of rows the extraction query actually returned.
 
   The per-run reconciliation check depends on the strategy. On a #strong[full replace];, `rows_extracted` should equal `destination_rows` -- you pulled N rows, loaded N rows, the destination should have N rows. If it doesn't, the load lost or duplicated data. `source_rows` may differ slightly from `rows_extracted` because the source can receive writes between the count and the extraction -- transit-time noise, not data loss, typically under 0.1% on a busy table. Set your alert thresholds above this floor to avoid false positives on every run.
 
-  On an #strong[incremental];, the per-run check is less direct -- `rows_extracted` is a window of change, not the full table, so it won't match `destination_rows`. Instead, track `source_rows` vs `destination_rows` across runs: if the totals drift apart over time, the incremental is accumulating missed rows or undetected deletes, and a full replace is overdue. See 0614 for thresholds and recovery.
+  On an #strong[incremental];, the per-run check is less direct -- `rows_extracted` is a window of change, not the full table, so it won't match `destination_rows`. Instead, track `source_rows` vs `destination_rows` across runs: if the totals drift apart over time, the incremental is accumulating missed rows or undetected deletes, and a full replace is overdue. See @reconciliation-patterns for thresholds and recovery.
 
   === Important Columns
   <important-columns>
   The timing breakdown stays as three separate columns -- `extraction_seconds`, `normalization_seconds`, `load_seconds` -- because a single `total_seconds` hides whether the bottleneck is the source query, the conforming step, or the destination load. When a pipeline that used to take 5 minutes starts taking 40, you need to know which phase is degrading without digging into logs. The total is trivially computable from the parts; the parts are not recoverable from the total.
 
-  `extraction_strategy` records whether this run was `full_replace`, `incremental`, `window`, or something else. The same table can run different strategies on different schedules -- a nightly full replace for purity, intraday incremental for freshness (see 0608). Without this column, 50k `rows_extracted` is ambiguous: perfectly normal on a full replace, possibly alarming on an incremental that usually returns 2k.
+  `extraction_strategy` records whether this run was `full_replace`, `incremental`, `window`, or something else. The same table can run different strategies on different schedules -- a nightly full replace for purity, intraday incremental for freshness (see @tiered-freshness). Without this column, 50k `rows_extracted` is ambiguous: perfectly normal on a full replace, possibly alarming on an incremental that usually returns 2k.
 
   === Nice-to-Have Columns
   <nice-to-have-columns>
@@ -5634,7 +5556,7 @@
 
   `query_used` stores the actual extraction query, which implicitly records the cursor value, window boundaries, and any filters applied. When an incremental returns 0 rows, the query tells you whether the cursor was already caught up or stuck. When a full replace suddenly takes 10x longer, the query tells you if someone added a WHERE clause that forced a full scan at source. It's the single most useful debugging column -- and the most expensive to store.
 
-  `schema_json` is a JSON snapshot of the column names and types seen during this run. Comparing it to the previous run's snapshot detects schema drift without building a separate fingerprinting system. The policies for what to do when drift is detected -- evolve (accept the change) or freeze (reject the load) -- belong in 0609. Silently discarding columns that don't match is a transformation decision, not a conforming one -- if the source sent it, the destination should have it (see 0403).
+  `schema_json` is a JSON snapshot of the column names and types seen during this run. Comparing it to the previous run's snapshot detects schema drift without building a separate fingerprinting system. The policies for what to do when drift is detected -- evolve (accept the change) or freeze (reject the load) -- belong in @data-contracts. Silently discarding columns that don't match is a transformation decision, not a conforming one -- if the source sent it, the destination should have it (see @merge-upsert).
 
   === Derived Metrics
   <derived-metrics>
@@ -5671,7 +5593,7 @@
 
   === Staleness Report
   <staleness-report>
-  Once the health table exists, staleness is a `MAX(extracted_at)` grouped by table -- the query is straightforward enough that 0604 covers it in full alongside the SLA thresholds that give the number meaning.
+  Once the health table exists, staleness is a `MAX(extracted_at)` grouped by table -- the query is straightforward enough that @sla-management covers it in full alongside the SLA thresholds that give the number meaning.
 
   == Populating the Health Table
   <populating-the-health-table>
@@ -5770,15 +5692,15 @@
 
   == The Pattern
   <the-pattern-2>
-  Cost monitoring extends the health table from 0602. The health table captures `extraction_seconds`, `load_seconds`, and `bytes_extracted` per run -- time and volume metrics that tell you where the pipeline spends effort. But destination-side cost (bytes scanned, slots consumed, DML pricing) lives in the destination's own audit logs, and the connection between the two is the job label or run ID you attach to each load operation.
+  Cost monitoring extends the health table from @the-health-table. The health table captures `extraction_seconds`, `load_seconds`, and `bytes_extracted` per run -- time and volume metrics that tell you where the pipeline spends effort. But destination-side cost (bytes scanned, slots consumed, DML pricing) lives in the destination's own audit logs, and the connection between the two is the job label or run ID you attach to each load operation.
 
   === What to Track
   <what-to-track>
   #strong[Compute costs] are the volatile dimension. Track bytes scanned per load operation (the MERGE, the DELETE+INSERT, the partition swap), and if your engine charges by slots or query-seconds, track those too. The same data supports three useful aggregations: cost per run (anomaly detection), cost per table (pattern decisions), and cost per schedule (budgeting). MERGE deserves special attention because it's the single most expensive load operation in columnar engines -- a MERGE-heavy pipeline loading hundreds of tables #strong[can cost an order of magnitude more] than the same tables loaded via partition swap or append-and-materialize, and the difference only shows up in the bill, not in run duration.
 
-  #strong[Storage costs] are predictable but sneaky at scale. Append logs grow with every run, and without compaction that growth is unbounded (0404 covers compaction). Staging tables that outlive their load job are dead weight, though in practice orphaned staging is more of a schema hygiene issue than a cost problem -- at \~\$0.02/GB/month in BigQuery, a few hundred GB of staging is annoying but not alarming. The compute cost of accidentally querying unpartitioned staging is usually worse than storing it.
+  #strong[Storage costs] are predictable but sneaky at scale. Append logs grow with every run, and without compaction that growth is unbounded (@append-and-materialize covers compaction). Staging tables that outlive their load job are dead weight, though in practice orphaned staging is more of a schema hygiene issue than a cost problem -- at \~\$0.02/GB/month in BigQuery, a few hundred GB of staging is annoying but not alarming. The compute cost of accidentally querying unpartitioned staging is usually worse than storing it.
 
-  #strong[Extraction costs] are easy to forget because querying your own PostgreSQL is free. But some sources meter reads: API rate limits, licensed query slots (SAP HANA, some SaaS platforms), or egress charges from cloud-hosted sources. Also sometimes extracting over VPNs incurs in bandwidth costs. Overlapping extraction windows in stateless patterns (0303) re-extract the same rows deliberately -- the overlap is correct, but its cost in time and source-side load should be visible and known.
+  #strong[Extraction costs] are easy to forget because querying your own PostgreSQL is free. But some sources meter reads: API rate limits, licensed query slots (SAP HANA, some SaaS platforms), or egress charges from cloud-hosted sources. Also sometimes extracting over VPNs incurs in bandwidth costs. Overlapping extraction windows in stateless patterns (@stateless-window-extraction) re-extract the same rows deliberately -- the overlap is correct, but its cost in time and source-side load should be visible and known.
 
   === Cost Attribution
   <cost-attribution>
@@ -5827,16 +5749,16 @@
       table.hline(),
       [MERGE on large tables],
       [Full scan of both source and destination sides],
-      [Partition-scoped merge, or switch to 0404],
+      [Partition-scoped merge, or switch to @append-and-materialize],
       [Unpartitioned full scan],
       [Every query reads the entire table],
-      [Partition by date, enforce `require_partition_filter` (0702)],
+      [Partition by date, enforce `require_partition_filter` (@pre-built-views)],
       [Staging cleanup missed],
       [Orphaned staging datasets accumulate storage],
       [Scheduled cleanup job, weekly or after each run],
       [Append log without compaction],
       [Storage grows linearly with schedule frequency],
-      [Periodic compaction to latest-only (0404)],
+      [Periodic compaction to latest-only (@append-and-materialize)],
     )],
     kind: table,
   )
@@ -5863,7 +5785,7 @@
   <anti-patterns-1>
   #ecl-danger(
     "Don't let cost drive pattern selection",
-  )[Switching from full replace to incremental to \"save money\" introduces complexity that costs engineering time and creates failure modes (see 0108). The cheaper pipeline is the one that breaks less, not the one with the lowest bytes-scanned number. Pick the pattern that's correct first, then optimize its cost within that pattern.]
+  )[Switching from full replace to incremental to \"save money\" introduces complexity that costs engineering time and creates failure modes (see @purity-vs-freshness). The cheaper pipeline is the one that breaks less, not the one with the lowest bytes-scanned number. Pick the pattern that's correct first, then optimize its cost within that pattern.]
 
   #ecl-warning(
     "Don't optimize without measuring",
@@ -5871,7 +5793,7 @@
 
   == What Comes Next
   <what-comes-next-1>
-  Cost is one input to the freshness decision. 0604 defines #emph[when] data must be fresh; 0608 uses cost as one factor in deciding which tables earn high-frequency schedules and which ones run daily.
+  Cost is one input to the freshness decision. @sla-management defines #emph[when] data must be fresh; @tiered-freshness uses cost as one factor in deciding which tables earn high-frequency schedules and which ones run daily.
 
   // ---
 
@@ -5907,13 +5829,13 @@
     kind: table,
   )
 
-  The measurement point matters. A run that starts at 7 AM but fails and retries until 8:45 AM doesn't meet a 9 AM SLA -- it barely makes it, and the next slow day it won't. Measure from `MAX(extracted_at) WHERE status = 'SUCCESS'` in the health table (0602), not from when the orchestrator kicked off the job.
+  The measurement point matters. A run that starts at 7 AM but fails and retries until 8:45 AM doesn't meet a 9 AM SLA -- it barely makes it, and the next slow day it won't. Measure from `MAX(extracted_at) WHERE status = 'SUCCESS'` in the health table (@the-health-table), not from when the orchestrator kicked off the job.
 
   === SLA Tiers
   <sla-tiers>
   Not every table deserves the same freshness. `metrics_daily` refreshed once a day has a different SLA than `orders` refreshed every 15 minutes or a balance sheet refreshed monthly. Group tables by consumer urgency, not by source system -- the tables that most often need more than daily are sales data (especially during Black Friday or seasonal peaks), receivables (for end-of-month collection runs), and inventory stock levels (for in-store availability decisions). Everything else is usually fine at daily.
 
-  Daily is the best default. It handles the vast majority of use cases, and the contract should say so explicitly: no more than one scheduled update per day, data reflects the previous night's extraction. When you increase frequency for specific tables -- an extra midday refresh for receivables, intraday incremental for sales -- make it clear in writing that the increased cadence is outside the base SLA and can be adjusted at any time. This matters because ad-hoc refreshes have a way of becoming expected commitments: you give a consumer an extra midday refresh as a favor, they build a process around it, and now you have an SLA you never agreed to. Give consumers `_extracted_at` in their reports (0501) so they always know how fresh the data actually is, rather than assuming.
+  Daily is the best default. It handles the vast majority of use cases, and the contract should say so explicitly: no more than one scheduled update per day, data reflects the previous night's extraction. When you increase frequency for specific tables -- an extra midday refresh for receivables, intraday incremental for sales -- make it clear in writing that the increased cadence is outside the base SLA and can be adjusted at any time. This matters because ad-hoc refreshes have a way of becoming expected commitments: you give a consumer an extra midday refresh as a favor, they build a process around it, and now you have an SLA you never agreed to. Give consumers `_extracted_at` in their reports (@metadata-column-injection) so they always know how fresh the data actually is, rather than assuming.
 
   #ecl-warning(
     "On-demand refreshes replace high-frequency schedules",
@@ -5954,13 +5876,13 @@
 
   The `sla_config` table is a simple lookup: one row per table or table group, with the `freshness_hours` threshold from the SLA. Hard-code it, load it from a config API, or manage it in a spreadsheet -- the mechanism doesn't matter as long as the thresholds are explicit and queryable rather than living in someone's head.
 
-  This query is the second item in the morning routine from 0601: after checking failures, check which tables are stale beyond their SLA.
+  This query is the second item in the morning routine from @monitoring-and-observability: after checking failures, check which tables are stale beyond their SLA.
 
   == What Erodes SLAs
   <what-erodes-slas>
   #strong[Upstream delays] are the most common cause and the hardest to control. ERP systems run their own batch jobs -- posting runs, period closes, nightly aggregation -- and those jobs determine when your source data is ready to extract. The ERP itself is rarely the problem; it's the people operating it. When a client has a technical team that runs ad-hoc processes or overloads the database during the window they designated to you, you're the one who gets blamed for stale data. #strong[Build buffer into the SLA] for exactly this -- if the source is ready by 7 AM on a good day, don't promise 7:30 AM.
 
-  #strong[Extraction duration creep] turns a comfortable SLA into a tight one over months. The health table's `extraction_seconds` column (0602) catches this trend before it becomes a breach -- a 3-minute extraction that silently creeps to 25 minutes eats into your buffer without anyone noticing until the SLA breaks.
+  #strong[Extraction duration creep] turns a comfortable SLA into a tight one over months. The health table's `extraction_seconds` column (@the-health-table) catches this trend before it becomes a breach -- a 3-minute extraction that silently creeps to 25 minutes eats into your buffer without anyone noticing until the SLA breaks.
 
   ```
   Example line graph, X axis is time (last 30 days), Y axis is max staleness (measured as distance from last successful timestamp to SLA)
@@ -5970,9 +5892,9 @@
   Something LIKE that, think about a table that updates once daily starting at 8 to end at 9, with SLA at 930. and it exceeds it, maybe Y axis should be different.
   ```
 
-  #strong[Stale joins at consumption] are the subtler freshness problem. `orders` and `order_lines` can extract and load independently -- there's no dependency between them at load time. But if only one of the two refreshes on a given run, consumers joining them will see orphan records: order lines pointing at a non-existent order header, or a refreshed header missing today's new lines. The SLA for header-detail pairs should cover both tables on the same schedule, not because the pipeline requires it, but because the consumer's query does (0606).
+  #strong[Stale joins at consumption] are the subtler freshness problem. `orders` and `order_lines` can extract and load independently -- there's no dependency between them at load time. But if only one of the two refreshes on a given run, consumers joining them will see orphan records: order lines pointing at a non-existent order header, or a refreshed header missing today's new lines. The SLA for header-detail pairs should cover both tables on the same schedule, not because the pipeline requires it, but because the consumer's query does (@scheduling-and-dependencies).
 
-  #strong[Backfills that steal capacity] from scheduled runs are a less obvious risk. A 6-month backfill running alongside production extractions competes for source connections, orchestrator slots, and destination DML quota (0611).
+  #strong[Backfills that steal capacity] from scheduled runs are a less obvious risk. A 6-month backfill running alongside production extractions competes for source connections, orchestrator slots, and destination DML quota (@backfill-strategies).
 
   == SLA Breach Response
   <sla-breach-response>
@@ -5985,7 +5907,7 @@
       [#strong[Warning];],
       [Staleness \> 80% of SLA window],
       [Increase priority of next scheduled run; investigate if it's a trend],
-      [#strong[Breach];], [Staleness \> SLA window], [Alert via 0605, investigate root cause, notify consumers],
+      [#strong[Breach];], [Staleness \> SLA window], [Alert via @alerting-and-notifications, investigate root cause, notify consumers],
       [#strong[Sustained breach];],
       [Multiple consecutive violations],
       [Escalate -- the schedule, the pattern, or the SLA itself needs to change],
@@ -6023,7 +5945,7 @@
 
   == What Comes Next
   <what-comes-next-2>
-  0605 covers the mechanics of turning SLA breaches into alerts -- the thresholds defined here are the input, and 0605 decides who gets paged, how, and at what severity.
+  @alerting-and-notifications covers the mechanics of turning SLA breaches into alerts -- the thresholds defined here are the input, and @alerting-and-notifications decides who gets paged, how, and at what severity.
 
   // ---
 
@@ -6035,7 +5957,7 @@
 
   == The Problem
   <the-problem-4>
-  Pipelines fail silently. Zero rows extracted successfully, schema changed upstream, row counts drifting apart between source and destination -- all of these can happen while the orchestrator reports SUCCESS. The monitoring layer from 0601 and the health table from 0602 capture these signals; this pattern is about deciding which of them deserve to wake someone up.
+  Pipelines fail silently. Zero rows extracted successfully, schema changed upstream, row counts drifting apart between source and destination -- all of these can happen while the orchestrator reports SUCCESS. The monitoring layer from @monitoring-and-observability and the health table from @the-health-table capture these signals; this pattern is about deciding which of them deserve to wake someone up.
 
   The calibration problem has two failure modes. 1. Too many alerts -- every run sends a notification, every minor discrepancy triggers a warning -- produces alert fatigue, and alert fatigue produces ignored alerts, and ignored alerts produce missed failures. 2. Too few alerts -- only page on total outages -- means silent data loss accumulates for days before anyone notices. \
   The goal is a narrow band between the two: alert on conditions that require human attention, monitor everything else on the dashboard. Your pipelines should be loud, so that you can rest comfortably when there is silence.
@@ -6055,7 +5977,7 @@
       [Table empty after load, row count dropped 80%, source/destination totals diverged beyond recovery],
       [#strong[Error];],
       [Load failed, destination stale, SLA breach],
-      [Permission denied, query timeout, staleness exceeds SLA from 0604],
+      [Permission denied, query timeout, staleness exceeds SLA from @sla-management],
       [#strong[Warning];],
       [Anomaly detected but data is present and current],
       [Row count drop \> threshold, schema drift (new columns), extraction duration 3x historical average],
@@ -6078,21 +6000,21 @@
   <always-alert>
   These are conditions where waiting until morning costs you something real -- data loss that compounds, costs that keep burning, or downstream consumers already seeing wrong results. Even here, table importance matters: a load failure on `orders` during month-end close is a page, the same failure on a warehouse lookup table is a line on tomorrow's dashboard.
 
-  #strong[Data didn't arrive and it matters now] -- load failure (quota exceeded, permission revoked, timeout) or extraction error on a table that was healthy yesterday. The distinction between "load rejected" and "source query failed" matters for triage but not for urgency -- either way, the destination is stale and nothing will fix it automatically. The health table's `status = 'FAILED'` with `error_message` gives you the starting point. Don't confuse extraction errors with "returned 0 rows," which can be normal for quiet incrementals (0610).
+  #strong[Data didn't arrive and it matters now] -- load failure (quota exceeded, permission revoked, timeout) or extraction error on a table that was healthy yesterday. The distinction between "load rejected" and "source query failed" matters for triage but not for urgency -- either way, the destination is stale and nothing will fix it automatically. The health table's `status = 'FAILED'` with `error_message` gives you the starting point. Don't confuse extraction errors with "returned 0 rows," which can be normal for quiet incrementals (@extraction-status-gates).
 
-  #strong[SLA breach on a table with consumers waiting] -- staleness exceeds the threshold defined in 0604, and duration is trending in the same direction. A breach means someone downstream is already affected or about to be; check whether it's duration creep, an upstream delay, or a schedule that needs adjustment. Duration anomalies that haven't breached an SLA yet are an early warning -- worth surfacing as a warning, not a page, unless the trajectory makes the breach inevitable.
+  #strong[SLA breach on a table with consumers waiting] -- staleness exceeds the threshold defined in @sla-management, and duration is trending in the same direction. A breach means someone downstream is already affected or about to be; check whether it's duration creep, an upstream delay, or a schedule that needs adjustment. Duration anomalies that haven't breached an SLA yet are an early warning -- worth surfacing as a warning, not a page, unless the trajectory makes the breach inevitable.
 
-  #strong[Partial failure across a dependency group] -- some tables loaded, others didn't, and the successful ones depend on the failed ones or vice versa. This is particularly dangerous because the overall run may report partial success and fly under the radar (0612). Isolated failures on independent tables can wait for morning; failures that leave the destination in an inconsistent state can't.
+  #strong[Partial failure across a dependency group] -- some tables loaded, others didn't, and the successful ones depend on the failed ones or vice versa. This is particularly dangerous because the overall run may report partial success and fly under the radar (@partial-failure-recovery). Isolated failures on independent tables can wait for morning; failures that leave the destination in an inconsistent state can't.
 
-  #strong[Cost spike] -- daily compute cost exceeds threshold (0603). A runaway MERGE or an unpartitioned scan keeps burning money every run until someone intervenes, so this is one of the few conditions where urgency is about the pipeline itself rather than the data.
+  #strong[Cost spike] -- daily compute cost exceeds threshold (@cost-monitoring). A runaway MERGE or an unpartitioned scan keeps burning money every run until someone intervenes, so this is one of the few conditions where urgency is about the pipeline itself rather than the data.
 
   === Alert Only When Unhandled
   <alert-only-when-unhandled>
   These conditions may or may not need attention depending on two filters: whether the pipeline has automatic recovery, and whether the table's importance justifies a notification over a dashboard entry.
 
-  #strong[Row count deviation] -- if the table uses hard-delete detection (0306) or reconciliation with auto-recovery, the pipeline handles it. Alert when the discrepancy exceeds the threshold #emph[and] no automatic pattern resolves it (0614). On low-importance tables, even an unhandled deviation can wait for the morning review.
+  #strong[Row count deviation] -- if the table uses hard-delete detection (@hard-delete-detection) or reconciliation with auto-recovery, the pipeline handles it. Alert when the discrepancy exceeds the threshold #emph[and] no automatic pattern resolves it (@reconciliation-patterns). On low-importance tables, even an unhandled deviation can wait for the morning review.
 
-  #strong[Schema drift] is nuanced. New columns with an `evolve` policy are accepted automatically -- log them, don't alert. Dropped columns deserve an alert even with `evolve`, because a missing column can break downstream queries silently and an `evolve` policy should reject column removal anyway. Type changes depend on direction: widening (INT → BIGINT) is usually safe; narrowing or type-class changes (INT → VARCHAR) are probably a problem. See 0609 for the policy framework.
+  #strong[Schema drift] is nuanced. New columns with an `evolve` policy are accepted automatically -- log them, don't alert. Dropped columns deserve an alert even with `evolve`, because a missing column can break downstream queries silently and an `evolve` policy should reject column removal anyway. Type changes depend on direction: widening (INT → BIGINT) is usually safe; narrowing or type-class changes (INT → VARCHAR) are probably a problem. See @data-contracts for the policy framework.
 
   === Never Alert
   <never-alert>
@@ -6145,7 +6067,7 @@
 
   == What Comes Next
   <what-comes-next-3>
-  0606 covers the scheduling layer that determines when pipelines run and in what order -- the timing decisions that directly affect whether SLAs from 0604 are achievable and which alert conditions fire.
+  @scheduling-and-dependencies covers the scheduling layer that determines when pipelines run and in what order -- the timing decisions that directly affect whether SLAs from @sla-management are achievable and which alert conditions fire.
 
   // ---
 
@@ -6165,7 +6087,7 @@
   <how-often-schedule-frequency>
   Every table needs a schedule, and the schedule should reflect how the table is consumed, not how often the source changes. A `customers` table that changes ten times a day but feeds a weekly report doesn't need hourly extraction -- once a day is fine. An `orders` table that feeds a real-time dashboard needs to update as frequently as your source and infrastructure can sustain. Watch for schedule pile-ups as tables grow: an extraction that used to finish in 10 minutes may creep to 40 and start overlapping with the next scheduled run, silently turning two clean windows into one messy one.
 
-  0608 covers the framework for assigning freshness tiers. The scheduling implication is straightforward: group tables by the freshness their consumers need, not by their source system or their size.
+  @tiered-freshness covers the framework for assigning freshness tiers. The scheduling implication is straightforward: group tables by the freshness their consumers need, not by their source system or their size.
 
   Most teams evolve through a predictable sequence:
 
@@ -6197,7 +6119,7 @@
 
   === When: Safe Hours
   <when-safe-hours>
-  Large extractions during business hours can slow down or even lock the source system (see 0607). Gate heavy extractions behind a safe-hours window -- typically off-peak, like 19:00 to 06:00 -- with a row-count or size threshold that determines which tables qualify as "heavy." Tables below the threshold run during business hours on their normal schedule; tables above it get deferred to the safe window automatically.
+  Large extractions during business hours can slow down or even lock the source system (see @source-system-etiquette). Gate heavy extractions behind a safe-hours window -- typically off-peak, like 19:00 to 06:00 -- with a row-count or size threshold that determines which tables qualify as "heavy." Tables below the threshold run during business hours on their normal schedule; tables above it get deferred to the safe window automatically.
 
   A threshold around 100,000 rows is a reasonable starting point, set proactively before an incident forces the decision. The exact number depends on the source -- a well-provisioned cloud database tolerates larger reads during business hours than an on-prem ERP running on aging hardware.
 
@@ -6278,7 +6200,7 @@
   <know-your-source>
   The sensitivity of a source system determines how carefully you need to tread. Before writing the first extraction query, understand what you're connecting to:
 
-  #strong[Production OLTP] -- a live transactional database serving the application's users. Every query competes with their transactions. Full scans lock pages, long reads block writes on some engines (see the SQL Server warning in 0606), and a bad retry at the wrong time can cascade into an outage. Treat these with maximum care: off-peak scheduling, conservative concurrency, explicit timeouts.
+  #strong[Production OLTP] -- a live transactional database serving the application's users. Every query competes with their transactions. Full scans lock pages, long reads block writes on some engines (see the SQL Server warning in @scheduling-and-dependencies), and a bad retry at the wrong time can cascade into an outage. Treat these with maximum care: off-peak scheduling, conservative concurrency, explicit timeouts.
 
   #strong[Read replica] -- lower sensitivity, but not zero. Replicas share storage I/O with the primary or lag behind it on the same hardware. A full scan on a replica can saturate disk throughput, increase replication lag, and degrade the primary indirectly. Treat replicas with the same patterns, just wider tolerances -- more concurrent queries, wider safe-hours windows.
 
@@ -6292,13 +6214,13 @@
 
   Ask the DBA to add an index. This is more achievable than it sounds -- adding an index on a timestamp column is a low-risk change that benefits anyone querying by date, and technical stakeholders on the source side often stand to gain from it too. I've had clients proactively add indexes after noticing my scans were slow, before I even asked. It's a soft rule -- officially read-only, but the performance improvement is large enough that most DBAs will cooperate.
 
-  If they can't add an index -- vendor-controlled schemas sometimes make this difficult or unsupported -- schedule those extractions for off-peak hours and accept that the scan will be heavier than ideal (see 0606, safe hours).
+  If they can't add an index -- vendor-controlled schemas sometimes make this difficult or unsupported -- schedule those extractions for off-peak hours and accept that the scan will be heavier than ideal (see @scheduling-and-dependencies, safe hours).
 
   === Respect Business Hours
   <respect-business-hours>
-  Whether extraction load during business hours is a problem depends entirely on the database and the client. Some clients proactively ask for intraday updates and are willing to absorb the source load. Others will escalate immediately if they see any query from your pipeline during working hours. This is a conversation for the SLA stage (see 0604) -- agree on what hours are acceptable before the pipeline goes live, not after the first complaint.
+  Whether extraction load during business hours is a problem depends entirely on the database and the client. Some clients proactively ask for intraday updates and are willing to absorb the source load. Others will escalate immediately if they see any query from your pipeline during working hours. This is a conversation for the SLA stage (see @sla-management) -- agree on what hours are acceptable before the pipeline goes live, not after the first complaint.
 
-  As a baseline: small incremental pulls during business hours are usually fine on a healthy source, because the query filters on a recent cursor and touches a small number of rows. Full table scans and backfills are a different story -- they read the entire table and should be gated behind a safe-hours window. Enforce this automatically for very weak or very massive databases by deferring tables above a row-count threshold to the off-peak window (see 0606). Sources in the middle ground -- decent hardware, moderate table sizes -- generally don't need the gate.
+  As a baseline: small incremental pulls during business hours are usually fine on a healthy source, because the query filters on a recent cursor and touches a small number of rows. Full table scans and backfills are a different story -- they read the entire table and should be gated behind a safe-hours window. Enforce this automatically for very weak or very massive databases by deferring tables above a row-count threshold to the off-peak window (see @scheduling-and-dependencies). Sources in the middle ground -- decent hardware, moderate table sizes -- generally don't need the gate.
 
   #ecl-warning(
     "Know the source's maintenance windows",
@@ -6306,11 +6228,11 @@
 
   === Limit Concurrency
   <limit-concurrency>
-  Multiple parallel extractions against the same source multiply the load. Cap concurrent connections per source system -- not per pipeline or per schedule, because the source doesn't care which schedule spawned the query. 3 to 5 concurrent extractions is a reasonable starting point for a typical transactional database; tune based on the DBA's feedback and the source's monitoring (see 0606 for the full treatment of parallelism tradeoffs).
+  Multiple parallel extractions against the same source multiply the load. Cap concurrent connections per source system -- not per pipeline or per schedule, because the source doesn't care which schedule spawned the query. 3 to 5 concurrent extractions is a reasonable starting point for a typical transactional database; tune based on the DBA's feedback and the source's monitoring (see @scheduling-and-dependencies for the full treatment of parallelism tradeoffs).
 
   === Set Timeouts
   <set-timeouts>
-  Set query timeouts explicitly. A query that runs for hours without a timeout is holding a connection, consuming source resources, and probably blocking something. When a query times out, fail the table explicitly (see 0610) -- don't retry immediately, because the condition that caused the timeout is likely still present.
+  Set query timeouts explicitly. A query that runs for hours without a timeout is holding a connection, consuming source resources, and probably blocking something. When a query times out, fail the table explicitly (see @extraction-status-gates) -- don't retry immediately, because the condition that caused the timeout is likely still present.
 
   Timeout thresholds depend on whether you're reading in batches. For unbatched reads, keep timeouts tight: a few minutes for regular tables, longer for known large ones. For batched reads (see below), individual batch timeouts can be shorter since each batch is small, while the overall extraction can run for hours.
 
@@ -6349,7 +6271,7 @@
 
   #strong[Share your schedule] -- what you extract, when, how often, how much data. No surprises.
 
-  #strong[Report your own impact] -- query duration, rows scanned, connection time. If you can show the source team that your extraction uses a small fraction of their database's capacity, you've answered the question before they ask it. The source health metrics from 0601 give you the numbers.
+  #strong[Report your own impact] -- query duration, rows scanned, connection time. If you can show the source team that your extraction uses a small fraction of their database's capacity, you've answered the question before they ask it. The source health metrics from @monitoring-and-observability give you the numbers.
 
   #strong[Own your incidents] -- when your query causes a slowdown, acknowledge it and fix the schedule before they have to ask. Nothing destroys trust faster than a DBA discovering your pipeline caused an issue and you didn't notice or didn't say anything.
 
@@ -6387,21 +6309,21 @@
 
   === Hot (Intraday)
   <hot-intraday>
-  Tables or partitions with actively changing data: today's `orders`, open `invoices`, recent `events`. Refreshed multiple times per day via incremental extraction when necessary (0302). The actual interval depends on the table's volume, source capacity, and consumer SLA -- a 500-row lookup table can refresh every few minutes while a 50M-row fact table might only sustain hourly.
+  Tables or partitions with actively changing data: today's `orders`, open `invoices`, recent `events`. Refreshed multiple times per day via incremental extraction when necessary (@cursor-based-timestamp-extraction). The actual interval depends on the table's volume, source capacity, and consumer SLA -- a 500-row lookup table can refresh every few minutes while a 50M-row fact table might only sustain hourly.
 
   The hot tier tolerates impurity. Slight gaps from late-arriving data or cursor lag aren't catastrophic here because the warm tier catches them on the next pass. This is where you accept a tradeoff: the data is fresh but might not be perfectly pure, and that's fine because purity comes later.
 
   === Warm (Daily)
   <warm-daily>
-  Current month or current quarter -- data that still receives occasional updates but not at high frequency. Refreshed daily, often overnight when the source is under less load. The extraction method is either a full replace of the warm window (0205) or incremental with a wider lag.
+  Current month or current quarter -- data that still receives occasional updates but not at high frequency. Refreshed daily, often overnight when the source is under less load. The extraction method is either a full replace of the warm window (@rolling-window-replace) or incremental with a wider lag.
 
-  This tier takes advantage of harder business boundaries. A closed month in an ERP is unlikely to change (though "unlikely" is not "impossible" -- see the soft rules in 0106). The warm tier's job is to re-read recent history with enough depth to catch what the hot tier missed: late cursor updates, backdated transactions, documents that changed without updating their `updated_at`. Here purity is a lot more important, and you should expect your destination to be exactly equal to source 99% of the time after loading.
+  This tier takes advantage of harder business boundaries. A closed month in an ERP is unlikely to change (though "unlikely" is not "impossible" -- see the soft rules in @hard-rules-soft-rules). The warm tier's job is to re-read recent history with enough depth to catch what the hot tier missed: late cursor updates, backdated transactions, documents that changed without updating their `updated_at`. Here purity is a lot more important, and you should expect your destination to be exactly equal to source 99% of the time after loading.
 
   === Cold (Weekly / On-Demand)
   <cold-weekly-on-demand>
   Historical data: prior years, closed fiscal periods, archived partitions. Refreshed on a slow cadence -- weekly, monthly, or only on demand for backfills and corrections. Full replace is the right method here because the volume is bounded and the frequency is low enough that the cost is negligible.
 
-  The cold tier is where 0108 plays out most directly: cold data trades freshness for purity. A weekly full replace of last year's data resets accumulated drift from the hot and warm tiers -- any row that was missed by a cursor, any late update that arrived outside the warm window, gets picked up here. The cold tier is your cleanup pass.
+  The cold tier is where @purity-vs-freshness plays out most directly: cold data trades freshness for purity. A weekly full replace of last year's data resets accumulated drift from the hot and warm tiers -- any row that was missed by a cursor, any late update that arrived outside the warm window, gets picked up here. The cold tier is your cleanup pass.
 
   === The Lag Window
   <the-lag-window>
@@ -6428,7 +6350,7 @@
     kind: table,
   )
 
-  Tier assignment can be static (configured per table in your orchestrator) or dynamic (based on recent activity signal from 0207). Static is simpler and covers most cases -- you know which tables are transactional and which are archival. Dynamic earns its complexity when you have hundreds of tables and can't manually classify each one, or when the same table's activity profile shifts seasonally.
+  Tier assignment can be static (configured per table in your orchestrator) or dynamic (based on recent activity signal from @activity-driven-extraction). Static is simpler and covers most cases -- you know which tables are transactional and which are archival. Dynamic earns its complexity when you have hundreds of tables and can't manually classify each one, or when the same table's activity profile shifts seasonally.
 
   Most pipelines don't need all three tiers from day one. About two-thirds of tables in a typical pipeline are lookups and dimensions that full-replace daily and never need anything faster. Incrementalizing everything you can is tempting but generates more errors than it saves time -- or money. The simpler approach is to maximize full replace and reserve incremental for the cases that actually demand it. The tier system matters most for the remaining third.
 
@@ -6499,7 +6421,7 @@
   <what-a-data-contract-covers>
   === Schema Contract
   <schema-contract>
-  The schema contract defines the expected column names and types -- the fingerprint from 0601. It answers three questions when the schema changes:
+  The schema contract defines the expected column names and types -- the fingerprint from @monitoring-and-observability. It answers three questions when the schema changes:
 
   #strong[New columns] -- accept or reject? The policy is either evolve (add the column to the destination) or freeze (fail the load). Evolve is the right default for almost every table. Source schemas grow -- ERPs add columns when modules are activated, applications add fields as features ship. Freezing a schema that legitimately evolves means a manual intervention every time the source team deploys, which is maintenance you don't want and they won't coordinate with you on. Evolve means one less thing to manage, and downstream consumers shouldn't be doing `SELECT *` against your destination anyway -- an added column doesn't break anything for them unless they wrote their queries wrong.
 
@@ -6513,7 +6435,7 @@
 
   The threshold should come from observed baselines, not assumptions. A simple approach: track the rolling average and standard deviation of row counts over the last 30 runs, and alert when the current run falls outside 2-3 standard deviations. For tables with predictable seasonality (month-end spikes on `invoices`, weekend dips on `orders`), factor the day-of-week or day-of-month into the baseline.
 
-  This feeds directly into 0610 for inline enforcement -- block the load when the volume looks wrong, rather than discovering the problem downstream.
+  This feeds directly into @extraction-status-gates for inline enforcement -- block the load when the volume looks wrong, rather than discovering the problem downstream.
 
   === Null Contract
   <null-contract>
@@ -6523,13 +6445,13 @@
 
   === Freshness Contract
   <freshness-contract>
-  The freshness contract is the SLA from 0604 expressed as a checkable rule: maximum acceptable staleness per table, measured from the health table's last successful load timestamp. This is the simplest contract to define and the most visible when violated -- a stale table is the one that generates the "why hasn't the dashboard updated" email.
+  The freshness contract is the SLA from @sla-management expressed as a checkable rule: maximum acceptable staleness per table, measured from the health table's last successful load timestamp. This is the simplest contract to define and the most visible when violated -- a stale table is the one that generates the "why hasn't the dashboard updated" email.
 
   == Enforcement Points
   <enforcement-points>
   === Pre-Load (Gate)
   <pre-load-gate>
-  Check schema, row count, and null rates after extraction but before loading. If the contract is violated, block the load and alert (0605). This is the extraction status gate from 0610 extended with richer checks.
+  Check schema, row count, and null rates after extraction but before loading. If the contract is violated, block the load and alert (@alerting-and-notifications). This is the extraction status gate from @extraction-status-gates extended with richer checks.
 
   Pre-load gates are the strongest enforcement point because they prevent bad data from reaching the destination. The cost is that a false positive blocks a load that was actually fine -- which is why baselining matters. A gate based on assumptions ("this column should never be NULL") fires on the first run and trains you to ignore it.
 
@@ -6541,7 +6463,7 @@
 
   === Continuous (Monitoring)
   <continuous-monitoring>
-  Schema fingerprint comparison on every run, volume trend tracking over time. This feeds the observability layer from 0601 and catches slow drift that no single-run check would flag: a table whose row count grows 2% less than expected every week, a column whose null rate creeps from 0.1% to 5% over a quarter.
+  Schema fingerprint comparison on every run, volume trend tracking over time. This feeds the observability layer from @monitoring-and-observability and catches slow drift that no single-run check would flag: a table whose row count grows 2% less than expected every week, a column whose null rate creeps from 0.1% to 5% over a quarter.
 
   === The Cost of Checking
   <the-cost-of-checking>
@@ -6567,7 +6489,7 @@
     kind: table,
   )
 
-  These are the only two valid policies in an ECL context. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are transformation decisions, not conforming ones. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See 0403 for the full reasoning.
+  These are the only two valid policies in an ECL context. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are transformation decisions, not conforming ones. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See @merge-upsert for the full reasoning.
 
   == Column Naming as a Contract
   <column-naming-as-a-contract>
@@ -6601,7 +6523,7 @@
 
   #ecl-danger(
     "Don't silently discard columns",
-  )[Silently dropping new or unexpected columns that don't match your schema breaks the conforming boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or 0209 (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.]
+  )[Silently dropping new or unexpected columns that don't match your schema breaks the conforming boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or @partial-column-loading (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.]
 
   == Tradeoffs
   <tradeoffs-6>
@@ -6653,14 +6575,14 @@
   When the gate fires:
 
   + #strong[Blocks the load] -- the extracted data (or lack of it) does not reach the destination. For full replace tables, the destination retains its current data untouched. #strong[For incremental tables, the decision is less clear-cut] -- you may still be getting #emph[some] new data, and a partial update is better than no update at all. Whether to block or load what you got is a case-by-case call based on how wrong the row count looks and how much damage a partial load would cause downstream.
-  + #strong[Triggers an alert] (0605) with the extraction metadata: expected row count, actual row count, query duration, and which table.
-  + #strong[Logs the event] in the health table (0602) so the pattern is visible over time -- a table that gates every Monday morning points to a weekend maintenance window nobody told you about.
+  + #strong[Triggers an alert] (@alerting-and-notifications) with the extraction metadata: expected row count, actual row count, query duration, and which table.
+  + #strong[Logs the event] in the health table (@the-health-table) so the pattern is visible over time -- a table that gates every Monday morning points to a weekend maintenance window nobody told you about.
 
   === Cursor Safety and Stateless Windows
   <cursor-safety-and-stateless-windows>
-  If you're using stateless window extraction (0303), cursor advancement is already a non-issue -- the next run re-reads the same window regardless. The gate still matters for preventing a bad load, but the recovery is automatic: you have the width of your lag window for the upstream problem to be resolved before data actually falls out of scope. The alert fires on day one; upstream has until the lag window closes to fix it.
+  If you're using stateless window extraction (@stateless-window-extraction), cursor advancement is already a non-issue -- the next run re-reads the same window regardless. The gate still matters for preventing a bad load, but the recovery is automatic: you have the width of your lag window for the upstream problem to be resolved before data actually falls out of scope. The alert fires on day one; upstream has until the lag window closes to fix it.
 
-  For cursor-based extraction, a stuck cursor can become a problem if the window between the cursor and "now" grows large enough that re-extraction becomes expensive. A wide enough lag window (0608) mitigates this -- the warm tier's daily pass catches what the hot tier missed, and the cold tier's full replace resets everything. Stateless windows avoid this problem entirely, which is one more reason they've become my preferred approach for most incremental extraction.
+  For cursor-based extraction, a stuck cursor can become a problem if the window between the cursor and "now" grows large enough that re-extraction becomes expensive. A wide enough lag window (@tiered-freshness) mitigates this -- the warm tier's daily pass catches what the hot tier missed, and the cold tier's full replace resets everything. Stateless windows avoid this problem entirely, which is one more reason they've become my preferred approach for most incremental extraction.
 
   == Full Replace Gates
   <full-replace-gates>
@@ -6676,7 +6598,7 @@
 
   #ecl-warning(
     "Start loose, tighten over time",
-  )[A gate that's too tight fires false positives and trains you to ignore it -- the exact same failure mode as over-alerting (0605). Start with a generous threshold (block only on 0 rows or \>90% drop), observe for a month, then tighten based on the table's actual variance.]
+  )[A gate that's too tight fires false positives and trains you to ignore it -- the exact same failure mode as over-alerting (@alerting-and-notifications). Start with a generous threshold (block only on 0 rows or \>90% drop), observe for a month, then tighten based on the table's actual variance.]
 
   == Validating Against Source
   <validating-against-source>
@@ -6734,7 +6656,7 @@
 
   == The Problem
   <the-problem-10>
-  Something went wrong upstream -- a schema change, a bad deploy, a data corruption that drifted for weeks before anyone noticed -- and now you need to reload a historical range. The naive response is "just rerun everything," but a backfill that treats the source like a normal extraction competes with live scheduled runs for source connections, destination quota, and orchestrator capacity. If it runs unchunked during business hours, it violates every rule in 0607.
+  Something went wrong upstream -- a schema change, a bad deploy, a data corruption that drifted for weeks before anyone noticed -- and now you need to reload a historical range. The naive response is "just rerun everything," but a backfill that treats the source like a normal extraction competes with live scheduled runs for source connections, destination quota, and orchestrator capacity. If it runs unchunked during business hours, it violates every rule in @source-system-etiquette.
 
   Backfills aren't rare. If you're running hundreds of tables with clients who routinely correct old records, delete and re-enter documents, or run maintenance scripts that touch historical data, backfills are a weekly operation. A `start_date` override or a `full_refresh: true` flag should be tools you reach for without hesitation -- the pipeline that can't backfill safely is the one that drifts furthest from its source.
 
@@ -6744,11 +6666,11 @@
   <backfill-types>
   === Date-Range Backfill
   <date-range-backfill>
-  The most common type: reload a specific date range -- last three months, last fiscal quarter, a single bad week -- using partition swap (0202) or rolling window replace (0205). Everything outside the range stays untouched. Scope the range slightly wider than the known corruption -- the blast radius of a bad deploy is rarely as precise as the deploy timestamp suggests.
+  The most common type: reload a specific date range -- last three months, last fiscal quarter, a single bad week -- using partition swap (@partition-swap) or rolling window replace (@rolling-window-replace). Everything outside the range stays untouched. Scope the range slightly wider than the known corruption -- the blast radius of a bad deploy is rarely as precise as the deploy timestamp suggests.
 
   === Full Table Backfill
   <full-table-backfill>
-  Reload the entire table from scratch when corruption is too widespread to scope, when the table is small enough that scoping isn't worth the effort, or when incremental state has drifted so far that a full reset is simpler than diagnosing the gap. Uses full replace (0401), which resets the destination data, any incremental cursors, pipeline state, and schema versions. After it completes, the next scheduled incremental run picks up from the new baseline.
+  Reload the entire table from scratch when corruption is too widespread to scope, when the table is small enough that scoping isn't worth the effort, or when incremental state has drifted so far that a full reset is simpler than diagnosing the gap. Uses full replace (@full-replace-load), which resets the destination data, any incremental cursors, pipeline state, and schema versions. After it completes, the next scheduled incremental run picks up from the new baseline.
 
   === Selective Backfill
   <selective-backfill>
@@ -6768,17 +6690,17 @@
 
   === Safe Hours
   <safe-hours>
-  Large backfills belong in the safe-hours window from 0607. If the backfill is too large for one window, span it across multiple nights with chunking. Track which chunks completed explicitly -- a simple table or config file with chunk boundaries and completion status -- so that a failure on night three doesn't force a restart from night one.
+  Large backfills belong in the safe-hours window from @source-system-etiquette. If the backfill is too large for one window, span it across multiple nights with chunking. Track which chunks completed explicitly -- a simple table or config file with chunk boundaries and completion status -- so that a failure on night three doesn't force a restart from night one.
 
   === Staging Persistence
   <staging-persistence>
-  For multi-chunk backfills, staging tables may intentionally persist between chunks so consumers see either the old data or the fully backfilled data, never a half-finished state. Don't clean up staging until the full backfill is validated -- the storage cost of a few extra days is negligible compared to restarting a multi-night backfill because you dropped staging prematurely (see 0603).
+  For multi-chunk backfills, staging tables may intentionally persist between chunks so consumers see either the old data or the fully backfilled data, never a half-finished state. Don't clean up staging until the full backfill is validated -- the storage cost of a few extra days is negligible compared to restarting a multi-night backfill because you dropped staging prematurely (see @cost-monitoring).
 
   == State Reset
   <state-reset>
   After a full backfill, the incremental state -- cursor position, high-water mark, schema version -- must match the data you just loaded. If the cursor still points to its old position, the next incremental run skips everything between that cursor and the most recent data, leaving an invisible gap. Some pipelines wipe state automatically on a full refresh; others require explicit cleanup (clearing a cursor table, deleting state files, resetting partition metadata). If state cleanup is a manual step, document it prominently -- a backfill that reloads the data but leaves the old cursor in place is worse than no backfill, because the pipeline reports success while silently skipping rows.
 
-  The risk compounds when pipeline state lives in a separate store. After clearing that state, the next scheduled run starts from scratch -- effectively a full refresh of every table, not just the one you backfilled. Engineers who don't expect this find out the hard way. This is one of the strongest arguments for stateless window extraction (0303): the next scheduled run re-reads its normal trailing window regardless of any backfill, there's no state to reset, and the failure mode of "reload data but forget to fix the cursor" doesn't exist. It's also far simpler to reason about -- "the pipeline always grabs the last N days" requires no mental model of cursor state, cleanup procedures, or post-backfill sequencing.
+  The risk compounds when pipeline state lives in a separate store. After clearing that state, the next scheduled run starts from scratch -- effectively a full refresh of every table, not just the one you backfilled. Engineers who don't expect this find out the hard way. This is one of the strongest arguments for stateless window extraction (@stateless-window-extraction): the next scheduled run re-reads its normal trailing window regardless of any backfill, there's no state to reset, and the failure mode of "reload data but forget to fix the cursor" doesn't exist. It's also far simpler to reason about -- "the pipeline always grabs the last N days" requires no mental model of cursor state, cleanup procedures, or post-backfill sequencing.
 
   == Backfill as Routine
   <backfill-as-routine>
@@ -6786,11 +6708,11 @@
 
   #strong[`start_date` / `end_date`] -- override the extraction's date boundaries to re-extract a specific range without pulling everything forward to today. Without an `end_date`, a backfill starting three months back also re-extracts all data between then and now -- wasting source load and destination writes on data that's already correct.
 
-  Date-range backfills can also clean up hard deletes and orphaned rows within the window if you filter on a stable business date (`order_date`, `invoice_date`) rather than `updated_at`, then swap the destination's partitions for that range with the fresh data (0202). The partition swap fully replaces the slice, so anything that existed in the destination but no longer exists in the source disappears. The business date is the right filter because it's immutable -- an order placed on March 5 always has `order_date = 2026-03-05` regardless of when it was last updated -- which keeps partition boundaries stable and guarantees you capture every row in the range, not just recently changed ones.
+  Date-range backfills can also clean up hard deletes and orphaned rows within the window if you filter on a stable business date (`order_date`, `invoice_date`) rather than `updated_at`, then swap the destination's partitions for that range with the fresh data (@partition-swap). The partition swap fully replaces the slice, so anything that existed in the destination but no longer exists in the source disappears. The business date is the right filter because it's immutable -- an order placed on March 5 always has `order_date = 2026-03-05` regardless of when it was last updated -- which keeps partition boundaries stable and guarantees you capture every row in the range, not just recently changed ones.
 
-  #strong[`full_refresh`] -- ignore all incremental state and reload the entire table using full replace (0401) instead of a merge. A merge only updates and inserts, so rows hard-deleted at the source survive in the destination indefinitely; a full replace wipes the slate. Useful when the table is small enough that scoping isn't worth the effort, when the incremental state is corrupt, or when you suspect hard deletes have drifted the destination.
+  #strong[`full_refresh`] -- ignore all incremental state and reload the entire table using full replace (@full-replace-load) instead of a merge. A merge only updates and inserts, so rows hard-deleted at the source survive in the destination indefinitely; a full replace wipes the slate. Useful when the table is small enough that scoping isn't worth the effort, when the incremental state is corrupt, or when you suspect hard deletes have drifted the destination.
 
-  Both should be launchable from your orchestrator's UI without modifying code or config files. If a backfill requires editing a config and redeploying, you'll avoid doing it until the problem is too large to ignore. Some orchestrators go further -- Dagster's partition-based backfill UI lets you select a date range, kick off the backfill, and track per-partition status from the same interface that shows your scheduled runs (see 0805).
+  Both should be launchable from your orchestrator's UI without modifying code or config files. If a backfill requires editing a config and redeploying, you'll avoid doing it until the problem is too large to ignore. Some orchestrators go further -- Dagster's partition-based backfill UI lets you select a date range, kick off the backfill, and track per-partition status from the same interface that shows your scheduled runs (see @orchestrators).
 
   == Tradeoffs
   <tradeoffs-7>
@@ -6844,15 +6766,15 @@
 
   #ecl-warning(
     "Cursor safety and partial failures",
-  )[If your cursors advance only after a confirmed successful load (0302), partial failures don't create data gaps -- the failed tables simply get re-extracted on the next run. Stateless window extraction (0303) avoids the question entirely.]
+  )[If your cursors advance only after a confirmed successful load (@cursor-based-timestamp-extraction), partial failures don't create data gaps -- the failed tables simply get re-extracted on the next run. Stateless window extraction (@stateless-window-extraction) avoids the question entirely.]
 
   == Failure Modes
   <failure-modes>
   === Extraction Failed for Some Tables
   <extraction-failed-for-some-tables>
-  Some tables extracted successfully, others hit a timeout, a connection error, or a source that was temporarily unavailable. The successful tables can proceed to load; the failed ones need re-extraction. Each table should have automatic retry on extraction errors -- a connection timeout on the first attempt often succeeds on the second, and waiting for the next scheduled run to discover that wastes an entire cycle. Two or three retries with a short backoff is enough; if the source is genuinely down, retrying indefinitely just adds load to a system that's already struggling (0607). Your orchestrator should track per-table status, not just per-run status -- the successful tables should proceed to load even though the run as a whole is failed.
+  Some tables extracted successfully, others hit a timeout, a connection error, or a source that was temporarily unavailable. The successful tables can proceed to load; the failed ones need re-extraction. Each table should have automatic retry on extraction errors -- a connection timeout on the first attempt often succeeds on the second, and waiting for the next scheduled run to discover that wastes an entire cycle. Two or three retries with a short backoff is enough; if the source is genuinely down, retrying indefinitely just adds load to a system that's already struggling (@source-system-etiquette). Your orchestrator should track per-table status, not just per-run status -- the successful tables should proceed to load even though the run as a whole is failed.
 
-  The common causes are connection timeouts (especially on slow on-prem sources), connection pool exhaustion when too many tables extract from the same source simultaneously, and source maintenance windows that nobody told you about. A table that fails for the same reason every Monday morning is a scheduling problem, not a retry problem -- move it to a different window or investigate the source's maintenance calendar (0607).
+  The common causes are connection timeouts (especially on slow on-prem sources), connection pool exhaustion when too many tables extract from the same source simultaneously, and source maintenance windows that nobody told you about. A table that fails for the same reason every Monday morning is a scheduling problem, not a retry problem -- move it to a different window or investigate the source's maintenance calendar (@source-system-etiquette).
 
   === Extraction Succeeded, Load Failed
   <extraction-succeeded-load-failed>
@@ -6862,33 +6784,33 @@
 
   === Load Partially Applied
   <load-partially-applied>
-  The load started but didn't finish -- rows were written but the job died mid-stream. What happens next depends on the load strategy: full replace and partition swaps are idempotent and can be safely rerun since the incomplete load gets overwritten. Append may have produced duplicates that need deduplication (0613). A merge may be partially applied -- some rows updated, others not -- leaving the table in an inconsistent state where the same extraction's data is half-landed. See 0406 for making the load step itself resilient to interruption.
+  The load started but didn't finish -- rows were written but the job died mid-stream. What happens next depends on the load strategy: full replace and partition swaps are idempotent and can be safely rerun since the incomplete load gets overwritten. Append may have produced duplicates that need deduplication (@duplicate-detection). A merge may be partially applied -- some rows updated, others not -- leaving the table in an inconsistent state where the same extraction's data is half-landed. See @reliable-loads for making the load step itself resilient to interruption.
 
   == Recovery Strategy
   <recovery-strategy>
   === Per-Table Retry
   <per-table-retry>
-  The first principle: retry only what failed, not the entire job. If 97/100 tables succeeded, rerunning all 100 wastes compute, risks introducing new failures on previously successful tables, and delays recovery. Your orchestrator should support re-running individual tables from a failed run -- if it doesn't, this is worth building, because the alternative is choosing between "rerun everything" and "wait for the next schedule." Some orchestrators support this natively -- Dagster lets you retry individual failed assets from a run's status page without touching the ones that succeeded (see 0805).
+  The first principle: retry only what failed, not the entire job. If 97/100 tables succeeded, rerunning all 100 wastes compute, risks introducing new failures on previously successful tables, and delays recovery. Your orchestrator should support re-running individual tables from a failed run -- if it doesn't, this is worth building, because the alternative is choosing between "rerun everything" and "wait for the next schedule." Some orchestrators support this natively -- Dagster lets you retry individual failed assets from a run's status page without touching the ones that succeeded (see @orchestrators).
 
   The retry should also target the right step. A table that failed at extraction needs re-extraction; a table that extracted successfully but failed at load only needs the load retried -- preferably from the data already in staging, not from a fresh extraction that hits the source again for no reason.
 
   === Staging as a Safety Net
   <staging-as-a-safety-net>
-  If staging tables persist after extraction, a load failure can be retried from staging without hitting the source again. This is the faster recovery path and the one that's gentler on the source system -- the data is already extracted, you just need to land it. The tradeoff is storage cost: persistent staging means keeping a copy of every extracted table until the load confirms success (see 0603). For most tables the cost is trivial; for a few massive ones it may matter.
+  If staging tables persist after extraction, a load failure can be retried from staging without hitting the source again. This is the faster recovery path and the one that's gentler on the source system -- the data is already extracted, you just need to land it. The tradeoff is storage cost: persistent staging means keeping a copy of every extracted table until the load confirms success (see @cost-monitoring). For most tables the cost is trivial; for a few massive ones it may matter.
 
-  If staging is ephemeral, a failed load requires full re-extraction. Whether that's acceptable depends on how expensive the extraction is and how soon the data needs to land. For small tables on a healthy source, re-extraction is fast and harmless. For a 50M-row table on a slow on-prem database during business hours, you may have to wait until the next safe window (0607).
+  If staging is ephemeral, a failed load requires full re-extraction. Whether that's acceptable depends on how expensive the extraction is and how soon the data needs to land. For small tables on a healthy source, re-extraction is fast and harmless. For a 50M-row table on a slow on-prem database during business hours, you may have to wait until the next safe window (@source-system-etiquette).
 
   === Per-Table Status Tracking
   <per-table-status-tracking>
   Track each table's lifecycle explicitly: `extracting` -\> `extracted` -\> `loading` -\> `loaded` / `failed`. On restart, tables stuck in `loading` are failed tables, not running ones -- treat them accordingly. A table that's been in `loading` for longer than its expected load duration either crashed or is hanging, and leaving it in limbo means nobody investigates.
 
-  The health table (0602) should record the outcome per table per run -- not just `success` / `failure` but which step failed and why. This is what makes per-table retry possible: without a record of where each table stopped, every retry is a guess.
+  The health table (@the-health-table) should record the outcome per table per run -- not just `success` / `failure` but which step failed and why. This is what makes per-table retry possible: without a record of where each table stopped, every retry is a guess.
 
   == Alerting on Partial Failures
   <alerting-on-partial-failures>
   Any failure, no matter how small, should mark the pipeline run as failed. A run where 197 tables succeeded and 3 failed is a failed run -- not a successful run with caveats. If your orchestrator reports it as success, the 3 broken tables disappear into the noise and nobody investigates until a consumer complains. The run status should be unambiguous: if anything didn't land, the run failed.
 
-  The tension is failure fatigue. If the pipeline fails every single run because one flaky table times out on Mondays, the team learns to ignore the failure status -- and the one time 50 tables fail for a real reason, nobody notices because the alert looks the same as every other Monday. Your alerting (0605) needs to distinguish between the two: include the count of failed tables, which ones, which step failed, and whether the failure is retryable. "Run failed: 3 tables (invoices, order\_lines, products) -- extraction timeout, auto-retry exhausted" is actionable. "Run failed" with no context trains people to click dismiss.
+  The tension is failure fatigue. If the pipeline fails every single run because one flaky table times out on Mondays, the team learns to ignore the failure status -- and the one time 50 tables fail for a real reason, nobody notices because the alert looks the same as every other Monday. Your alerting (@alerting-and-notifications) needs to distinguish between the two: include the count of failed tables, which ones, which step failed, and whether the failure is retryable. "Run failed: 3 tables (invoices, order\_lines, products) -- extraction timeout, auto-retry exhausted" is actionable. "Run failed" with no context trains people to click dismiss.
 
   == Anti-Patterns
   <anti-patterns-9>
@@ -6923,7 +6845,7 @@
       table.header([Cause], [Mechanism]),
       table.hline(),
       [Append without dedup handling],
-      [Append-only done right (0402) handles edge cases with `ON CONFLICT DO NOTHING` or a dedup view. Raw INSERT with no conflict handling and no dedup layer produces duplicates from retries, overlap buffers, or upstream replays],
+      [Append-only done right (@append-only-load) handles edge cases with `ON CONFLICT DO NOTHING` or a dedup view. Raw INSERT with no conflict handling and no dedup layer produces duplicates from retries, overlap buffers, or upstream replays],
       [Merge key too specific],
       [The merge key includes a column that changes between extractions (e.g., `_extracted_at`, a hash that incorporates load metadata), so the merge never matches existing rows and every re-extraction INSERTs instead of UPDATing],
       [NOLOCK page #strong[desync];],
@@ -6934,14 +6856,14 @@
 
   #ecl-warning(
     "Cross-partition duplicates",
-  )[Partitioning the destination by `updated_at` or another mutable date makes cross-partition duplicates likely: a row lands in the March partition, gets updated in April, and the next extraction writes the updated version to the April partition while the March copy persists. Partitioning by an immutable business date (`order_date`, `invoice_date`) prevents the row from scattering across partitions -- every re-extraction targets the same partition, which is cheaper and correctly scoped. But #strong[partitioning alone doesn't deduplicate];: columnar engines don't enforce uniqueness, so you still need your load strategy (merge with the correct key, or a dedup view from 0404) to handle duplicates within the partition.]
+  )[Partitioning the destination by `updated_at` or another mutable date makes cross-partition duplicates likely: a row lands in the March partition, gets updated in April, and the next extraction writes the updated version to the April partition while the March copy persists. Partitioning by an immutable business date (`order_date`, `invoice_date`) prevents the row from scattering across partitions -- every re-extraction targets the same partition, which is cheaper and correctly scoped. But #strong[partitioning alone doesn't deduplicate];: columnar engines don't enforce uniqueness, so you still need your load strategy (merge with the correct key, or a dedup view from @append-and-materialize) to handle duplicates within the partition.]
 
   == Detection
   === Row Count Comparison
   <row-count-comparison>
-  The simplest signal: compare `COUNT(*)` between source and destination. If the destination has more rows, you either have duplicates or you're missing hard-delete detection. Run hard-delete detection first (0306) -- if after cleaning up deleted rows the destination still has more rows than the source, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness constraints).
+  The simplest signal: compare `COUNT(*)` between source and destination. If the destination has more rows, you either have duplicates or you're missing hard-delete detection. Run hard-delete detection first (@hard-delete-detection) -- if after cleaning up deleted rows the destination still has more rows than the source, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness constraints).
 
-  Run `COUNT(*)` on the source and on the destination separately, then compare in your orchestrator or manually -- these are different engines, so there's no single query that spans both. If the destination has more rows after hard-delete cleanup, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness). This ties directly to 0614 -- if reconciliation is already running on a schedule, it surfaces the count mismatch before anyone downstream notices.
+  Run `COUNT(*)` on the source and on the destination separately, then compare in your orchestrator or manually -- these are different engines, so there's no single query that spans both. If the destination has more rows after hard-delete cleanup, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness). This ties directly to @reconciliation-patterns -- if reconciliation is already running on a schedule, it surfaces the count mismatch before anyone downstream notices.
 
   === By Primary Key
   <by-primary-key>
@@ -6959,11 +6881,11 @@
 
   === By Content Hash
 
-  When there's no natural PK, hash the columns that identify the entity and group by hash -- count \> 1 means multiple rows for the same entity. Fix the key definition (0502) so it uses only the columns that define identity (revise your synthetic keys, maybe?), then deduplicate.
+  When there's no natural PK, hash the columns that identify the entity and group by hash -- count \> 1 means multiple rows for the same entity. Fix the key definition (@synthetic-keys) so it uses only the columns that define identity (revise your synthetic keys, maybe?), then deduplicate.
 
   === Narrowing the Root Cause
   <narrowing-the-root-cause>
-  Once you've found duplicates, `_extracted_at` or `_batch_id` from 0501 narrow down which load introduced them. "All duplicates share `_batch_id = 47`" points to a specific run and limits where to look.
+  Once you've found duplicates, `_extracted_at` or `_batch_id` from @metadata-column-injection narrow down which load introduced them. "All duplicates share `_batch_id = 47`" points to a specific run and limits where to look.
 
   == Deduplication
   <deduplication>
@@ -6992,7 +6914,7 @@
 
   === Dedup via Rebuild
   <dedup-via-rebuild>
-  Re-extract the table with a full replace (0401) or rebuild from staging. Cleaner than in-place dedup because it resets to a known-good state with no residual risk of missed duplicates. Prefer this when the duplication is widespread or when the table is small enough that a full reload is cheap.
+  Re-extract the table with a full replace (@full-replace-load) or rebuild from staging. Cleaner than in-place dedup because it resets to a known-good state with no residual risk of missed duplicates. Prefer this when the duplication is widespread or when the table is small enough that a full reload is cheap.
 
   === Dedup View
   <dedup-view>
@@ -7009,11 +6931,11 @@
   ) WHERE _rn = 1;
   ```
 
-  Fast to deploy, no DML, no data loss risk. If you rename the base table to `orders_raw` and create the view as `orders`, downstream queries don't need to change -- this is the same mechanism that 0404 uses permanently. As a temporary fix it buys you time to investigate the root cause while consumers see clean data immediately.
+  Fast to deploy, no DML, no data loss risk. If you rename the base table to `orders_raw` and create the view as `orders`, downstream queries don't need to change -- this is the same mechanism that @append-and-materialize uses permanently. As a temporary fix it buys you time to investigate the root cause while consumers see clean data immediately.
 
   #ecl-tip(
     "Consider append-and-materialize permanently",
-  )[If you're reaching for the dedup view often, consider switching to append-and-materialize. The dedup view is the core of 0404. Append-and-materialize removes the duplicate problem structurally -- every extraction appends, the view always deduplicates -- and it's cheaper than merge in columnar engines because a pure INSERT never rewrites existing partitions. The dedup cost is paid at read time, not at load time, and only for the rows the consumer actually queries.]
+  )[If you're reaching for the dedup view often, consider switching to append-and-materialize. The dedup view is the core of @append-and-materialize. Append-and-materialize removes the duplicate problem structurally -- every extraction appends, the view always deduplicates -- and it's cheaper than merge in columnar engines because a pure INSERT never rewrites existing partitions. The dedup cost is paid at read time, not at load time, and only for the rows the consumer actually queries.]
 
   == Anti-Patterns
   <anti-patterns-10>
@@ -7037,7 +6959,7 @@
   <the-problem-13>
   A load that completes without errors can still produce wrong results: missing rows, duplicate rows, stale data, wrong values. The pipeline reports success; the destination is quietly wrong. Without a verification step, discrepancies surface only when a consumer notices something off -- a report that doesn't tie out, a dashboard metric that jumped overnight, an analyst who ran the numbers twice and got different answers.
 
-  Reconciliation is the scheduled check that the destination actually reflects the source. It runs after the load, compares what arrived against what should have arrived, and alerts when the numbers don't add up. It's not a replacement for staging validation (0201) or extraction gates (0610) -- those catch failures before the load commits. Reconciliation catches what those gates didn't see: rows that fell within tolerance, drift that accumulated over multiple runs, or discrepancies that only surface after downstream queries start running.
+  Reconciliation is the scheduled check that the destination actually reflects the source. It runs after the load, compares what arrived against what should have arrived, and alerts when the numbers don't add up. It's not a replacement for staging validation (@full-scan-strategies) or extraction gates (@extraction-status-gates) -- those catch failures before the load commits. Reconciliation catches what those gates didn't see: rows that fell within tolerance, drift that accumulated over multiple runs, or discrepancies that only surface after downstream queries start running.
 
   == Reconciliation Levels
   <reconciliation-levels>
@@ -7067,7 +6989,7 @@
 
   #strong[Destination has more rows than source] -- interpretation depends on whether hard delete detection is running. If it is, a surplus means duplicates and warrants an immediate alert. If it isn't, the surplus is expected: rows deleted from the source still exist in the destination. Know which case you're in before alerting.
 
-  When a deficit above threshold surfaces, the resolution depends on the gap size. A small gap is a candidate for pk-to-pk detection (0306) to identify exactly which rows are missing without reloading the whole table. A large gap points to a structural failure -- a missed extraction window, a dropped partition, a load strategy mismatch -- and the right fix is a full reload or partition swap (0201, 0202).
+  When a deficit above threshold surfaces, the resolution depends on the gap size. A small gap is a candidate for pk-to-pk detection (@hard-delete-detection) to identify exactly which rows are missing without reloading the whole table. A large gap points to a structural failure -- a missed extraction window, a dropped partition, a load strategy mismatch -- and the right fix is a full reload or partition swap (@full-scan-strategies, @partition-swap).
 
   == Timing Matters
   <timing-matters>
@@ -7081,7 +7003,7 @@
 
   The tradeoff: inline checks catch discrepancies before downstream queries run on bad data. A scheduled reconciliation job may surface an issue hours after downstream consumers have already seen it. For critical tables, inline is worth the overhead. For the long tail of lower-priority tables, a daily reconciliation job is the right balance.
 
-  Store the results in the health table (0602): table name, source count, destination count, delta, status (OK / warning / critical). Storing results historically lets you detect drift trends -- a table that's consistently 50 rows short is a different problem from one that's suddenly 50,000 rows short. If you store per-run source and destination counts as part of normal pipeline operation, the dedicated reconciliation job becomes a comparison of already-collected numbers rather than a fresh round of queries against both systems -- which makes it cheap enough to run across everything, every morning.
+  Store the results in the health table (@the-health-table): table name, source count, destination count, delta, status (OK / warning / critical). Storing results historically lets you detect drift trends -- a table that's consistently 50 rows short is a different problem from one that's suddenly 50,000 rows short. If you store per-run source and destination counts as part of normal pipeline operation, the dedicated reconciliation job becomes a comparison of already-collected numbers rather than a fresh round of queries against both systems -- which makes it cheap enough to run across everything, every morning.
 
   == By Corridor
   #ecl-warning(
@@ -7116,7 +7038,7 @@
   <triage-assess-the-blast-radius>
   === When Did It Start?
   <when-did-it-start>
-  `_extracted_at` from 0501 narrows the window. Filter destination rows by `_extracted_at` ranges and compare against the source to find where the data starts diverging -- the first batch where values don't match is the start of the corruption window. Cross-reference that timestamp with your deploy history and git log: a commit that shipped on the same day as the first bad batch is the likely root cause.
+  `_extracted_at` from @metadata-column-injection narrows the window. Filter destination rows by `_extracted_at` ranges and compare against the source to find where the data starts diverging -- the first batch where values don't match is the start of the corruption window. Cross-reference that timestamp with your deploy history and git log: a commit that shipped on the same day as the first bad batch is the likely root cause.
 
   If `_batch_id` is populated, the scoping is even tighter -- "all rows from batch 47 onward are corrupted" is a precise statement that drives the recovery scope. Without metadata columns, you're left correlating deploy dates with destination anomalies by hand, which is slower and less certain.
 
@@ -7142,17 +7064,17 @@
 
   === Date-Range Rebuild
   <date-range-rebuild>
-  Reload only the corruption window via backfill (0611). Less disruptive than full replace because data outside the window stays untouched, but it requires knowing the exact corruption range. Scope the range slightly wider than the first bad batch -- corruption boundaries are rarely as precise as a single timestamp suggests, and a few extra days of reload is cheap insurance against missing rows at the edges.
+  Reload only the corruption window via backfill (@backfill-strategies). Less disruptive than full replace because data outside the window stays untouched, but it requires knowing the exact corruption range. Scope the range slightly wider than the first bad batch -- corruption boundaries are rarely as precise as a single timestamp suggests, and a few extra days of reload is cheap insurance against missing rows at the edges.
 
-  Use partition swap (0202) for the destination-side replacement so the rebuild is atomic per partition and the rest of the table stays live throughout. For tables too large to full-replace but where the corruption window is bounded, this is the sweet spot.
+  Use partition swap (@partition-swap) for the destination-side replacement so the rebuild is atomic per partition and the rest of the table stays live throughout. For tables too large to full-replace but where the corruption window is bounded, this is the sweet spot.
 
   === PK-to-PK Repair
   <pk-to-pk-repair>
-  Compare primary keys between source and destination to identify exactly which rows are wrong -- missing, surplus, or mismatched values. Fix only the discrepancies: insert missing rows, delete surplus rows, update changed values. This is the same mechanism as hard delete detection (0306) and the small-gap resolution described in 0614.
+  Compare primary keys between source and destination to identify exactly which rows are wrong -- missing, surplus, or mismatched values. Fix only the discrepancies: insert missing rows, delete surplus rows, update changed values. This is the same mechanism as hard delete detection (@hard-delete-detection) and the small-gap resolution described in @reconciliation-patterns.
 
   Use this when the corruption is narrow -- a handful of rows in a large table, a specific set of PKs identified during triage -- and reloading an entire table or date range would be disproportionate. The tradeoff is that you need to know exactly which rows are affected, which requires either a full PK comparison against the source or a reconciliation pass that identified the discrepancies.
 
-  All three strategies may require a state reset if the table uses cursor-based extraction. A full replace or date-range rebuild that reloads the data but leaves the old cursor in place means the next incremental run skips everything between the stale high-water mark and now -- the same problem 0611 warns about. Stateless window extraction (0303) sidesteps this entirely -- the next run re-reads its normal trailing window regardless of what the rebuild did, and there's no cursor to forget about. This is one of the operational arguments for defaulting to stateless: recovery is simpler because there's less state to manage.
+  All three strategies may require a state reset if the table uses cursor-based extraction. A full replace or date-range rebuild that reloads the data but leaves the old cursor in place means the next incremental run skips everything between the stale high-water mark and now -- the same problem @backfill-strategies warns about. Stateless window extraction (@stateless-window-extraction) sidesteps this entirely -- the next run re-reads its normal trailing window regardless of what the rebuild did, and there's no cursor to forget about. This is one of the operational arguments for defaulting to stateless: recovery is simpler because there's less state to manage.
 
   == Recovery Checklist
   <recovery-checklist>
@@ -7162,22 +7084,22 @@
   - ☐ Confirm the root cause is fixed and deployed
   - ☐ Test the fix on a small range before committing to the full rebuild
   - ☐ Verify source connectivity and schema haven't changed since the corruption started
-  - ☐ If the table uses cursor-based extraction: reset incremental state (cursor position, schema versions) so the rebuild sets a clean baseline -- not needed for stateless window extraction (0303)
+  - ☐ If the table uses cursor-based extraction: reset incremental state (cursor position, schema versions) so the rebuild sets a clean baseline -- not needed for stateless window extraction (@stateless-window-extraction)
   - ☐ Run the rebuild (full replace, date-range backfill, or PK-to-PK repair depending on scope)
-  - ☐ Reconcile post-rebuild: source count vs destination count (0614)
+  - ☐ Reconcile post-rebuild: source count vs destination count (@reconciliation-patterns)
   - ☐ Notify downstream consumers that data is clean and they can rebuild dependent models
 
   == Prevention
   <prevention>
   None of these prevent corruption from happening -- source schemas change, bugs ship, scripts run without warning. What they do is make corruption detectable early and recoverable fast, which limits the blast radius.
 
-  #strong[Metadata columns] (`_extracted_at`, `_batch_id`) make triage possible. Without them you can't scope the corruption to specific batches -- you're left guessing which runs introduced the bad data based on deploy dates and git blame. See 0501.
+  #strong[Metadata columns] (`_extracted_at`, `_batch_id`) make triage possible. Without them you can't scope the corruption to specific batches -- you're left guessing which runs introduced the bad data based on deploy dates and git blame. See @metadata-column-injection.
 
-  #strong[Schema contracts] catch drift before it corrupts data. A new column appearing is harmless; a column disappearing or a type changing is a signal that something upstream changed without coordination. Contracts surface these changes before the load commits, not after consumers have already consumed the result. See 0609.
+  #strong[Schema contracts] catch drift before it corrupts data. A new column appearing is harmless; a column disappearing or a type changing is a signal that something upstream changed without coordination. Contracts surface these changes before the load commits, not after consumers have already consumed the result. See @data-contracts.
 
-  #strong[Reconciliation] catches silent count and value drift between source and destination. A table that's consistently 50 rows short is a different problem from one that's suddenly 50,000 rows short, and both are problems that row-level pipeline success doesn't reveal. See 0614.
+  #strong[Reconciliation] catches silent count and value drift between source and destination. A table that's consistently 50 rows short is a different problem from one that's suddenly 50,000 rows short, and both are problems that row-level pipeline success doesn't reveal. See @reconciliation-patterns.
 
-  #strong[Stateless, idempotent pipelines] reduce the recovery surface. Pipeline state -- cursors, schema version tracking, checkpoint files -- is itself a corruption vector. When the state is wrong, the pipeline produces wrong output from correct source data, and the failure mode is invisible because no query failed and no error fired. The less state your pipeline carries between runs, the fewer ways it can silently break. Full replace and stateless window extraction (0303) both minimize carried state; cursor-based extraction with external state stores maximizes it.
+  #strong[Stateless, idempotent pipelines] reduce the recovery surface. Pipeline state -- cursors, schema version tracking, checkpoint files -- is itself a corruption vector. When the state is wrong, the pipeline produces wrong output from correct source data, and the failure mode is invisible because no query failed and no error fired. The less state your pipeline carries between runs, the fewer ways it can silently break. Full replace and stateless window extraction (@stateless-window-extraction) both minimize carried state; cursor-based extraction with external state stores maximizes it.
 
   == Anti-Patterns
   <anti-patterns-11>
@@ -7215,7 +7137,7 @@
 
   The distinction matters because aggregation and derivation encode decisions that belong to the people who understand the business context -- and those decisions change. A grouping that makes sense today ("revenue by product category") stops making sense when the category taxonomy changes. A formula that's correct today is wrong next quarter when the pricing model shifts. If the pipeline made those decisions at extraction, every change requires a pipeline change. If a downstream view made them, the view changes and the pipeline keeps running untouched.
 
-  See 0102 for the full framework.
+  See @what-is-conforming for the full framework.
 
   == The Exception: `metrics_daily`
   <the-exception-metrics_daily>
@@ -7229,9 +7151,9 @@
 
   #strong[Photos] are point-in-time snapshots: `inventory` (current stock levels), `metrics_daily` (today's aggregated numbers). Each row is the state of something right now. The history is gone the moment the next snapshot overwrites it.
 
-  Land both when both exist at the source. The `inventory` table and the `inventory_movements` table are different data -- the photo and the movements don't always agree (bulk imports that update `inventory` without logging a movement, the soft rule from 0002), and it's your job to make that discrepancy visible to consumers rather than hiding it by building one from the other.
+  Land both when both exist at the source. The `inventory` table and the `inventory_movements` table are different data -- the photo and the movements don't always agree (bulk imports that update `inventory` without logging a movement, the soft rule from @domain-model), and it's your job to make that discrepancy visible to consumers rather than hiding it by building one from the other.
 
-  Downstream can reconstruct photos from movements if they want to (see 0706) -- stock as of any date is a `SUM(quantity) WHERE created_at <= target_date`. The inverse isn't possible: you can't recover individual movements from a snapshot total. Detail produces aggregates; aggregates don't produce detail.
+  Downstream can reconstruct photos from movements if they want to (see @point-in-time-from-events) -- stock as of any date is a `SUM(quantity) WHERE created_at <= target_date`. The inverse isn't possible: you can't recover individual movements from a snapshot total. Detail produces aggregates; aggregates don't produce detail.
 
   == The Conversation
   <the-conversation>
@@ -7249,7 +7171,7 @@
 
   == What Consumers Actually Need
   <what-consumers-actually-need>
-  A pre-built view (0703) that aggregates the raw data for their specific use case. The view is downstream, documented, and changeable without touching the pipeline. Different consumers can have different aggregations over the same raw data: the sales team sees revenue by product, the finance team sees revenue by cost center, the warehouse team sees units shipped by location -- all from the same `order_lines` table, each through their own view.
+  A pre-built view (@query-patterns-for-analysts) that aggregates the raw data for their specific use case. The view is downstream, documented, and changeable without touching the pipeline. Different consumers can have different aggregations over the same raw data: the sales team sees revenue by product, the finance team sees revenue by cost center, the warehouse team sees units shipped by location -- all from the same `order_lines` table, each through their own view.
 
   When the business logic changes -- a new product category, a different grouping, a revised pricing formula -- the view changes. The pipeline doesn't.
 
@@ -7280,7 +7202,7 @@
   <choosing-the-partition-key>
   Partition by the column consumers filter on most. For transactional data, that's almost always an immutable business date: `order_date`, `event_date`, `invoice_date`. These dates describe when the business event happened -- not when the row was last modified or when the pipeline extracted it -- and they never change. An order placed on March 5 always has `order_date = 2026-03-05` regardless of how many times its status, amount, or shipping address gets updated. That stability is what makes it safe as a partition key: the row stays in the same partition across every load.
 
-  Never partition by `updated_at` or `_extracted_at`. These are mutable -- `updated_at` changes on every source modification, `_extracted_at` changes on every extraction. A row updated today lands in a different partition than its previous version, which forces the MERGE to touch both the old and new partition. In BigQuery, every partition touched in a DML statement is a full partition rewrite (0403), so a batch of 10,000 rows scattered across 200 dates rewrites 200 partitions. If the load strategy doesn't clean up the old version in the previous partition, you also end up with cross-partition duplicates (0613).
+  Never partition by `updated_at` or `_extracted_at`. These are mutable -- `updated_at` changes on every source modification, `_extracted_at` changes on every extraction. A row updated today lands in a different partition than its previous version, which forces the MERGE to touch both the old and new partition. In BigQuery, every partition touched in a DML statement is a full partition rewrite (@merge-upsert), so a batch of 10,000 rows scattered across 200 dates rewrites 200 partitions. If the load strategy doesn't clean up the old version in the previous partition, you also end up with cross-partition duplicates (@duplicate-detection).
 
   == Partition Granularity
   <partition-granularity>
@@ -7304,9 +7226,9 @@
   <require_partition_filter>
   BigQuery's `require_partition_filter = true` rejects any query that doesn't include the partition column in the `WHERE` clause. It's the single most effective cost-protection mechanism for large tables -- an analyst who forgets to filter by date gets an error instead of a bill for scanning 3TB.
 
-  The tradeoff is friction. Consumers who are used to `SELECT * FROM orders LIMIT 100` for a quick look now get an error and have to add a date filter. BI tools that generate queries without partition awareness fail until someone configures the date filter in the tool's connection settings. For tables where consumers query frequently and know the schema, the protection is worth the friction. For tables where non-technical consumers explore ad hoc and the hand-holding cost is high, consider whether the enforcement helps more than it annoys -- and whether a pre-built view (0703) with a built-in default date range is a better answer than forcing the filter on the raw table.
+  The tradeoff is friction. Consumers who are used to `SELECT * FROM orders LIMIT 100` for a quick look now get an error and have to add a date filter. BI tools that generate queries without partition awareness fail until someone configures the date filter in the tool's connection settings. For tables where consumers query frequently and know the schema, the protection is worth the friction. For tables where non-technical consumers explore ad hoc and the hand-holding cost is high, consider whether the enforcement helps more than it annoys -- and whether a pre-built view (@query-patterns-for-analysts) with a built-in default date range is a better answer than forcing the filter on the raw table.
 
-  No other columnar engine has an equivalent enforcement mechanism. Snowflake, ClickHouse, and Redshift rely on documentation, query review, and cost monitoring (0603) to catch unfiltered scans after they happen.
+  No other columnar engine has an equivalent enforcement mechanism. Snowflake, ClickHouse, and Redshift rely on documentation, query review, and cost monitoring (@cost-monitoring) to catch unfiltered scans after they happen.
 
   == Per Engine
   <per-engine>
@@ -7322,11 +7244,11 @@
   <partition-alignment-with-load-strategy>
   The partition scheme and the load strategy interact directly -- a mismatch between them turns a cheap operation into an expensive one.
 
-  #strong[Full replace] via partition swap (0202) is partition-native: you replace entire partitions atomically, and the partition key determines which slices get swapped. BigQuery partition copies are near-free metadata operations; Snowflake and Redshift use DELETE + INSERT within a transaction scoped to the partition range.
+  #strong[Full replace] via partition swap (@partition-swap) is partition-native: you replace entire partitions atomically, and the partition key determines which slices get swapped. BigQuery partition copies are near-free metadata operations; Snowflake and Redshift use DELETE + INSERT within a transaction scoped to the partition range.
 
-  #strong[Incremental MERGE] cost scales with the number of partitions the batch touches (0403). A batch aligned to a single day's partition rewrites one partition. A batch scattered across 30 dates rewrites 30. Keep load batches as aligned to partition boundaries as the data allows.
+  #strong[Incremental MERGE] cost scales with the number of partitions the batch touches (@merge-upsert). A batch aligned to a single day's partition rewrites one partition. A batch scattered across 30 dates rewrites 30. Keep load batches as aligned to partition boundaries as the data allows.
 
-  #strong[Append-and-materialize] (0404) introduces a split: partition the log table by `_extracted_at` for cheap retention drops (each day's extraction is its own partition, dropping old extractions is a metadata operation). The dedup view sits on top and can't be partitioned itself -- but if consumers filter by a business date in their query, the engine still prunes the underlying log's partitions. If read cost becomes a problem, materialize the dedup result into a separate table partitioned by business date (0703).
+  #strong[Append-and-materialize] (@append-and-materialize) introduces a split: partition the log table by `_extracted_at` for cheap retention drops (each day's extraction is its own partition, dropping old extractions is a metadata operation). The dedup view sits on top and can't be partitioned itself -- but if consumers filter by a business date in their query, the engine still prunes the underlying log's partitions. If read cost becomes a problem, materialize the dedup result into a separate table partitioned by business date (@query-patterns-for-analysts).
 
   == Retrofitting a Partition Scheme
   <retrofitting-a-partition-scheme>
@@ -7375,7 +7297,7 @@
   <the-hierarchy>
   Four tools, from lightest to heaviest. Start at the top and move down only when the lighter option doesn't serve the consumer well enough.
 
-  #strong[SQL views.] A saved query, computed fresh on every read. The dedup view from 0404 is the most common example: a `ROW_NUMBER()` over the append log that exposes only the latest version of each row. Column-filtering views that hide internal metadata (`_extracted_at`, `_batch_id`) are another. Free to create, not free to consume -- every query against the view scans the underlying table. A well-written view can reduce cost by baking in partition filters and column selection that consumers would otherwise forget, but it doesn't pre-compute anything.
+  #strong[SQL views.] A saved query, computed fresh on every read. The dedup view from @append-and-materialize is the most common example: a `ROW_NUMBER()` over the append log that exposes only the latest version of each row. Column-filtering views that hide internal metadata (`_extracted_at`, `_batch_id`) are another. Free to create, not free to consume -- every query against the view scans the underlying table. A well-written view can reduce cost by baking in partition filters and column selection that consumers would otherwise forget, but it doesn't pre-compute anything.
 
   #strong[Materialized views.] Pre-computed and stored. The engine refreshes them on a schedule or on data change, and routes queries to the materialized result instead of recomputing from the base table. The query cost drops to scanning the materialized result (generally smaller than the base table), at the expense of storage and refresh overhead. This is where the cost savings happen -- the consumer queries the pre-built result, not the raw data.
 
@@ -7387,15 +7309,15 @@
 
   == When to Materialize
   <when-to-materialize>
-  The dedup view from 0404 is a SQL view by default, and during development that's fine -- you're the only one querying it. Once analysts start using it daily, the cost shifts: 50 queries per day against a view that scans 90 days of append log means 50 full scans of that log per day. At that point the materialization cost (one refresh per load) is a fraction of the repeated read cost, and the switch is justified.
+  The dedup view from @append-and-materialize is a SQL view by default, and during development that's fine -- you're the only one querying it. Once analysts start using it daily, the cost shifts: 50 queries per day against a view that scans 90 days of append log means 50 full scans of that log per day. At that point the materialization cost (one refresh per load) is a fraction of the repeated read cost, and the switch is justified.
 
   A view over 90 days of append log is an even clearer case -- every query scans 90x the base table volume to find the latest version per key. Materialization is almost always worth it here, even at low query frequency.
 
-  The rule: don't materialize speculatively. Wait until the query cost shows up in 0603, then materialize the views that actually get hit. A materialized view for a table queried once a week is wasted storage and refresh compute -- and at 15 views across 70 base tables, most of the serving layer stays as simple SQL views that never need materialization.
+  The rule: don't materialize speculatively. Wait until the query cost shows up in @cost-monitoring, then materialize the views that actually get hit. A materialized view for a table queried once a week is wasted storage and refresh compute -- and at 15 views across 70 base tables, most of the serving layer stays as simple SQL views that never need materialization.
 
   == Flattening Views for JSON
   <flattening-views-for-json>
-  JSON and nested data land as-is (0507) -- the pipeline doesn't parse or restructure them. Consumers who need tabular access get a flattening view. The syntax depends on how the data landed:
+  JSON and nested data land as-is (@nested-data-and-json) -- the pipeline doesn't parse or restructure them. Consumers who need tabular access get a flattening view. The syntax depends on how the data landed:
 
   #strong[JSON string columns] (landed as `STRING` or `JSON` type):
 
@@ -7430,7 +7352,7 @@
 
   Different consumer groups can have different flattening views over the same nested data -- the sales team sees shipping and pricing fields, logistics sees warehouse and carrier fields -- each shaped for their use case without duplicating the underlying data.
 
-  When the nested schema mutates -- a new field appears, a field is renamed -- the view definition changes. The pipeline doesn't. This is the same principle as 0701: the pipeline lands what the source has, the serving layer adapts it for consumption.
+  When the nested schema mutates -- a new field appears, a field is renamed -- the view definition changes. The pipeline doesn't. This is the same principle as @partitioning-clustering-and-pruning: the pipeline lands what the source has, the serving layer adapts it for consumption.
 
   == Per Engine
   <per-engine-1>
@@ -7450,7 +7372,7 @@
 
   #ecl-danger(
     "Don't materialize before you measure",
-  )[A materialized view for every table \"just in case\" is wasted storage and refresh compute. Materialize the views that actually get queried, based on observed cost from 0603.]
+  )[A materialized view for every table \"just in case\" is wasted storage and refresh compute. Materialize the views that actually get queried, based on observed cost from @cost-monitoring.]
 
   // ---
 
@@ -7464,11 +7386,11 @@
   <who-this-is-for>
   This is the reference you hand analysts when they get access to the destination. They didn't design the schema, they don't know what append-and-materialize means, and they will `SELECT *` on a 3TB table if nobody tells them not to. The patterns below are the minimum they need to query ECL-landed data correctly and cheaply.
 
-  One thing to internalize before querying: the destination is not a moment-to-moment replica of the source. Data has to be extracted, conformed, and loaded before it appears -- that takes time, and the freshness depends on the table's schedule (0604). If you need transactional-level freshness for point lookups ("is this order shipped right now?"), query the source directly. Columnar destinations are for analysis, not real-time lookups.
+  One thing to internalize before querying: the destination is not a moment-to-moment replica of the source. Data has to be extracted, conformed, and loaded before it appears -- that takes time, and the freshness depends on the table's schedule (@sla-management). If you need transactional-level freshness for point lookups ("is this order shipped right now?"), query the source directly. Columnar destinations are for analysis, not real-time lookups.
 
   == Current State from Append-Only Tables
   <current-state-from-append-only-tables>
-  Some tables in the destination are append logs -- every extraction appends new rows without overwriting old ones (0404). The log contains every version of every row your pipeline has ever seen: order 123 with `status = pending`, then order 123 with `status = shipped`, then order 123 with `status = delivered`. All three rows are in the log. The current state is the latest one.
+  Some tables in the destination are append logs -- every extraction appends new rows without overwriting old ones (@append-and-materialize). The log contains every version of every row your pipeline has ever seen: order 123 with `status = pending`, then order 123 with `status = shipped`, then order 123 with `status = delivered`. All three rows are in the log. The current state is the latest one.
 
   If the table has a dedup view, query the view. The view handles the deduplication logic and returns one row per entity -- the latest version. The view is named after the business object (`orders`), and the log is suffixed (`orders_log` or `orders_raw`). If you're not sure which is which, the one with fewer rows is the view.
 
@@ -7500,7 +7422,7 @@
 
   #strong[`_extracted_at`] is when the pipeline pulled the row. It's set by the pipeline, not the source, and it's always accurate -- it reflects when this version of the row arrived in the destination.
 
-  #strong[`updated_at`] is when the source last modified the row. It's maintained by the source application -- triggers, ORMs, manual updates -- and its reliability varies by table (0301).
+  #strong[`updated_at`] is when the source last modified the row. It's maintained by the source application -- triggers, ORMs, manual updates -- and its reliability varies by table (@timestamp-extraction-foundations).
 
   Which one to filter on depends on the question:
 
@@ -7542,7 +7464,7 @@
 
   == Querying JSON Columns
   <querying-json-columns>
-  Some source tables have JSON or nested data columns that land as-is (0507). If a flattening view exists (0703), use it -- the view extracts the fields you need into regular columns. If not, use the engine's JSON path syntax:
+  Some source tables have JSON or nested data columns that land as-is (@nested-data-and-json). If a flattening view exists (@query-patterns-for-analysts), use it -- the view extracts the fields you need into regular columns. If not, use the engine's JSON path syntax:
 
   ```sql
   -- destination: bigquery (JSON string column)
@@ -7607,7 +7529,7 @@
 
   #ecl-warning(
     "Don't expect real-time destination data",
-  )[The destination reflects the source as of the last successful extraction, not as of right now. Check `_extracted_at` or the health table (0602) to know how fresh the data is. If you need live data, query the source.]
+  )[The destination reflects the source as of the last successful extraction, not as of right now. Check `_extracted_at` or the health table (@the-health-table) to know how fresh the data is. If you need live data, query the source.]
 
   // ---
 
@@ -7621,7 +7543,7 @@
   <the-problem-3>
   Cost optimization is engine-specific. What saves money on BigQuery (reducing bytes scanned) is irrelevant on Snowflake (which bills by warehouse time). Generic advice like "use partitions" applies everywhere, but the specifics -- what to partition on, how clustering interacts with the billing model, which operations are free and which are traps -- differ enough across engines that generic advice doesn't help with the decisions that actually move the bill.
 
-  The ECL engineer's load-time decisions have permanent cost consequences on every consumer query. A partition key chosen at table creation, a clustering configuration, a table format -- these compound across every query for the lifetime of the table. This chapter is the engine-specific reference for making those decisions correctly, and for knowing which levers to pull when the cost monitoring from 0603 surfaces a table that's too expensive.
+  The ECL engineer's load-time decisions have permanent cost consequences on every consumer query. A partition key chosen at table creation, a clustering configuration, a table format -- these compound across every query for the lifetime of the table. This chapter is the engine-specific reference for making those decisions correctly, and for knowing which levers to pull when the cost monitoring from @cost-monitoring surfaces a table that's too expensive.
 
   I once wasted \$500 in a single night because of unlimited retries on a badly merged table. The retries ran all night, rescanning the table roughly 30 times a minute. By next morning the bill was already in, and the lesson was clear: set per-day cost limits on the project, and understand what each query costs before you let it retry indefinitely.
 
@@ -7637,7 +7559,7 @@
       "https://cloud.google.com/bigquery/docs/materialized-views-intro",
     )[Materialized views] -- #link("https://cloud.google.com/bigquery/docs/reservations-intro")[Reservations (slots)]]
 
-  #strong[Partitioning + `require_partition_filter`.] Mandatory cost control for any table over a few GB. A query that filters on the partition column reads only the partitions that match; everything else is skipped at zero cost. `require_partition_filter = true` rejects queries that forget the filter, turning a potential \$50 full scan into an error message. See 0702 for partition key selection.
+  #strong[Partitioning + `require_partition_filter`.] Mandatory cost control for any table over a few GB. A query that filters on the partition column reads only the partitions that match; everything else is skipped at zero cost. `require_partition_filter = true` rejects queries that forget the filter, turning a potential \$50 full scan into an error message. See @partitioning-clustering-and-pruning for partition key selection.
 
   #strong[Clustering.] Reduces bytes scanned within partitions. Up to 4 columns, ordered by filtering priority -- the first column clusters most effectively. A query filtering on a clustered column reads fewer storage blocks because the engine skips blocks whose min/max range doesn't include the target value. BigQuery auto-reclusters in the background at no explicit cost.
 
@@ -7719,7 +7641,7 @@
 
   #strong[Select only the columns you need.] Matters most on BigQuery (bytes scanned = money), still reduces I/O and speeds up queries on every engine.
 
-  #strong[Monitor before optimizing.] Cost attribution from 0603 tells you which tables and queries to focus on. Optimizing a table that costs \$0.02/month is wasted effort.
+  #strong[Monitor before optimizing.] Cost attribution from @cost-monitoring tells you which tables and queries to focus on. Optimizing a table that costs \$0.02/month is wasted effort.
 
   #strong[Set cost guardrails early.] BigQuery's per-day cost limits, Snowflake's resource monitors, Redshift's query monitoring rules -- every engine has a mechanism to cap runaway costs. Configure them before production, not after.
 
@@ -7731,7 +7653,7 @@
 
   #ecl-danger(
     "Don't optimize tables that aren't expensive",
-  )[A 10k-row lookup table costs fractions of a cent per query regardless of partitioning or clustering. Optimize what shows up in the top-10 cost report from 0603.]
+  )[A 10k-row lookup table costs fractions of a cent per query regardless of partitioning or clustering. Optimize what shows up in the top-10 cost report from @cost-monitoring.]
 
   #ecl-warning(
     "Don't let unlimited retries run unbound",
@@ -7749,7 +7671,7 @@
   <the-problem-4>
   A consumer asks "what was the inventory level on March 5?" or "what was the order status at 2pm last Tuesday?" If you only have the current state -- the latest version of each row from a full replace or a dedup view -- the answer is gone, overwritten by subsequent updates. The destination reflects right now, not any point in the past.
 
-  Two mechanisms preserve history. An append-and-materialize log (0404) accumulates extracted versions over time -- each extraction appends rows tagged with `_extracted_at`, and prior versions survive alongside current ones until compaction. Event tables take a different approach -- `inventory_movements`, append-only `events` -- each row is something that happened, and the full history is in the log itself. Any point-in-time state is computable by replaying events up to the target date, without storing a single snapshot.
+  Two mechanisms preserve history. An append-and-materialize log (@append-and-materialize) accumulates extracted versions over time -- each extraction appends rows tagged with `_extracted_at`, and prior versions survive alongside current ones until compaction. Event tables take a different approach -- `inventory_movements`, append-only `events` -- each row is something that happened, and the full history is in the log itself. Any point-in-time state is computable by replaying events up to the target date, without storing a single snapshot.
 
   In practice, the most common use case is inventory auditing. A client wants to reconcile their physical stock count against what the system said the stock was on the count date. That's a point-in-time reconstruction: sum all movements up to the count date, compare against the physical count, and the difference tells you whether the system or the warehouse is wrong.
 
@@ -7780,9 +7702,9 @@
   GROUP BY sku_id, warehouse_id;
   ```
 
-  The two queries are identical except for the WHERE clause. Any point-in-time snapshot is computable from the event log by moving the date boundary -- this is why 0701 insists on landing the movements: the detail produces any aggregate, but the aggregate can't reproduce the detail.
+  The two queries are identical except for the WHERE clause. Any point-in-time snapshot is computable from the event log by moving the date boundary -- this is why @partitioning-clustering-and-pruning insists on landing the movements: the detail produces any aggregate, but the aggregate can't reproduce the detail.
 
-  For high-frequency point-in-time queries -- a dashboard showing stock levels at close-of-business for each day of the month -- replaying the full movement history on every query gets expensive fast. A materialized table built from movements avoids the rescan: a scheduled query (0703) runs after each extraction, replays movements up to each date, and writes the result.
+  For high-frequency point-in-time queries -- a dashboard showing stock levels at close-of-business for each day of the month -- replaying the full movement history on every query gets expensive fast. A materialized table built from movements avoids the rescan: a scheduled query (@query-patterns-for-analysts) runs after each extraction, replays movements up to each date, and writes the result.
 
   The trap is materializing the full grid. 200 warehouses, 100,000 SKUs, 365 days -- that's 7.3 billion rows for a single year, most of them zeros because a given SKU doesn't move every day in every warehouse. Materialize sparse: only SKU/warehouse/date combinations where a movement actually occurred. A consumer who needs "stock on March 5 for SKU X in warehouse Y" gets the answer from the most recent materialized row on or before that date, not from a row for every day.
 
@@ -7790,7 +7712,7 @@
 
   == Status History from Append Logs
   <status-history-from-append-logs>
-  Not every table has a natural event log. `orders` doesn't have a changelog -- it's a mutable table that gets updated in place. But if `orders` is loaded via append-and-materialize (0404), the log table has every extracted version of each order: order 123 with `status = pending` from Monday's extraction, order 123 with `status = shipped` from Wednesday's. The extraction log becomes an implicit event trail, with one "event" per extraction run.
+  Not every table has a natural event log. `orders` doesn't have a changelog -- it's a mutable table that gets updated in place. But if `orders` is loaded via append-and-materialize (@append-and-materialize), the log table has every extracted version of each order: order 123 with `status = pending` from Monday's extraction, order 123 with `status = shipped` from Wednesday's. The extraction log becomes an implicit event trail, with one "event" per extraction run.
 
   Status at a point in time is the latest extracted version before the target timestamp:
 
@@ -7813,7 +7735,7 @@
 
   #ecl-warning(
     "Compaction destroys version history",
-  )[0404 recommends compacting the log -- trimming old extractions or collapsing to latest-only -- to keep the dedup view fast and storage bounded. That compaction deletes the version history this section depends on. If consumers need point-in-time reconstruction from the append log, the compaction retention window must be longer than their lookback requirement. A 90-day lookback needs at least 90 days of log retention, which means 90 days of extraction overlap sitting in storage. That's a real cost on a large table -- decide upfront whether the log is a temporary buffer or a historical record, because it can't cheaply be both.]
+  )[@append-and-materialize recommends compacting the log -- trimming old extractions or collapsing to latest-only -- to keep the dedup view fast and storage bounded. That compaction deletes the version history this section depends on. If consumers need point-in-time reconstruction from the append log, the compaction retention window must be longer than their lookback requirement. A 90-day lookback needs at least 90 days of log retention, which means 90 days of extraction overlap sitting in storage. That's a real cost on a large table -- decide upfront whether the log is a temporary buffer or a historical record, because it can't cheaply be both.]
 
   == When Events Aren't Enough
   <when-events-arent-enough>
@@ -7821,9 +7743,9 @@
 
   For tables where point-in-time matters but no event log exists:
 
-  #strong[Append-and-materialize with history retention (0404).] Skip compaction (or compact less frequently) and the append log becomes an explicit version history. Each extraction appends the current state of changed rows, and prior versions accumulate. Storage grows with extraction frequency, but the history is queryable -- point-in-time state is the latest extracted version before the target date.
+  #strong[Append-and-materialize with history retention (@append-and-materialize).] Skip compaction (or compact less frequently) and the append log becomes an explicit version history. Each extraction appends the current state of changed rows, and prior versions accumulate. Storage grows with extraction frequency, but the history is queryable -- point-in-time state is the latest extracted version before the target date.
 
-  #strong[Append-and-materialize log (0404).] The extraction log provides event-like history as a side effect of the load strategy -- cheaper than full snapshots because each extraction appends only the changed rows, not the entire table. The tradeoff: the history exists only at extraction granularity, and compacting the log destroys it. Once you compact to latest-only, the prior versions are gone. If consumers depend on point-in-time queries against the log, the compaction retention window must be longer than their lookback requirement -- and they need to know that compaction is happening so they don't build a process that assumes the history is permanent.
+  #strong[Append-and-materialize log (@append-and-materialize).] The extraction log provides event-like history as a side effect of the load strategy -- cheaper than full snapshots because each extraction appends only the changed rows, not the entire table. The tradeoff: the history exists only at extraction granularity, and compacting the log destroys it. Once you compact to latest-only, the prior versions are gone. If consumers depend on point-in-time queries against the log, the compaction retention window must be longer than their lookback requirement -- and they need to know that compaction is happening so they don't build a process that assumes the history is permanent.
 
   #strong[SCD Type 2 (Slowly Changing Dimension).] When point-in-time queries are a first-class requirement -- not an occasional audit but something dashboards and reports depend on daily -- an SCD2 structure makes the history explicit in the schema itself. Each row gets `valid_from` and `valid_to` columns, and a query for "what did this customer look like on March 5?" becomes a range filter instead of a window function over an extraction log:
 
@@ -7837,7 +7759,7 @@
     AND (valid_to > '2026-03-05' OR valid_to IS NULL);
   ```
 
-  Building the SCD2 table is a downstream transformation, not a conforming operation -- the pipeline lands the current state or the append log, and a scheduled job compares consecutive extractions to detect changes and maintain the `valid_from`/`valid_to` bookkeeping. The mechanics are well-documented elsewhere; what matters for this pattern is that SCD2 gives you point-in-time queries that are cheap to run (a range filter that benefits from partitioning and clustering -- 0702), explicit in their semantics (no ambiguity about what `_extracted_at` means versus when the change actually happened), and immune to compaction -- the history is the table, not a side effect of a retention window.
+  Building the SCD2 table is a downstream transformation, not a conforming operation -- the pipeline lands the current state or the append log, and a scheduled job compares consecutive extractions to detect changes and maintain the `valid_from`/`valid_to` bookkeeping. The mechanics are well-documented elsewhere; what matters for this pattern is that SCD2 gives you point-in-time queries that are cheap to run (a range filter that benefits from partitioning and clustering -- @pre-built-views), explicit in their semantics (no ambiguity about what `_extracted_at` means versus when the change actually happened), and immune to compaction -- the history is the table, not a side effect of a retention window.
 
   The cost is maintaining the SCD2 pipeline itself. Every extraction needs to be diffed against the previous state to detect what changed, close out old rows, and open new ones. For a `customers` table with 100K rows that changes slowly (hence the name), this is trivial. For an `orders` table with millions of rows and high mutation rates, the daily diff becomes expensive. SCD2 earns its place on tables where the change rate is low relative to the table size and the point-in-time queries are frequent -- dimension tables like `customers`, `products`, `warehouses`. For high-mutation fact tables, the append log or snapshot approaches are usually cheaper to maintain.
 
@@ -7875,7 +7797,7 @@
 
   == Completeness
   <completeness>
-  Replay is only as accurate as the event log, and event logs have gaps. The domain model's `inventory_movements` table has a soft rule: "every stock change creates a movement." But bulk import scripts that update `inventory` directly without logging a movement violate this silently (0002). The reconstructed snapshot from movements will differ from the actual `inventory` table, and the difference is the sum of all unlogged changes.
+  Replay is only as accurate as the event log, and event logs have gaps. The domain model's `inventory_movements` table has a soft rule: "every stock change creates a movement." But bulk import scripts that update `inventory` directly without logging a movement violate this silently (@domain-model). The reconstructed snapshot from movements will differ from the actual `inventory` table, and the difference is the sum of all unlogged changes.
 
   I had a client whose `inventory` table and the reconstructed-from-movements inventory diverged by hundreds of units on certain SKUs. The client refused to believe my data was correct -- their expectation was that movements and inventory should always match. I had to pull both from the source, show the same discrepancy in the source system itself, and demonstrate that the gap came from bulk operations that bypassed the movement log. The pipeline was cloning faithfully; the source was inconsistent.
 
@@ -7989,7 +7911,7 @@
 
   #strong[Accented characters] like `línea_factura` or `straße` are valid UTF-8 and every modern engine supports them, but BI tools and older ODBC connectors can choke. Replace accents at load time (`línea` → `linea`, `straße` → `strasse`) -- the readability cost is negligible, and you avoid discovering the incompatibility at the worst possible moment.
 
-  #strong[Collisions after normalization] happen when a case-sensitive source has columns like `OrderID` and `orderid` that collapse to the same string after any normalization. Detect these at load time and fail loudly -- a silent overwrite is worse than a broken load. Resolve by suffixing (`orderid`, `orderid_1`) and document the original-to-normalized mapping in column descriptions or a schema contract (0609). Ugly, but it preserves every source column.
+  #strong[Collisions after normalization] happen when a case-sensitive source has columns like `OrderID` and `orderid` that collapse to the same string after any normalization. Detect these at load time and fail loudly -- a silent overwrite is worse than a broken load. Resolve by suffixing (`orderid`, `orderid_1`) and document the original-to-normalized mapping in column descriptions or a schema contract (@data-contracts). Ugly, but it preserves every source column.
 
   == Schema Naming
   <schema-naming>
@@ -8060,7 +7982,7 @@
 
   === Staging conventions
   <staging-conventions>
-  Staging tables need their own namespace to avoid colliding with production. Table prefix (`stg_orders` in the same schema) or parallel schema (`orders_staging.orders`) -- the tradeoffs are covered in 0203.
+  Staging tables need their own namespace to avoid colliding with production. Table prefix (`stg_orders` in the same schema) or parallel schema (`orders_staging.orders`) -- the tradeoffs are covered in @staging-swap.
 
   == Per-Table Overrides
   <per-table-overrides>
@@ -8068,7 +7990,7 @@
 
   I learned this the hard way with a client who had `ProductStock` and `ProductStock$` in the same source -- identical structure, one holding unit quantities and the other monetary values. My stripping rule removed the `$`, both tables landed as `product_stock`, and whichever loaded second silently overwrote the first. I didn't catch it until the numbers stopped making sense downstream. The fix was a per-table override renaming one to `product_stock_value` -- a borderline transformation, but better than losing data. The general rule works until it doesn't, and when it doesn't, the alternative to a per-table escape hatch is rewriting the entire convention.
 
-  0609 treats the naming convention as a schema contract -- any change to it, including per-table overrides, is a breaking change that should go through the contract process.
+  @data-contracts treats the naming convention as a schema contract -- any change to it, including per-table overrides, is a breaking change that should go through the contract process.
 
   == Migrating a Convention
   <migrating-a-convention>
@@ -8140,7 +8062,7 @@
     kind: table,
   )
 
-  See 0707 for naming strategy.
+  See @sql-dialect-reference for naming strategy.
 
   // ---
 
@@ -8182,13 +8104,13 @@
 
   #ecl-warning(
     "BigQuery has no naive datetime",
-  )[Every `TIMESTAMP` in BigQuery is UTC. Naive timestamps from the source land as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Conform timezone info during load. See 0505.]
+  )[Every `TIMESTAMP` in BigQuery is UTC. Naive timestamps from the source land as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Conform timezone info during load. See @timezone-conforming.]
 
   #ecl-warning(
     "DATETIME2 precision truncates on load",
   )[SQL Server DATETIME2(7) 100-nanosecond precision truncates to microseconds on BigQuery and Redshift. Snowflake's `TIMESTAMP_NTZ(9)` and ClickHouse's `DateTime64(7)` can preserve it.]
 
-  See 0503 for the full type mapping.
+  See @type-casting-and-normalization for the full type mapping.
 
   // ---
 
@@ -8295,7 +8217,7 @@
     updated_at = VALUES(updated_at);
   ```
 
-  #strong[ClickHouse] -- no native upsert. Use `ReplacingMergeTree` with eventual dedup on merge, or append + deduplicate. See 0404.
+  #strong[ClickHouse] -- no native upsert. Use `ReplacingMergeTree` with eventual dedup on merge, or append + deduplicate. See @append-and-materialize.
 
   #strong[Redshift] -- `MERGE` added in late 2023, same syntax as Snowflake/BigQuery. For older clusters or performance-sensitive loads, the classic pattern is DELETE + INSERT in a transaction.
 
@@ -8313,7 +8235,7 @@
     kind: table,
   )
 
-  See 0403 for cost analysis and when to use MERGE vs alternatives.
+  See @merge-upsert for cost analysis and when to use MERGE vs alternatives.
 
   // ---
 
@@ -8364,7 +8286,7 @@
 
   Keeps exactly one row per key regardless of age -- safe with any extraction strategy. All version history is gone, but every current row survives. On engines without `QUALIFY`, use the subquery wrapper inside the `CREATE TABLE ... AS SELECT`.
 
-  See 0404 for the full pattern, cost tradeoffs, and retention sizing.
+  See @append-and-materialize for the full pattern, cost tradeoffs, and retention sizing.
 
   // ---
 
@@ -8416,7 +8338,7 @@
 
   Atomic swap of both table names. The old production data moves to `stg_orders` after the swap.
 
-  See 0203 for the full pattern.
+  See @staging-swap for the full pattern.
 
   // ---
 
@@ -8454,7 +8376,7 @@
 
   Atomic per partition, operates at the partition level without rewriting rows.
 
-  See 0202 for the full pattern.
+  See @partition-swap for the full pattern.
 
   // ---
 
@@ -8522,7 +8444,7 @@
 
   Sort keys and dist keys are changeable via `ALTER TABLE`, but the rewrite runs in the background and can be slow on large tables -- choose well at creation. Sort key serves the role of a partition/cluster key for scan pruning. Dist key controls how data distributes across nodes for join performance.
 
-  See 0104 for storage mechanics and 0702 for key selection.
+  See @columnar-destinations for storage mechanics and @pre-built-views for key selection.
 
   // ---
 
@@ -8555,7 +8477,7 @@
 
   Same result, different syntax. `QUALIFY` filters directly on window functions without a subquery. Engines that don't support it need the subquery wrapper.
 
-  See 0404 for dedup views and 0613 for detection patterns.
+  See @append-and-materialize for dedup views and @duplicate-detection for detection patterns.
 
   // ---
 
@@ -8583,7 +8505,7 @@
     kind: table,
   )
 
-  See 0104 for format compatibility and gotchas.
+  See @columnar-destinations for format compatibility and gotchas.
 
   // ---
 
@@ -8608,7 +8530,7 @@
     kind: table,
   )
 
-  See 0507 for conforming strategy.
+  See @nested-data-and-json for conforming strategy.
 
   // ---
 
@@ -8637,7 +8559,7 @@
     kind: table,
   )
 
-  See 0104 for full details and 0609 for schema policies.
+  See @columnar-destinations for full details and @data-contracts for schema policies.
 
   // ---
 
@@ -8648,7 +8570,7 @@
   - #strong[SQL Server];: `WITH (NOLOCK)` avoids blocking writers during extraction but reads dirty data (rows mid-transaction). `DATETIME2(7)` nanosecond precision truncates on most destinations. Getting read access to a production SQL Server often involves procurement, security reviews, and a DBA who has 47 other priorities.
   - #strong[SAP HANA];: Proprietary SQL dialect. Legally restricted access to some tables (S/4HANA). Varies by SAP module -- extraction patterns that work for B1 may not apply to S/4. If you're extracting from SAP, you already know.
 
-  See 0103 for the full terrain.
+  See @transactional-sources for the full terrain.
 
   // ---
 
@@ -8716,7 +8638,7 @@
   <freshness-tier>
   // TODO: Convert mermaid diagram to Typst or embed as SVG
 
-  See 0608 for the full framework.
+  See @tiered-freshness for the full framework.
 
   == Domain Model Mapping
   <domain-model-mapping>
@@ -8729,56 +8651,56 @@
       table.header([Table], [Extraction], [Load], [Freshness], [Why]),
       table.hline(),
       [`orders`],
-      [Stateless window 7d (0303)],
-      [Append-and-materialize (0404)],
+      [Stateless window 7d (@stateless-window-extraction)],
+      [Append-and-materialize (@append-and-materialize)],
       [Hot + warm nightly reset],
       [`updated_at` unreliable, hard deletes unlikely, high mutation rate],
       [`order_lines`],
-      [Cursor from header (0304)],
+      [Cursor from header (@cursor-from-another-table)],
       [Same as `orders`],
       [Same schedule as `orders`],
       [No own timestamp, borrows from `orders`],
       [`customers`],
-      [Full replace (0201)],
-      [Full replace (0401)],
+      [Full replace (@full-scan-strategies)],
+      [Full replace (@full-replace-load)],
       [Warm (daily)],
       [Dimension table, changes across full history, small enough to scan],
       [`products`],
-      [Full replace (0201)],
-      [Full replace (0401)],
+      [Full replace (@full-scan-strategies)],
+      [Full replace (@full-replace-load)],
       [Warm (daily)],
       [Schema mutates, full replace catches everything],
       [`invoices`],
-      [Open/closed split (0307)],
-      [Merge (0403)],
+      [Open/closed split (@openclosed-documents)],
+      [Merge (@merge-upsert)],
       [Hot for open, cold for closed],
       [Hard deletes on open invoices, closed invoices frozen],
       [`invoice_lines`],
-      [Open/closed from header (0307) + detail handling (0308)],
+      [Open/closed from header (@openclosed-documents) + detail handling (@detail-without-timestamp)],
       [Same as `invoices`],
       [Same schedule as `invoices`],
       [Independent status changes, hard deletes not just cascade],
       [`events`],
-      [Sequential ID cursor (0305)],
-      [Append-only (0402)],
+      [Sequential ID cursor (@sequential-id-cursor)],
+      [Append-only (@append-only-load)],
       [Hot],
       [Append-only, partitioned by date, never updated],
       [`sessions`],
       [Sequential ID or `created_at` cursor],
-      [Append-only (0402)],
+      [Append-only (@append-only-load)],
       [Hot],
-      [Late-arriving events need wider window (0309)],
+      [Late-arriving events need wider window (@late-arriving-data)],
       [`metrics_daily`],
-      [Scoped full replace (0204)],
-      [Partition swap (0202)],
+      [Scoped full replace (@scoped-full-replace)],
+      [Partition swap (@partition-swap)],
       [Warm (daily)],
       [Pre-aggregated, overwritten daily, partition-aligned],
       [`inventory`],
-      [Activity-driven (0207)],
-      [Staging swap (0203)],
+      [Activity-driven (@activity-driven-extraction)],
+      [Staging swap (@staging-swap)],
       [Warm (daily) + monthly full],
       [Sparse cross-product, activity-filtered extraction],
-      [`inventory_movements`], [Sequential ID cursor (0305)], [Append-only (0402)], [Hot], [Append-only activity log],
+      [`inventory_movements`], [Sequential ID cursor (@sequential-id-cursor)], [Append-only (@append-only-load)], [Hot], [Append-only activity log],
     )],
     kind: table,
   )
@@ -8791,91 +8713,91 @@
 
   = Glossary
   <glossary>
-  #strong[Append-and-materialize] -- Load strategy that appends every extraction as new rows to a log table and deduplicates to current state via a view. Avoids MERGE cost on columnar engines. See 0404.
+  #strong[Append-and-materialize] -- Load strategy that appends every extraction as new rows to a log table and deduplicates to current state via a view. Avoids MERGE cost on columnar engines. See @append-and-materialize.
 
-  #strong[Backfill] -- Reloading a historical date range or an entire table to correct accumulated drift, recover from corruption, or onboard a new table. See 0611.
+  #strong[Backfill] -- Reloading a historical date range or an entire table to correct accumulated drift, recover from corruption, or onboard a new table. See @backfill-strategies.
 
-  #strong[Batch ID (`_batch_id`)] -- Metadata column that correlates all rows from the same extraction run. Used for rollback, debugging, and reconciliation. See 0501.
+  #strong[Batch ID (`_batch_id`)] -- Metadata column that correlates all rows from the same extraction run. Used for rollback, debugging, and reconciliation. See @metadata-column-injection.
 
-  #strong[Cold tier] -- Freshness tier for historical data refreshed weekly or monthly via full replace. Acts as the purity safety net. See 0608.
+  #strong[Cold tier] -- Freshness tier for historical data refreshed weekly or monthly via full replace. Acts as the purity safety net. See @tiered-freshness.
 
-  #strong[Compaction] -- Collapsing an append log to one row per key, removing all historical versions. Always collapse-to-latest (`QUALIFY ROW_NUMBER() = 1`), never trim-by-date. See 0404.
+  #strong[Compaction] -- Collapsing an append log to one row per key, removing all historical versions. Always collapse-to-latest (`QUALIFY ROW_NUMBER() = 1`), never trim-by-date. See @append-and-materialize.
 
-  #strong[Conforming] -- Everything the data needs to survive the crossing between source and destination: type casting, metadata injection, null handling, charset encoding, key synthesis. If it changes business meaning, it belongs downstream. See 0102.
+  #strong[Conforming] -- Everything the data needs to survive the crossing between source and destination: type casting, metadata injection, null handling, charset encoding, key synthesis. If it changes business meaning, it belongs downstream. See @what-is-conforming.
 
-  #strong[Corridor] -- The combination of source type and destination type. Transactional -\> Columnar (e.g.~PostgreSQL -\> BigQuery) or Transactional -\> Transactional (e.g.~PostgreSQL -\> PostgreSQL). Same pattern, different trade-offs. See 0107.
+  #strong[Corridor] -- The combination of source type and destination type. Transactional -\> Columnar (e.g.~PostgreSQL -\> BigQuery) or Transactional -\> Transactional (e.g.~PostgreSQL -\> PostgreSQL). Same pattern, different trade-offs. See @corridors.
 
-  #strong[Cursor] -- A high-water mark (typically `MAX(updated_at)` or `MAX(id)`) used to extract only rows that changed since the last run. See 0302.
+  #strong[Cursor] -- A high-water mark (typically `MAX(updated_at)` or `MAX(id)`) used to extract only rows that changed since the last run. See @cursor-based-timestamp-extraction.
 
-  #strong[Data contract] -- Explicit, checkable rules at the boundary between source and destination: schema shape, volume range, null rates, freshness. See 0609.
+  #strong[Data contract] -- Explicit, checkable rules at the boundary between source and destination: schema shape, volume range, null rates, freshness. See @data-contracts.
 
-  #strong[Dedup view] -- A SQL view over an append log that uses `ROW_NUMBER() OVER (PARTITION BY pk ORDER BY _extracted_at DESC) = 1` to expose only the latest version of each row. See 0404.
+  #strong[Dedup view] -- A SQL view over an append log that uses `ROW_NUMBER() OVER (PARTITION BY pk ORDER BY _extracted_at DESC) = 1` to expose only the latest version of each row. See @append-and-materialize.
 
-  #strong[ECL] -- Extract, Conform, Load. The framework this book documents. The C handles type casting, metadata injection, null handling, key synthesis -- everything the data needs to land correctly. See 0101.
+  #strong[ECL] -- Extract, Conform, Load. The framework this book documents. The C handles type casting, metadata injection, null handling, key synthesis -- everything the data needs to land correctly. See @the-el-myth.
 
-  #strong[EL] -- Extract-Load with zero transformation. The theoretical ideal that never survives contact with real systems. See 0101.
+  #strong[EL] -- Extract-Load with zero transformation. The theoretical ideal that never survives contact with real systems. See @the-el-myth.
 
-  #strong[Evolve] -- Schema policy that accepts new columns from the source and adds them to the destination automatically. The recommended default for most tables. See 0609.
+  #strong[Evolve] -- Schema policy that accepts new columns from the source and adds them to the destination automatically. The recommended default for most tables. See @data-contracts.
 
-  #strong[Extracted at (`_extracted_at`)] -- Metadata column recording when the pipeline pulled the row, not when the source last modified it. Foundation for dedup ordering in append-and-materialize. See 0501.
+  #strong[Extracted at (`_extracted_at`)] -- Metadata column recording when the pipeline pulled the row, not when the source last modified it. Foundation for dedup ordering in append-and-materialize. See @metadata-column-injection.
 
-  #strong[Extraction gate] -- A check between extraction and load that blocks the load when the result looks implausible (0 rows from a table that normally has data, row count outside expected range). See 0610.
+  #strong[Extraction gate] -- A check between extraction and load that blocks the load when the result looks implausible (0 rows from a table that normally has data, row count outside expected range). See @extraction-status-gates.
 
-  #strong[Freeze] -- Schema policy that rejects any schema change and fails the load. Reserved for tables with stable, critical schemas. See 0609.
+  #strong[Freeze] -- Schema policy that rejects any schema change and fails the load. Reserved for tables with stable, critical schemas. See @data-contracts.
 
-  #strong[Freshness] -- How recently the destination reflects the source. The other end of the purity tradeoff. See 0108.
+  #strong[Freshness] -- How recently the destination reflects the source. The other end of the purity tradeoff. See @purity-vs-freshness.
 
-  #strong[Full replace] -- Drop and reload the entire table on every run. Stateless, idempotent, catches everything. The default until the table outgrows the scan window. See 0201.
+  #strong[Full replace] -- Drop and reload the entire table on every run. Stateless, idempotent, catches everything. The default until the table outgrows the scan window. See @full-scan-strategies.
 
-  #strong[Hard delete] -- A source row that was physically removed. Invisible to any cursor-based extraction. Requires a separate detection mechanism. See 0306.
+  #strong[Hard delete] -- A source row that was physically removed. Invisible to any cursor-based extraction. Requires a separate detection mechanism. See @hard-delete-detection.
 
-  #strong[Hard rule] -- A constraint enforced by the database: PK, UNIQUE, NOT NULL, FK, CHECK. If the system rejects violations at write time, it's hard. See 0106.
+  #strong[Hard rule] -- A constraint enforced by the database: PK, UNIQUE, NOT NULL, FK, CHECK. If the system rejects violations at write time, it's hard. See @hard-rules-soft-rules.
 
-  #strong[Health table] -- Append-only table with one row per table per pipeline run, capturing raw measurements (row counts, timing, status, schema fingerprint). See 0602.
+  #strong[Health table] -- Append-only table with one row per table per pipeline run, capturing raw measurements (row counts, timing, status, schema fingerprint). See @the-health-table.
 
-  #strong[Hot tier] -- Freshness tier for actively changing data refreshed multiple times per day via incremental extraction. See 0608.
+  #strong[Hot tier] -- Freshness tier for actively changing data refreshed multiple times per day via incremental extraction. See @tiered-freshness.
 
-  #strong[Idempotent] -- A pipeline that produces the same destination state whether it runs once or ten times with the same input. Full replace gets it for free; incremental has to earn it. See 0109.
+  #strong[Idempotent] -- A pipeline that produces the same destination state whether it runs once or ten times with the same input. Full replace gets it for free; incremental has to earn it. See @idempotency.
 
-  #strong[Metadata columns] -- Columns injected during extraction that don't exist in the source: `_extracted_at`, `_batch_id`, `_source_hash`. See 0501.
+  #strong[Metadata columns] -- Columns injected during extraction that don't exist in the source: `_extracted_at`, `_batch_id`, `_source_hash`. See @metadata-column-injection.
 
-  #strong[Open document] -- A record that can still be modified (e.g.~draft invoice, pending order). Contrast with closed document. See 0307.
+  #strong[Open document] -- A record that can still be modified (e.g.~draft invoice, pending order). Contrast with closed document. See @openclosed-documents.
 
-  #strong[Closed document] -- A record that is immutable (e.g.~posted invoice). In many jurisdictions, modifying a closed invoice is illegal. See 0307.
+  #strong[Closed document] -- A record that is immutable (e.g.~posted invoice). In many jurisdictions, modifying a closed invoice is illegal. See @openclosed-documents.
 
-  #strong[Partition swap] -- Replace data at partition granularity without touching the rest of the table. See 0202.
+  #strong[Partition swap] -- Replace data at partition granularity without touching the rest of the table. See @partition-swap.
 
-  #strong[Purity] -- The degree to which the destination is an exact clone of the source at a given point in time. Full replace maximizes it; incremental carries purity debt. See 0108.
+  #strong[Purity] -- The degree to which the destination is an exact clone of the source at a given point in time. Full replace maximizes it; incremental carries purity debt. See @purity-vs-freshness.
 
-  #strong[QUALIFY] -- SQL clause that filters directly on window functions without a subquery. Native on BigQuery, Snowflake, ClickHouse. Not supported on PostgreSQL, MySQL, SQL Server, Redshift. See 0801.
+  #strong[QUALIFY] -- SQL clause that filters directly on window functions without a subquery. Native on BigQuery, Snowflake, ClickHouse. Not supported on PostgreSQL, MySQL, SQL Server, Redshift. See @decision-flowchart.
 
-  #strong[Reconciliation] -- Post-load verification that the destination matches the source: row count comparison, aggregate checks, hash comparison. See 0614.
+  #strong[Reconciliation] -- Post-load verification that the destination matches the source: row count comparison, aggregate checks, hash comparison. See @reconciliation-patterns.
 
-  #strong[Schema policy] -- How the pipeline responds when the source schema changes. Two valid modes in ECL: evolve (accept) or freeze (reject). See 0609.
+  #strong[Schema policy] -- How the pipeline responds when the source schema changes. Two valid modes in ECL: evolve (accept) or freeze (reject). See @data-contracts.
 
-  #strong[Scoped full replace] -- Full-replace semantics applied to a declared scope (e.g.~current year) while historical data outside the scope is frozen. See 0204.
+  #strong[Scoped full replace] -- Full-replace semantics applied to a declared scope (e.g.~current year) while historical data outside the scope is frozen. See @scoped-full-replace.
 
-  #strong[SLA] -- Service Level Agreement. Four components: table/group, freshness target, deadline, measurement point. See 0604.
+  #strong[SLA] -- Service Level Agreement. Four components: table/group, freshness target, deadline, measurement point. See @sla-management.
 
-  #strong[Soft rule] -- A business expectation with no database enforcement. "Quantities are always positive," "only open invoices get deleted." Your pipeline must survive these being wrong. See 0106.
+  #strong[Soft rule] -- A business expectation with no database enforcement. "Quantities are always positive," "only open invoices get deleted." Your pipeline must survive these being wrong. See @hard-rules-soft-rules.
 
-  #strong[Source hash (`_source_hash`)] -- Hash of all business columns at extraction time. Enables change detection without relying on `updated_at`. See 0501, 0208.
+  #strong[Source hash (`_source_hash`)] -- Hash of all business columns at extraction time. Enables change detection without relying on `updated_at`. See @metadata-column-injection, @hash-based-change-detection.
 
-  #strong[Staging swap] -- Load into a staging table, validate, then atomically swap to production. Zero downtime, trivial rollback. See 0203.
+  #strong[Staging swap] -- Load into a staging table, validate, then atomically swap to production. Zero downtime, trivial rollback. See @staging-swap.
 
-  #strong[Stateless window] -- Extract a fixed trailing window on every run with no cursor state between runs. The default incremental approach for most tables. See 0303.
+  #strong[Stateless window] -- Extract a fixed trailing window on every run with no cursor state between runs. The default incremental approach for most tables. See @stateless-window-extraction.
 
-  #strong[Synthetic key (`_source_key`)] -- A hash of immutable business columns, used as the MERGE key when the source has no stable primary key. See 0502.
+  #strong[Synthetic key (`_source_key`)] -- A hash of immutable business columns, used as the MERGE key when the source has no stable primary key. See @synthetic-keys.
 
-  #strong[Tiered freshness] -- Splitting a pipeline into hot, warm, and cold tiers so tables are refreshed at the cadence that matches their consumption, not at a uniform schedule. See 0608.
+  #strong[Tiered freshness] -- Splitting a pipeline into hot, warm, and cold tiers so tables are refreshed at the cadence that matches their consumption, not at a uniform schedule. See @tiered-freshness.
 
-  #strong[Warm tier] -- Freshness tier for recent data refreshed daily, typically overnight. The purity layer that catches what the hot tier missed. See 0608.
+  #strong[Warm tier] -- Freshness tier for recent data refreshed daily, typically overnight. The purity layer that catches what the hot tier missed. See @tiered-freshness.
 
   // ---
 
   = Domain Model Quick Reference
   <domain-model-quick-reference>
-  Condensed reference for the shared fictional schema used in every SQL example. For the full description, ERD, and soft rule explanations, see 0002.
+  Condensed reference for the shared fictional schema used in every SQL example. For the full description, ERD, and soft rule explanations, see @domain-model.
 
   == Tables at a Glance
   <tables-at-a-glance>
@@ -8889,37 +8811,37 @@
       [`order_id`],
       [`customer_id`, `status`, `total`, `created_at`, `updated_at`],
       [Broken cursor showcase],
-      [0301, 0303, 0310],
+      [@timestamp-extraction-foundations, @stateless-window-extraction, @create-vs-update-separation],
       [`order_lines`],
       [`line_id`],
       [`order_id`, `product_id`, `line_num`, `quantity`, `unit_price`],
       [Detail with no timestamp],
-      [0304, 0308],
-      [`customers`], [`customer_id`], [`name`, `email`, `is_active`], [Soft-delete dimension], [0201, 0106],
-      [`products`], [`product_id`], [`name`, `price`, `category`], [Schema drift case], [0201, 0105, 0209],
+      [@cursor-from-another-table, @detail-without-timestamp],
+      [`customers`], [`customer_id`], [`name`, `email`, `is_active`], [Soft-delete dimension], [@full-scan-strategies, @hard-rules-soft-rules],
+      [`products`], [`product_id`], [`name`, `price`, `category`], [Schema drift case], [@full-scan-strategies, @the-lies-sources-tell, @partial-column-loading],
       [`invoices`],
       [`invoice_id`],
       [`customer_id`, `status`, `doc_status`, `created_at`, `updated_at`],
       [Open/closed + hard deletes],
-      [0306, 0307],
+      [@hard-delete-detection, @openclosed-documents],
       [`invoice_lines`],
       [`line_id`],
       [`invoice_id`, `product_id`, `quantity`, `unit_price`, `status`],
       [Independent detail lifecycle],
-      [0308, 0306],
-      [`events`], [`event_id`], [`event_type`, `event_date`, `payload`], [Append-only, partitioned], [0305, 0402],
-      [`sessions`], [(implicit)], [`session_id`, `user_id`, `started_at`], [Late-arriving data], [0309],
+      [@detail-without-timestamp, @hard-delete-detection],
+      [`events`], [`event_id`], [`event_type`, `event_date`, `payload`], [Append-only, partitioned], [@sequential-id-cursor, @append-only-load],
+      [`sessions`], [(implicit)], [`session_id`, `user_id`, `started_at`], [Late-arriving data], [@late-arriving-data],
       [`metrics_daily`],
       [(composite)],
       [`metric_date`, `metric_name`, `value`],
       [Pre-aggregated, partition-replace],
-      [0202, 0204],
-      [`inventory`], [(`sku_id`, `warehouse_id`)], [`on_hand`, `on_order`], [Sparse cross-product], [0206, 0207],
+      [@partition-swap, @scoped-full-replace],
+      [`inventory`], [(`sku_id`, `warehouse_id`)], [`on_hand`, `on_order`], [Sparse cross-product], [@sparse-table-extraction, @activity-driven-extraction],
       [`inventory_movements`],
       [`movement_id`],
       [`sku_id`, `warehouse_id`, `movement_type`, `quantity`, `movement_date`],
       [Activity signal, append-only],
-      [0207, 0402, 0706],
+      [@activity-driven-extraction, @append-only-load, @schema-naming-conventions],
     )],
     kind: table,
   )
@@ -8946,7 +8868,7 @@
     kind: table,
   )
 
-  See 0106 for why these matter and how your pipeline should handle violations.
+  See @hard-rules-soft-rules for why these matter and how your pipeline should handle violations.
 
   == Relationships
   <relationships>
@@ -8960,7 +8882,7 @@
   <orchestrators>
   Every pattern in the book works regardless of tooling. This page names names.
 
-  An orchestrator schedules extractions, retries failures, and tracks what happened on each run. For ECL, the relevant concerns are scheduling cadence (0606), tiered freshness (0608), backfill execution (0611), and health table population (0602). The three serious options for a Python-based stack are Dagster, Airflow, and Prefect -- each models work differently, and the model shapes what's easy.
+  An orchestrator schedules extractions, retries failures, and tracks what happened on each run. For ECL, the relevant concerns are scheduling cadence (@scheduling-and-dependencies), tiered freshness (@tiered-freshness), backfill execution (@backfill-strategies), and health table population (@the-health-table). The three serious options for a Python-based stack are Dagster, Airflow, and Prefect -- each models work differently, and the model shapes what's easy.
 
   == Feature Comparison
   <feature-comparison>
@@ -9013,15 +8935,15 @@
   Dagster's core abstraction is the #strong[software-defined asset]: a function that produces a named data artifact, declared in code. For ECL, one asset maps to one destination table -- `orders`, `customers`, `events` -- and the orchestrator tracks when each was last materialized, whether it's fresh, and what metadata the last run attached to it.
 
   - #strong[Partitioned assets] let you declare that `events` is partitioned by date, then backfill a range by selecting it in the UI. The orchestrator chunks the range into partition runs, respects concurrency limits, and tracks success per partition. Prefer monthly partitions over daily -- a yearly backfill with daily partitions spawns 365 individual runs with their own metadata and UI entries, while monthly gives you 12 with the same per-partition retry.
-  - #strong[Asset checks] (`@asset_check`) run inline after materialization: row count validation, null rate thresholds, schema drift detection. Maps directly to 0609 and 0610.
-  - #strong[Freshness policies] declare how stale an asset is allowed to be. Violations surface in the UI and trigger alerts -- the 0604 SLA expressed as a one-liner in the asset definition.
-  - #strong[Custom metadata per materialization] (`context.add_output_metadata({"row_count": n})`) feeds the health table (0602) as a side effect of every run, with no explicit INSERT required.
+  - #strong[Asset checks] (`@asset_check`) run inline after materialization: row count validation, null rate thresholds, schema drift detection. Maps directly to @data-contracts and @extraction-status-gates.
+  - #strong[Freshness policies] declare how stale an asset is allowed to be. Violations surface in the UI and trigger alerts -- the @sla-management SLA expressed as a one-liner in the asset definition.
+  - #strong[Custom metadata per materialization] (`context.add_output_metadata({"row_count": n})`) feeds the health table (@the-health-table) as a side effect of every run, with no explicit INSERT required.
   - #strong[Sensors] trigger runs from external events. I use sensors to let dashboard admins trigger an on-demand refresh of the tables behind their reports, which means the pipeline only needs to run once daily while consumers who need fresher data pull it when they actually need it -- without a high-frequency schedule running for data nobody checks until 10 AM.
   - #strong[Concurrency limits per resource] cap concurrent extractions against a single source without global semaphores. At scale -- thousands of tables across dozens of sources -- this is what keeps the pipeline from overloading its own clients.
 
   #ecl-info(
     "Stateless by default",
-  )[Dagster's asset model encourages stateless pipelines: each materialization reads from the source and writes to the destination with no persisted cursor between runs. Incremental cursors (0302) can live in Dagster's built-in cursor mechanism or in the destination itself, but the orchestrator doesn't force a state store. This aligns with the 0109 goal.]
+  )[Dagster's asset model encourages stateless pipelines: each materialization reads from the source and writes to the destination with no persisted cursor between runs. Incremental cursors (@cursor-based-timestamp-extraction) can live in Dagster's built-in cursor mechanism or in the destination itself, but the orchestrator doesn't force a state store. This aligns with the @idempotency goal.]
 
   #strong[Where it costs you:]
 
@@ -9045,8 +8967,8 @@
 
   #strong[Where it needs more wiring for ECL:]
 
-  - Populating the health table (0602) with structured run metrics (row counts, durations, schema hashes) still requires explicit code per task. Asset metadata in 3.0 is oriented toward lineage tracking rather than the kind of per-run operational metrics that Dagster's `add_output_metadata` captures.
-  - SLA miss callbacks track task duration, and 3.1's deadline alerts add proactive monitoring on schedules -- but neither directly measures data freshness as 0604 defines it. You still need your own staleness query.
+  - Populating the health table (@the-health-table) with structured run metrics (row counts, durations, schema hashes) still requires explicit code per task. Asset metadata in 3.0 is oriented toward lineage tracking rather than the kind of per-run operational metrics that Dagster's `add_output_metadata` captures.
+  - SLA miss callbacks track task duration, and 3.1's deadline alerts add proactive monitoring on schedules -- but neither directly measures data freshness as @sla-management defines it. You still need your own staleness query.
   - XComs improved in 3.0 but remain the primary mechanism for passing structured data between tasks, and at scale (hundreds of tables) the ergonomics for metadata like row counts and schema hashes feel heavier than Dagster's built-in approach.
 
   #ecl-tip(
@@ -9060,12 +8982,12 @@
   - Python-native API with minimal boilerplate. The gap between "script that works" and "orchestrated pipeline" is the smallest of the three tools.
   - Automations (trigger actions on flow/task state changes, external events) provide flexible alerting and event-driven scheduling.
   - Ephemeral infrastructure via work pools -- Prefect spins up ECS tasks or Kubernetes jobs per run and deprovisions after completion, which keeps costs low for bursty workloads.
-  - The transactional interface lets you group tasks into transactions with automatic rollback on failure, which helps with the idempotency goals from 0109.
+  - The transactional interface lets you group tasks into transactions with automatic rollback on failure, which helps with the idempotency goals from @idempotency.
 
   #strong[Where it's limited for ECL at scale:]
 
   - No native partition concept. Backfilling a date range means parameterizing the flow and triggering N runs manually -- the orchestrator doesn't know they form a logical unit.
-  - No first-class freshness tracking or per-asset metadata. The health table (0602) is entirely your responsibility.
+  - No first-class freshness tracking or per-asset metadata. The health table (@the-health-table) is entirely your responsibility.
   - Flow-level concurrency from Prefect 2 was removed in 3.0, replaced by a combination of global concurrency limits, work pool limits, and work queue limits -- functional but less ergonomic.
   - At scale (thousands of tables), the flow-per-table model generates UI clutter without the asset lineage graph that helps navigate large Dagster installations.
 
@@ -9110,7 +9032,7 @@
   <the-spectrum>
   Extractor/loader tools sit on a spectrum from fully managed to fully custom. On the managed end, Fivetran handles everything -- connectors, scheduling, schema decisions, infrastructure -- and you accept whatever it decides. On the custom end, you write Python with SQLAlchemy, own every line, and maintain every failure mode. In between, Airbyte gives you managed connectors with more visibility into what they do, and dlt gives you a Python library that handles the plumbing while leaving schema control, deployment, and orchestration in your hands.
 
-  Where you belong on this spectrum depends on how many sources you need to cover, how much control you need over the conforming layer (0102), whether someone else's schema decisions are acceptable for your destination, and price. A self-built stack running dlt on your own infrastructure with BigQuery as the destination can run thousands of tables for a few hundred dollars a month in compute and storage. The same workload on Fivetran costs an order of magnitude more because you're paying per row, per sync, per connector -- and you're paying for the engineering you didn't have to do, which is a valid tradeoff only if you genuinely don't have the engineering capacity.
+  Where you belong on this spectrum depends on how many sources you need to cover, how much control you need over the conforming layer (@what-is-conforming), whether someone else's schema decisions are acceptable for your destination, and price. A self-built stack running dlt on your own infrastructure with BigQuery as the destination can run thousands of tables for a few hundred dollars a month in compute and storage. The same workload on Fivetran costs an order of magnitude more because you're paying per row, per sync, per connector -- and you're paying for the engineering you didn't have to do, which is a valid tradeoff only if you genuinely don't have the engineering capacity.
 
   == Comparison
   <comparison>
@@ -9194,11 +9116,11 @@
 
   Callbacks let you customize behavior per table without writing custom extraction code:
 
-  - #strong[`table_adapter_callback`] -- receives each reflected table and lets you modify which columns get extracted, add computed columns, or skip tables entirely. This is where you'd exclude PII columns (0209) or add metadata columns.
+  - #strong[`table_adapter_callback`] -- receives each reflected table and lets you modify which columns get extracted, add computed columns, or skip tables entirely. This is where you'd exclude PII columns (@partial-column-loading) or add metadata columns.
   - #strong[`type_adapter_callback`] -- overrides SQLAlchemy type mappings. If your source has `FLOAT` columns that should land as `DECIMAL`, this is where you fix it before any data moves.
-  - #strong[`query_adapter_callback`] -- modifies the SELECT query before execution. Add WHERE clauses for scoped extraction (0204), change the ORDER BY for cursor alignment, or inject hints for the source query planner.
+  - #strong[`query_adapter_callback`] -- modifies the SELECT query before execution. Add WHERE clauses for scoped extraction (@scoped-full-replace), change the ORDER BY for cursor alignment, or inject hints for the source query planner.
 
-  For incremental loading, dlt tracks cursor state internally via `dlt.sources.incremental()` -- it stores the last value in a `_dlt_pipeline_state` table on the destination and picks up where it left off on the next run. Incremental requires a primary key on the resource so dlt can merge correctly; without one, you're appending duplicates on every run. This works well for simple cursor-based patterns (0302) where you trust `updated_at` and want the library to manage state for you.
+  For incremental loading, dlt tracks cursor state internally via `dlt.sources.incremental()` -- it stores the last value in a `_dlt_pipeline_state` table on the destination and picks up where it left off on the next run. Incremental requires a primary key on the resource so dlt can merge correctly; without one, you're appending duplicates on every run. This works well for simple cursor-based patterns (@cursor-based-timestamp-extraction) where you trust `updated_at` and want the library to manage state for you.
 
   === Schema Contracts
   <schema-contracts>
@@ -9212,7 +9134,7 @@
   pipeline.run(source, schema_contract={"tables": "freeze", "columns": "freeze"})
   ```
 
-  I run permissive (`evolve`/`evolve`) in production because at scale the alternative is a constant stream of freeze-triggered failures from ERP modules being activated, schema migrations, and column additions that are all legitimate. The monitoring layer (0609) catches what matters; the pipeline keeps running.
+  I run permissive (`evolve`/`evolve`) in production because at scale the alternative is a constant stream of freeze-triggered failures from ERP modules being activated, schema migrations, and column additions that are all legitimate. The monitoring layer (@data-contracts) catches what matters; the pipeline keeps running.
 
   The conservative option makes sense when you have a small number of high-value tables where a schema surprise should stop the pipeline -- freeze tables to prevent junk table creation from source bugs, freeze types so a `VARCHAR` that suddenly arrives as `INT64` doesn't silently corrupt downstream queries.
 
@@ -9220,13 +9142,13 @@
 
   #ecl-warning(
     "Discard modes break the conforming boundary",
-  )[Silently dropping rows or values means your destination no longer mirrors the source -- you've introduced an invisible filter that nobody downstream knows about. For ECL workloads where the goal is a faithful clone, stick to `evolve` and `freeze`. See 0102.]
+  )[Silently dropping rows or values means your destination no longer mirrors the source -- you've introduced an invisible filter that nobody downstream knows about. For ECL workloads where the goal is a faithful clone, stick to `evolve` and `freeze`. See @what-is-conforming.]
 
   === Naming Conventions
   <naming-conventions>
   dlt normalizes all identifiers through a naming convention before they reach the destination. The default is `snake_case` -- lowercased, ASCII only, special characters stripped. Other options include `duck_case` (case-sensitive Unicode), `direct` (preserve as-is), and SQL-safe variants (`sql_cs_v1`, `sql_ci_v1`).
 
-  This is a one-time decision with permanent consequences -- the same tradeoff described in 0707. Changing the convention after data exists is destructive: dlt re-normalizes already-normalized identifiers (it doesn't store the originals), which means every table and column name in your destination could change.
+  This is a one-time decision with permanent consequences -- the same tradeoff described in @sql-dialect-reference. Changing the convention after data exists is destructive: dlt re-normalizes already-normalized identifiers (it doesn't store the originals), which means every table and column name in your destination could change.
 
   #ecl-warning(
     "Normalization can collide source keys",
@@ -9242,11 +9164,11 @@
 
   === Stateless Operation
   <stateless-operation>
-  dlt persists pipeline state in a local directory (schema cache, pending packages, load history) and in the destination (`_dlt_version`, `_dlt_pipeline_state`). For stateless operation (0109), delete the pipeline directory before every run to prevent stale caches from causing errors on staging tables that were cleaned up after the last merge.
+  dlt persists pipeline state in a local directory (schema cache, pending packages, load history) and in the destination (`_dlt_version`, `_dlt_pipeline_state`). For stateless operation (@idempotency), delete the pipeline directory before every run to prevent stale caches from causing errors on staging tables that were cleaned up after the last merge.
 
   Even with a clean local directory, dlt caches schema metadata in the destination's `_dlt_version` table. If a staging table is deleted after merge but the destination-side cache survives, the next load can skip table creation and fail. Use dlt's `refresh="drop_resources"` mechanism or delete cache entries before each load.
 
-  Combined with a stateless trailing-window extraction (0303), the pipeline has no persisted state between runs -- every execution is independent and idempotent.
+  Combined with a stateless trailing-window extraction (@stateless-window-extraction), the pipeline has no persisted state between runs -- every execution is independent and idempotent.
 
   === Going Custom
   <going-custom>
@@ -9255,13 +9177,13 @@
   - #strong[Extraction]: custom `@dlt.resource` functions with manual SQL via SQLAlchemy instead of `sql_table`. I build the query myself (including the WHERE clause for trailing-window extraction) and yield PyArrow tables via dlt's `row_tuples_to_arrow` helper -- significantly faster than dict-based iteration for large tables.
   - #strong[Merge]: custom DELETE+INSERT+QUALIFY in a BigQuery transaction instead of dlt's built-in merge. dlt's merge rewrites all touched partitions; ours prunes the DELETE to only the months that appear in the staging data, which matters when a 7-day trailing window touches rows across 2-3 partition months on a table with years of history.
   - #strong[Schema evolution]: custom `ALTER TABLE ADD COLUMN` before the merge step, with a mapping for BigQuery's legacy type names (`FLOAT` → `FLOAT64`, `INTEGER` → `INT64`) that the schema API returns.
-  - #strong[Incremental state]: no `_dlt_pipeline_state` table. The trailing window (0303) means every run re-extracts the same N-day range regardless of what happened before -- no cursor to track, no state to corrupt.
+  - #strong[Incremental state]: no `_dlt_pipeline_state` table. The trailing window (@stateless-window-extraction) means every run re-extracts the same N-day range regardless of what happened before -- no cursor to track, no state to corrupt.
 
   dlt still handles the load job itself (`pipeline.run()` with `write_disposition="replace"` to staging), Parquet serialization, `_dlt_id`/`_dlt_load_id` generation, schema contracts, and naming conventions. The library earns its place even when you bypass most of its extraction and merge machinery.
 
   #ecl-info(
     "dlt and append-and-materialize",
-  )[dlt's three write dispositions are `replace`, `append`, and `merge`. There's no built-in support for the append-and-materialize pattern from 0404 -- appending every extraction to a log table and deduplicating via a view. You can use `write_disposition="append"` to build the log, but the dedup view, compaction job, and materialization schedule are entirely yours to build and maintain outside of dlt. If append-and-materialize is your primary load strategy for columnar destinations, know that dlt handles the append step but everything after it -- the view, the compaction, the partition management -- is custom SQL you manage separately.]
+  )[dlt's three write dispositions are `replace`, `append`, and `merge`. There's no built-in support for the append-and-materialize pattern from @append-and-materialize -- appending every extraction to a log table and deduplicating via a view. You can use `write_disposition="append"` to build the log, but the dedup view, compaction job, and materialization schedule are entirely yours to build and maintain outside of dlt. If append-and-materialize is your primary load strategy for columnar destinations, know that dlt handles the append step but everything after it -- the view, the compaction, the partition management -- is custom SQL you manage separately.]
 
   // ---
 
@@ -9283,7 +9205,7 @@
   <fivetran>
   Fully managed, zero code, zero infrastructure. You authenticate a source, pick a destination, set a sync schedule, and Fivetran handles everything else. For teams without engineering capacity or for SaaS sources where the connector exists and works well, this is the fastest path to having data in your warehouse.
 
-  The tradeoff is control. Fivetran decides column types, naming conventions, and how to handle nested data. You can't inject metadata columns (0501), can't control the schema contract (0609), and can't customize the merge strategy. What lands in your destination is what Fivetran decided, and if that decision is wrong for your use case, your only recourse is a support ticket.
+  The tradeoff is control. Fivetran decides column types, naming conventions, and how to handle nested data. You can't inject metadata columns (@metadata-column-injection), can't control the schema contract (@data-contracts), and can't customize the merge strategy. What lands in your destination is what Fivetran decided, and if that decision is wrong for your use case, your only recourse is a support ticket.
 
   Fivetran does add its own metadata columns (`_fivetran_synced`, `_fivetran_deleted`) and handles soft deletes for some connectors. These are useful but non-standard -- your downstream queries become Fivetran-aware, which creates coupling that matters if you ever migrate off the platform.
 
@@ -9338,7 +9260,7 @@
 
   = Destinations
   <destinations>
-  0104 covers how columnar engines store, partition, and price data. 0705 covers the cost levers once data is loaded. This page is the decision: which engine for which workload, and what to watch out for when running ECL pipelines against each one.
+  @columnar-destinations covers how columnar engines store, partition, and price data. @cost-optimization-by-engine covers the cost levers once data is loaded. This page is the decision: which engine for which workload, and what to watch out for when running ECL pipelines against each one.
 
   == Cost Model Comparison
   <cost-model-comparison>
@@ -9459,7 +9381,7 @@
 
   #strong[ECL strengths:]
   - Reads and writes Parquet and CSV natively from S3/GCS/Azure -- no separate load job needed
-  - `INSERT ON CONFLICT` and `MERGE INTO` (DuckDB 1.4+) support the upsert and merge patterns from 0403
+  - `INSERT ON CONFLICT` and `MERGE INTO` (DuckDB 1.4+) support the upsert and merge patterns from @merge-upsert
   - Develop locally with the exact same SQL that runs in MotherDuck cloud -- the dev-to-prod gap is zero
   - Local DuckDB is free. MotherDuck's per-GB price (~\$0.15/GB) is higher than BigQuery's on-demand rate (~\$0.006/GB), but the total bill is often lower because DuckDB's single-node engine scans less data per query -- no distributed overhead, no shuffle. The savings come from efficiency, not a cheaper unit price
 
@@ -9474,7 +9396,7 @@
 
   #ecl-tip(
     "PostgreSQL as a destination",
-  )[For pipelines with fewer than ~100 tables, PostgreSQL with real PK enforcement, transactional `TRUNCATE`, and cheap `INSERT ON CONFLICT` is simpler and more forgiving than any columnar engine. The complexity tax of columnar only pays off when you need partition pruning, bytes-scanned billing, or warehouse-scale analytics. See 0107.]
+  )[For pipelines with fewer than ~100 tables, PostgreSQL with real PK enforcement, transactional `TRUNCATE`, and cheap `INSERT ON CONFLICT` is simpler and more forgiving than any columnar engine. The complexity tax of columnar only pays off when you need partition pruning, bytes-scanned billing, or warehouse-scale analytics. See @corridors.]
 
   // ---
 
@@ -9487,7 +9409,7 @@
       columns: (16%, 21%, 21%, 21%, 21%),
       align: (auto, auto, auto, auto, auto),
       table.header(
-        [Engine], [Full replace (0401)], [Append-only (0402)], [Merge / upsert (0403)], [Append-and-materialize (0404)]
+        [Engine], [Full replace (@full-replace-load)], [Append-only (@append-only-load)], [Merge / upsert (@merge-upsert)], [Append-and-materialize (@append-and-materialize)]
       ),
       table.hline(),
       [#strong[BigQuery]],
@@ -9550,7 +9472,7 @@
       [Lowest cost, local-first dev, no infrastructure to manage],
       [Mixed analytical + operational consumers],
       [Snowflake or BigQuery + PostgreSQL],
-      [Columnar for analytics, transactional for point queries (0405)],
+      [Columnar for analytics, transactional for point queries (@hybrid-append-merge)],
     )],
     kind: table,
   )

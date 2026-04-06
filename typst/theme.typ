@@ -15,7 +15,8 @@
 )[
   #text(fill: color, weight: "bold", size: 10pt, title)
   #v(4pt)
-  #text(fill: p.fg-subtle, body)
+  #set text(fill: p.fg-subtle)
+  #body
 ]
 #let ecl-tip(title, body) = ecl-callout(title, body, color: p.green-accent)
 #let ecl-warning(title, body) = ecl-callout(title, body, color: p.yellow-accent)

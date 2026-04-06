@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="250" viewBox="0 0 720 250">
+  <rect x="0" y="0" width="720" height="250" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Full ID comparison — extract source IDs, land in staging, diff at destination</text>
+
+  <!-- ═══ Step 1: Source ═══ -->
+  <text x="90" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">1. Extract IDs from source</text>
+
+  <rect x="20" y="46" width="140" height="130" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="20" y="46" width="140" height="18" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="60" width="140" height="4" fill="#ebdbb2"/>
+  <text x="90" y="58" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Source (invoices)</text>
+
+  <text x="90" y="76" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">invoice_id</text>
+  <line x1="28" y1="81" x2="152" y2="81" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <text x="90" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <line x1="28" y1="101" x2="152" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="90" y="116" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <line x1="28" y1="121" x2="152" y2="121" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="90" y="136" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1004</text>
+  <line x1="28" y1="141" x2="152" y2="141" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="90" y="156" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1005</text>
+  <line x1="28" y1="161" x2="152" y2="161" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="90" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1006</text>
+
+  <!-- Arrow: land IDs -->
+  <line x1="168" y1="110" x2="198" y2="110" stroke="#928374" stroke-width="1.5"/>
+  <polygon points="198,106 208,110 198,114" fill="#928374"/>
+  <text x="188" y="100" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">load</text>
+
+  <!-- ═══ Step 2: Staging at destination ═══ -->
+  <text x="310" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">2. Diff at destination</text>
+
+  <!-- Staging table -->
+  <rect x="215" y="46" width="92" height="130" fill="#f9f5d7" stroke="#458588" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+  <rect x="215" y="46" width="92" height="18" fill="#458588" opacity="0.08" rx="4"/>
+  <rect x="215" y="60" width="92" height="4" fill="#458588" opacity="0.08"/>
+  <text x="261" y="58" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">_stg_ids</text>
+
+  <text x="261" y="76" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">invoice_id</text>
+  <line x1="223" y1="81" x2="299" y2="81" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <text x="261" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <line x1="223" y1="101" x2="299" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="261" y="116" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <line x1="223" y1="121" x2="299" y2="121" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="261" y="136" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1004</text>
+  <line x1="223" y1="141" x2="299" y2="141" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="261" y="156" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1005</text>
+  <line x1="223" y1="161" x2="299" y2="161" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="261" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1006</text>
+
+  <!-- Destination table -->
+  <rect x="320" y="46" width="92" height="130" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="320" y="46" width="92" height="18" fill="#ebdbb2" rx="4"/>
+  <rect x="320" y="60" width="92" height="4" fill="#ebdbb2"/>
+  <text x="366" y="58" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">invoices</text>
+
+  <text x="366" y="76" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">invoice_id</text>
+  <line x1="328" y1="81" x2="404" y2="81" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <text x="366" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <line x1="328" y1="101" x2="404" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="366" y="116" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <line x1="328" y1="121" x2="404" y2="121" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- 1003: in dest but NOT in staging = deleted -->
+  <rect x="321" y="122" width="90" height="18" fill="#9d0006" opacity="0.06"/>
+  <rect x="321" y="122" width="3" height="18" fill="#9d0006" opacity="0.3" rx="1"/>
+  <text x="366" y="135" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1003</text>
+  <line x1="328" y1="141" x2="404" y2="141" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="366" y="156" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1004</text>
+  <line x1="328" y1="161" x2="404" y2="161" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="366" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1006</text>
+
+  <!-- Arrow: result -->
+  <line x1="420" y1="110" x2="450" y2="110" stroke="#928374" stroke-width="1.5"/>
+  <polygon points="450,106 460,110 450,114" fill="#928374"/>
+
+  <!-- ═══ Step 3: Result ═══ -->
+  <text x="580" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">3. Deleted rows</text>
+
+  <rect x="468" y="60" width="232" height="76" fill="#f9f5d7" stroke="#9d0006" stroke-width="1.5" rx="4"/>
+  <rect x="468" y="60" width="232" height="18" fill="#9d0006" opacity="0.06" rx="4"/>
+  <rect x="468" y="74" width="232" height="4" fill="#9d0006" opacity="0.06"/>
+  <text x="584" y="72" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">d LEFT JOIN _stg_ids s ... WHERE s.id IS NULL</text>
+
+  <text x="584" y="96" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">invoice_id</text>
+  <line x1="476" y1="101" x2="692" y2="101" stroke="#9d0006" stroke-width="0.3" opacity="0.3"/>
+
+  <text x="584" y="120" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600">1003</text>
+
+  <!-- Legend -->
+  <rect x="468" y="152" width="3" height="12" fill="#9d0006" opacity="0.3" rx="1"/>
+  <text x="478" y="162" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">in destination but not in source (hard-deleted)</text>
+
+  <rect x="468" y="170" width="70" height="14" fill="#458588" opacity="0.08" rx="3" stroke="#458588" stroke-width="0.75" stroke-dasharray="4,3"/>
+  <text x="544" y="180" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">staging (dropped after diff)</text>
+
+  <!-- Bottom annotation -->
+  <text x="360" y="218" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">Source cost: full SELECT id FROM table. Destination cost: single-column scan. Schedule outside business hours.</text>
+</svg>
