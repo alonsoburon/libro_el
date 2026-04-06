@@ -3904,7 +3904,6 @@
 
   // ---
 
-  // REVIEWED: author checked content above this line (2026-04-06)
 
   = Merge / Upsert
   <merge-upsert>
@@ -3960,6 +3959,8 @@
 
   All three produce the same result: rows that existed get overwritten, rows that didn't get inserted.
 
+  The maintenance cost is in the column lists. A table with 5 columns is manageable; a table with 80 columns means 80 entries in the INSERT, 80 in the VALUES, and 79 in the UPDATE SET (everything except the key). Add a column to the source and you need to update three places in BigQuery/Snowflake, two in PostgreSQL. Multiply by however many tables you're loading this way and the MERGE statement itself becomes a schema-drift vector -- the exact failure mode covered in @merge-and-schema-evolution. Most production pipelines generate these statements dynamically from the staging table's schema at runtime, which eliminates the drift but requires a builder function per engine dialect. See @upsert-merge for per-engine syntax helpers and @dynamic-merge-generation for help on that builder function.
+
   // ---
 
   == Cost Anatomy
@@ -3990,7 +3991,7 @@
 
   #ecl-warning(
     "Unenforced PKs cause silent data loss",
-  )[If the source has no unique constraint on what you're using as the merge key, two rows can share the same key value. The merge collapses them into one -- the second overwrites the first, and the destination ends up with fewer rows than the source. This is data loss, not duplication, and it's invisible: the pipeline reports success, row counts look close enough, and the missing rows only surface when someone reconciles at the record level. Verify uniqueness on the actual data before committing to a merge key (@the-lies-sources-tell). If the source genuinely has duplicate PKs, you need a synthetic key (@synthetic-keys).]
+  )[If the source has no unique constraint on what you're using as the merge key, two rows can share the same key value. The merge collapses them into one -- the second overwrites the first, and the destination ends up with fewer rows than the source. *This is data loss* and it's invisible: the pipeline reports success, row counts look close enough, and the missing rows only surface when someone reconciles at the record level. *Verify uniqueness on the actual data* before committing to a merge key (@the-lies-sources-tell). If the source genuinely has duplicate PKs, you need a synthetic key (@synthetic-keys).]
 
   // ---
 
@@ -4029,7 +4030,37 @@
   SELECT * FROM _stg_orders;
   ```
 
-  On BigQuery, this still rewrites the affected partitions twice (once for DELETE, once for INSERT), so the cost advantage over MERGE depends on how many partitions are touched and whether the batch is pre-deduplicated. On Snowflake, the two operations inside a transaction can be cheaper than a MERGE because Snowflake's MERGE has additional overhead for the MATCHED/NOT MATCHED evaluation.
+  Whether delete-insert beats MERGE depends on the engine. The difference is not subtle:
+
+  #figure(
+    align(center)[#table(
+      columns: (14%, 18%, 68%),
+      align: (auto, auto, auto),
+      table.header([Engine], [Recommendation], [Why]),
+      table.hline(),
+      [BigQuery],
+      [Delete-insert],
+      [Both MERGE and delete-insert rewrite every partition they touch -- for scattered key-based deletes the cost is comparable. The advantage is concurrency: MERGE is limited to 2 concurrent operations per table (additional statements queue), while INSERT has no such limit. Under load, MERGE queuing can push lag from minutes to hours.],
+      [Snowflake],
+      [MERGE if clustered],
+      [A well-clustered target table lets MERGE prune 99%+ of micro-partitions, making the scan cheap. Without clustering on the join key, both approaches scan everything -- and delete-insert avoids the MATCHED/NOT MATCHED overhead. Snowflake Gen2 warehouses (2025) further reduce MERGE cost by up to 4x for sparse updates.],
+      [Redshift],
+      [Delete-insert],
+      [Redshift's MERGE is a macro around DELETE + INSERT + temp table -- it adds overhead without optimizing anything. AWS's own documentation recommends delete-insert in a transaction for upserts.],
+      [PostgreSQL],
+      [`ON CONFLICT`],
+      [`ON CONFLICT DO UPDATE` is a single-pass operation with index-only lookups. Delete-insert rebuilds all index entries for every affected row. Use delete-insert only for partition-scoped replacements where the entire range is being reloaded.],
+      [MySQL],
+      [`ON DUPLICATE KEY`],
+      [Preserves auto-increment PKs, fewer lock escalations than `REPLACE INTO`. Delete-insert has more predictable locking under concurrency but requires explicit transactions.],
+      [SQL Server],
+      [Delete-insert],
+      [MERGE has residual bugs (race conditions without `HOLDLOCK`, assertion errors on partitioned tables) and produces a single execution plan for all branches, which can't be tuned independently.],
+    )],
+    kind: table,
+  )
+
+  The pattern in the codeblock above uses `WHERE order_id IN (SELECT ...)`, which scopes the DELETE to matching keys -- the rows are scattered across partitions, so every touched partition gets rewritten. This is the incremental case. For partition-scoped full replacement (an immutable date range), see @load-partition-swap where the DELETE covers whole partitions and is free on BigQuery.
 
   // ---
 
@@ -4063,7 +4094,7 @@
 
   3. #strong[Apply] -- if the policy is `evolve`, add the column to the destination (`ALTER TABLE ADD COLUMN`) before the MERGE runs. If it's `freeze`, the pipeline stops and alerts.
 
-  The recommended production default is `evolve` for new columns and `freeze` for type changes -- new nullable columns appearing in the destination are harmless (downstream queries that don't reference them are unaffected), while type changes that silently widen a column can break downstream logic. See @data-contracts for formalizing schema policies into enforceable contracts, and @columnar-destinations for how each engine handles `ALTER TABLE ADD COLUMN`.
+  I run `evolve` on both -- new columns and type changes. If a type widening breaks something downstream, that's a conversation between the source team and the downstream consumers; the pipeline's job is to land what the source sends, not to gatekeep schema changes. The conservative alternative is `evolve` for new columns and `freeze` for type changes, which stops the pipeline on any type change and forces someone to approve the widening before data flows. See @data-contracts for formalizing either policy into enforceable contracts, and @columnar-destinations for how each engine handles `ALTER TABLE ADD COLUMN`.
 
   #ecl-warning(
     "Column-explicit MERGE silently freezes schema",
@@ -4100,13 +4131,15 @@
   <by-corridor-2>
   #ecl-info(
     "Transactional to columnar",
-  )[MERGE is the most expensive DML operation in columnar engines. The cost scales with the number of partitions touched, not the batch size. Minimize partition spread in each batch, consider delete-insert as an alternative, and evaluate whether @append-and-materialize (append + dedup view) is cheaper for tables with low mutation rates relative to their size.]
+  )[MERGE is the most expensive DML operation in columnar engines. The cost scales with the number of partitions touched, not the batch size. Minimize partition spread in each batch, consider delete-insert as an alternative, and evaluate whether @append-and-materialize (append + dedup view) is cheaper -- it usually is, because most tables are read far less often than they're loaded, and the dedup scan on read is cheaper than a MERGE on every write.]
 
   #ecl-warning(
     "Transactional to transactional",
   )[`INSERT ... ON CONFLICT` is cheap -- each row is an index lookup + point write. Cost scales linearly with batch size. The primary key index handles conflict detection efficiently. For large batches (100K+ rows), load into a staging table first and run the `INSERT ... ON CONFLICT ... SELECT FROM staging` as a single statement rather than row-by-row inserts.]
 
   // ---
+
+  // REVIEWED: author checked content above this line (2026-04-06)
 
   // ---
 
@@ -4119,7 +4152,7 @@
   // ---
 
   == The MERGE Cost Ceiling
-  MERGE cost in columnar engines scales per run: every execution reads the destination, matches keys, and rewrites the affected partitions. If a single MERGE costs $X$, running it 24 times per day costs $24 times X$ -- and the cost scales with table size and partition spread -- never batch size (see @merge-upsert). This creates a ceiling on extraction frequency: you can only afford to run as often as the MERGE budget allows.
+  MERGE cost in columnar engines scales per run: every execution reads the destination, matches keys, and rewrites the affected partitions. If a single MERGE costs $X$, running it 24 times per day costs $24 times X$ -- and the *cost scales with table size* and partition spread -- never batch size (see @merge-upsert). This creates a ceiling on extraction frequency: you can only afford to run as often as the MERGE budget allows.
 
   That ceiling directly limits purity. The less often you extract, the longer the destination drifts from the source between runs. Missed corrections, late-arriving data, and accumulated cursor gaps all widen with the interval. Running more often closes the gap -- but MERGE makes running more often expensive.
 
@@ -8162,6 +8195,32 @@
   )
 
   See @merge-upsert for cost analysis and when to use MERGE vs alternatives.
+
+  === Dynamic MERGE Generation
+  <dynamic-merge-generation>
+  Writing column-explicit MERGE statements by hand doesn't scale -- 80-column tables mean 80 entries in three places, and every schema change is a drift risk (@merge-and-schema-evolution). In production, generate the statement from the staging table's schema at runtime.
+
+  The building blocks per engine:
+
+  #figure(
+    align(center)[#table(
+      columns: (20%, 80%),
+      align: (auto, auto),
+      table.header([Engine], [How to introspect staging columns]),
+      table.hline(),
+      [PostgreSQL],
+      [`SELECT column_name FROM information_schema.columns WHERE table_name = '_stg_orders'` -- then build the `INSERT ... ON CONFLICT DO UPDATE SET` string in your language of choice],
+      [MySQL],
+      [Same `information_schema.columns` query. `ON DUPLICATE KEY UPDATE` needs `col = VALUES(col)` per non-key column],
+      [SQL Server], [`sys.columns` joined to `sys.tables` -- same approach, different catalog],
+      [BigQuery],
+      [`INFORMATION_SCHEMA.COLUMNS` per dataset, or the `bq show --schema` CLI. Build the MERGE string in Python/SQL],
+      [Snowflake], [`INFORMATION_SCHEMA.COLUMNS` or `DESCRIBE TABLE _stg_orders` -- same pattern],
+    )],
+    kind: table,
+  )
+
+  With SQLAlchemy, `inspect(engine).get_columns('_stg_orders')` returns the column list for any supported engine -- one function call, no engine-specific catalog queries. Build the MERGE template once, parameterize per table.
 
   // ---
 
