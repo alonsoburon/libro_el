@@ -44,15 +44,19 @@
     #v(2fr)
     #align(right)[
       #text(fill: p.fg-quote, size: 12pt, style: "italic")[
-        To my lovely fiancée, whose patience is beaten by no saint, and whose light willed this book into existence.
+        To the woman I'll spend my life with -- whose patience would put every saint to shame, whose light kept me whole through the late nights, and whose love carried this book when I couldn't.
 
         #v(8pt)
 
-        Thank you for enduring the nights I spent glued to my screen muttering about broken pipelines, for listening to unsolicited explanations about cursors and timestamps, and for believing in this project when I wasn't sure anyone would read it.
+        Thank you for enduring the nights I spent glued to my screen muttering about pipelines, for listening to mad ramblings about watermarks and cursors, and for believing in this project when I wasn't sure anyone would read it.
 
         #v(8pt)
 
-        This book exists because you gave me the space, the confidence, and the coffee to write it.
+        This book exists because you gave me the space, the confidence, and the food to write it.
+
+        #v(8pt)
+
+        #text(fill: p.orange)[I love you.]
       ]
     ]
     #v(3fr)
@@ -1668,7 +1672,6 @@
     #strong[One-liner:] Load into a staging table, validate, then atomically swap to production. Zero downtime, trivial rollback.
   ]
 
-  == The Problem
   The naive full replace is `TRUNCATE production; INSERT INTO production SELECT * FROM source`. Simple. And it leaves a window where `production` is empty -- any dashboard or query that runs between the TRUNCATE and the INSERT sees nothing. On a table with live consumers, that's an incident.
 
   The second problem: if the load fails halfway through, you're left with a half-loaded production table and no clean way back. You can't replay the INSERT without truncating again, which means another empty window.
@@ -1854,8 +1857,7 @@
     #strong[One-liner:] Declare a scope boundary, apply full-replace semantics inside it, and explicitly freeze everything outside -- so you get idempotent reloads without scanning years of history every run.
   ]
 
-  == The Problem
-  <the-problem-1>
+  == Why Not Just Full Replace?
   A full table replace is the cleanest option available. It resets state, eliminates drift, and gives you a complete, verifiable destination every run. The problem is cost. An `orders` table with five years of history might have 200 million rows. A nightly full reload takes hours and burns slot quota. At some point the cost of purity exceeds its value.
 
   The alternative most people reach for is incremental. That trades one problem for another: cursor management, drift accumulation, delete detection -- the full weight of Part III. For tables where historical rows rarely change, that complexity is never earned.
@@ -2006,8 +2008,6 @@
     #strong[One-liner:] Drop and reload the last N days every run. The window moves forward with time; everything outside it is frozen.
   ]
 
-  == The Problem
-  <the-problem-2>
   A full table replace is too expensive. A cursor-based incremental is unreliable or more complexity than the table deserves. But the data changes -- corrections arrive, statuses update, late rows trickle in -- and those changes cluster in a predictable recent window.
 
   Rolling window replace exploits that clustering. Instead of scanning the full table or tracking individual row changes, it defines a fixed-width window anchored to today, does a complete full replace inside that window every run, and leaves everything older untouched. Within the window, the destination is always correct. Outside it, the data is frozen at whenever it last fell inside the window.
@@ -2114,8 +2114,7 @@
     #strong[One-liner:] Cross-product tables where 90%+ of rows are zeros -- filter at extraction to pull only meaningful combinations, but know that "empty" is a business definition, not a data one.
   ]
 
-  == The Problem
-  <the-problem-3>
+  == Zeros vs. Missing
   Some tables are the cartesian product of two dimensions. Every SKU against every Warehouse. Every Employee against every Benefit. Every Product against every Location. The source system pre-computes all combinations and fills in zeros where nothing is happening.
 
   The result is a table that's technically large but informationally sparse. A retailer with 50,000 SKUs and 200 warehouses has a 10-million-row inventory table -- and in most businesses, the vast majority of those rows have `OnHand = 0` and `OnOrder = 0`. Extracting all of them is expensive, slow, and loads mostly noise into the destination.
@@ -2198,8 +2197,6 @@
     #strong[One-liner:] Don't scan the sparse table at all -- use recent transaction history to identify which dimension combinations are active, then extract only those rows.
   ]
 
-  == The Problem
-  <the-problem-4>
   @sparse-table-extraction reduces transfer volume by filtering zeros at extraction. The source still scans the full table -- it just drops most rows before sending them. For a 10-million-row inventory table that's 95% zeros, you're still reading 10 million rows on the source every run and discarding 9.5 million of them. On a busy production ERP at peak hours, that scan may be a problem.
 
   Activity-driven extraction skips the scan entirely. Instead of asking the sparse table "which of your rows are non-zero?", it asks the transaction table "which dimension combinations have been active recently?" -- then pulls only those specific rows from the sparse table. The source reads a few thousand rows instead of millions.
@@ -2296,8 +2293,7 @@
     #strong[One-liner:] No `updated_at`? Hash the row, compare to the last extraction, load only what changed.
   ]
 
-  == The Problem
-  <the-problem-5>
+  == When Cursors Fail
   Every incremental pattern in this book assumes the source has a cursor -- an `updated_at`, a sequence, a changelog. When that signal doesn't exist or can't be trusted (see @the-lies-sources-tell), the standard incremental approach fails silently. You either miss changes or you load everything every run.
 
   A full replace every run is correct but expensive when only a small fraction of rows actually change. A 10-million-row products table where 50 rows change per day doesn't need 10 million destination writes nightly. Hash-based change detection threads the needle: read the full source, but write only the rows that are actually different.
@@ -2419,8 +2415,7 @@
     #strong[One-liner:] When you can't or won't extract all columns, do it explicitly, document what's missing and why, and accept that your destination is no longer a complete clone.
   ]
 
-  == The Problem
-  <the-problem-6>
+  == Why Exclude Columns?
   Most pipelines extract all columns. `SELECT *` from source, load to destination -- a complete clone. Partial column loading is a deliberate departure from that: you extract a subset of columns and leave the rest behind.
 
   Three situations justify it:
@@ -2545,7 +2540,7 @@
     #strong[One-liner:] `updated_at` is the obvious signal for incremental extraction -- and it's exactly as reliable as your application team's discipline.
   ]
 
-  == The Problem
+  == The Discipline Gap
   Incremental extraction needs a signal: which rows changed since the last run? `updated_at` is the obvious answer -- it's on most tables, queryable, and cheap to filter. The difficulty is that it's maintained by the application layer, not the database. That means it works only if every write path remembers to update it -- triggers, ORMs, admin scripts, bulk imports. In practice, at least one always forgets.
 
   Two patterns build on this signal: @cursor-based-timestamp-extraction tracks a high-water mark between runs; @stateless-window-extraction always re-extracts a fixed trailing window. Both fail the same way when the signal is wrong.
@@ -2822,10 +2817,6 @@
     image("diagrams/0304-cursor-from-header.svg", width: 95%),
   )
 
-  // ---
-
-  == The Problem
-  <the-problem-1>
   Some detail tables like `order_lines` and `invoice_lines` carry no timestamp of their own -- the only `updated_at` lives on the header.
 
   Re-extracting all lines on every run works until the table crosses a few million rows and your source DBA starts asking questions. You need to scope.
@@ -2943,10 +2934,6 @@
     image("diagrams/0305-sequential-id-cursor.svg", width: 95%),
   )
 
-  // ---
-
-  == The Problem
-  <the-problem-2>
   `events` has no `updated_at` and no `created_at`. `inventory_movements` doesn't either. What they do have is an auto-incrementing primary key that grows with every insert. That's enough to build a cursor on -- with an explicit tradeoff.
 
   // ---
@@ -3034,10 +3021,6 @@
     image("diagrams/0306-full-id-comparison.svg", width: 95%),
   )
 
-  // ---
-
-  == The Problem
-  <the-problem-3>
   Every extraction pattern in this chapter -- cursors, stateless windows, borrowed timestamps -- detects rows that changed. A hard delete leaves nothing behind to detect. The row is gone from the source, still present in the destination, and every cursor-based run confirms zero about its absence. The count drifts silently.
 
   // ---
@@ -3153,8 +3136,7 @@
 
   // ---
 
-  == The Problem
-  <the-problem-4>
+  == Mutable vs. Frozen
   `invoices` are mutable while open -- status changes, lines get added or removed, amounts are adjusted. Once posted or closed, they're frozen. Treating both sides the same either wastes resources (re-extracting millions of immutable rows) or misses changes (a cursor can't see mutations on open documents that didn't update the header timestamp).
 
   The business lifecycle itself is the scoping mechanism. Open documents need full re-extraction because anything can change. Closed documents are safe to extract once and never revisit.
@@ -3352,8 +3334,7 @@
 
   // ---
 
-  == The Problem
-  <the-problem-6>
+  == Behind the Cursor
   A row lands in the source with an `updated_at` or `created_at` that's already behind your cursor or outside your window. The extraction ran at 10:00, picked up everything through 09:59, and advanced the cursor. At 10:05, a batch job inserts a row with `updated_at = 08:30`. That row is now permanently behind the cursor and will never be extracted.
 
   This happens through more mechanisms than just "slow transactions":
@@ -3477,10 +3458,6 @@
     #strong[One-liner:] When the trigger fires on UPDATE only and INSERT rows have `updated_at = NULL`, you need two extraction paths.
   ]
 
-  // ---
-
-  == The Problem
-  <the-problem-7>
   @timestamp-extraction-foundations documents the failure mode: a trigger maintains `updated_at` on UPDATE but not on INSERT, leaving new rows with `updated_at = NULL`. A cursor on `updated_at >= :last_run` catches every modification to existing rows while every new row is permanently invisible.
 
   This happens in `orders` when the trigger was added after the table existed and only wired to the UPDATE event -- a common pattern in legacy systems where the trigger was built for auditing, not extraction. The result is two populations in the same table: rows that have been updated at least once (visible to the cursor) and rows that were inserted but never touched again (invisible).
@@ -3664,12 +3641,12 @@
 
   // ---
 
-  == The Problem
+  == Scope Alignment
   The extraction patterns in Part II give you a dataset -- full table, scoped range, set of partitions -- and this page covers the destination-side mechanics: how to swap it in.
 
-  The fundamental constraint is scope alignment: *what you replace must match what you extracted.* All with all (full table extraction replaces the full table), or parts with parts (partition extraction replaces exactly those partitions). What breaks is replacing all with some -- if you truncate the destination and load only rows where `updated_at >= :last_run`, every row that wasn't recently modified vanishes. That's not a load strategy, it's data loss.
+  The fundamental constraint is scope alignment: *what you replace must match what you extracted.* All with all (full table extraction replaces the full table), or parts with parts (partition extraction replaces exactly those partitions). What breaks is replacing all with some -- if you truncate the destination and load only rows where `updated_at >= :last_run`, every row that wasn't recently modified vanishes. This is the simpler case.
 
-  This makes full replace incompatible with cursor-based extraction (@cursor-based-timestamp-extraction, @cursor-from-another-table) and stateless windows on mutable fields like `updated_at` (@stateless-window-extraction), because those extract a subset of the table, not the whole thing. The extracted batch is a delta, and a delta cannot replace a complete table. Incremental extractions need append or merge strategies instead (see @append-only-load, @append-and-materialize).
+  The less obvious case is partition swap. Replacing a partition looks safe -- it's parts with parts -- but only when the partition key is immutable. If you partition on `event_date` or `created_at`, a row that landed in the `2026-03-01` partition stays there forever; re-extracting and replacing that partition is a clean swap with no data loss. But if the partition key is mutable -- say you partition on `updated_at` -- a row updated today jumps from last week's partition into today's. You re-extract and replace today's partition, which captures the current version, but the stale copy in last week's partition stays behind untouched. Now you have duplicates, or stale data, depending on how consumers query it. Mutability is what separates "I can replace this slice" from "I have to merge or upsert it," and it applies to partitions just as much as it applies to full tables. When the partition key can change, you need merge or append strategies instead (see @merge-upsert, @append-and-materialize).
 
   The naive TRUNCATE + INSERT leaves a window where the table is empty -- bad if anyone's querying it. Safer mechanisms exist, and the choice depends on how much downtime is acceptable and how much validation you want before committing.
 
@@ -3755,7 +3732,7 @@
 
   #ecl-tip(
     "TRUNCATE vs DELETE in columnar engines",
-  )[BigQuery `TRUNCATE` is a metadata operation that resets the table instantly at zero cost. `DELETE FROM table` without a WHERE clause rewrites every partition and charges for bytes scanned. Snowflake `TRUNCATE` reclaims storage immediately (no Time Travel retention); `DELETE` preserves Time Travel history. Choose based on whether you need the recovery window.]
+  )[BigQuery `TRUNCATE` is a metadata operation that resets the table instantly at zero cost. `DELETE FROM table` without a WHERE clause rewrites every partition and charges for bytes scanned. Snowflake `TRUNCATE` reclaims storage immediately (no Time Travel retention); `DELETE` preserves Time Travel history. Choose based on whether you need the recovery window, and are willing to pay the cost.]
 
   // ---
 
@@ -3778,6 +3755,10 @@
 
   All three are idempotent -- rerunning the same extraction and load produces the same destination state regardless of how many times you run it, with no accumulated state, no cursor, and no merge logic (see @idempotency). The shared failure mode is loading bad data into production before catching the problem, which only staging swap prevents through its validation step.
 
+  #ecl-danger(
+    "Validate before you swap -- an empty staging table is a silent wipe",
+  )[A source timeout, a broken query, or a permission change can return zero rows without raising an error. If the pipeline swaps that empty result into production, the table is gone -- truncate + insert leaves it empty, staging swap replaces it with nothing, partition swap deletes the target range and inserts zero rows. Always check that the staging table has a sane row count before committing the swap. A simple `SELECT COUNT(\*) FROM stg_orders` compared against a threshold (previous count, minimum expected, or percentage of the current production table) is enough to catch it.]
+
   // ---
 
   == By Corridor
@@ -3799,13 +3780,9 @@
     #strong[One-liner:] Source is immutable -- rows are inserted, never updated or deleted. Append to the destination with pure INSERT, no MERGE needed.
   ]
 
-  // ---
+  `events`, `inventory_movements`, and clickstream tables only grow. Rows are inserted once and never modified or deleted. A MERGE on every load -- matching on a key, checking for existence, deciding between INSERT and UPDATE -- is unnecessary work when the source *guarantees* that every extracted row is new.
 
-  == The Problem
-  <the-problem-1>
-  `events`, `inventory_movements`, and clickstream tables only grow. Rows are inserted once and never modified or deleted. A MERGE on every load -- matching on a key, checking for existence, deciding between INSERT and UPDATE -- is unnecessary work when the source guarantees that every extracted row is new.
-
-  The append-only load skips all of that: extract the new rows, INSERT them into the destination, done. No key matching, no partition rewriting, no update logic.
+  The append-only load skips all of that: extract the new rows, INSERT them into the destination, done. No key matching, no partition rewriting, no update logic. This also makes this load strategy the most naive and fragile.
 
   // ---
 
@@ -3839,7 +3816,7 @@
 
   #ecl-warning(
     "Verify the source is actually immutable",
-  )[Before committing to this pattern, confirm that \"events are never updated\" is a hard rule, not a soft one (@hard-rules-soft-rules). Unless the schema enforces it, someone will eventually run an UPDATE on `events` -- a bulk correction, an admin fix, a backfill that modifies existing rows -- and the append-only load will miss the change entirely. Check with the source team, and keep the periodic full replace (@full-scan-strategies) as a safety net.]
+  )[Before committing to this pattern, confirm that \"events are never updated\" is a *hard rule*, not a soft one (@hard-rules-soft-rules). Unless the schema enforces it, someone will eventually run an UPDATE on `events` -- a bulk correction, an admin fix, a backfill that modifies existing rows -- and the append-only load will miss the change entirely. Check with the source team, and keep the periodic full replace (@full-scan-strategies) as a safety net.]
 
   // ---
 
@@ -3880,11 +3857,11 @@
   QUALIFY ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY _extracted_at DESC) = 1;
   ```
 
-  BigQuery and Snowflake don't enforce primary keys, so duplicates land in the table and the deduplication happens downstream through a view or materialized table. This is the foundation of the @append-and-materialize pattern -- the difference is that @append-and-materialize applies it to mutable data (every version of a row), while here the duplicates are accidental copies of the same immutable row.
+  BigQuery and Snowflake don't enforce primary keys, so duplicates will land in the table and the deduplication happens downstream through a view or materialized table. This is the foundation of the @append-and-materialize pattern -- the difference is that @append-and-materialize applies it to mutable data (every version of a row), while here the duplicates are accidental copies of the same immutable row. For your destination, it's the same thing.
 
   #ecl-warning(
     "Don't MERGE to deduplicate immutable data",
-  )[Switching from APPEND to MERGE because \"duplicates might happen\" throws away the cost advantage of append-only loading. Handle duplicates at the edges -- `ON CONFLICT DO NOTHING` on transactional destinations, a dedup view on columnar -- and keep the load path cheap.]
+  )[Switching from APPEND to MERGE because \"duplicates might happen\" throws away the cost advantage of append-only loading completely. Handle duplicates at the edges -- `ON CONFLICT DO NOTHING` on transactional destinations, a dedup view on columnar -- and keep the load path cheap.]
 
   // ---
 
@@ -3902,10 +3879,9 @@
   <partitioning-by-date>
   Append-only tables are a natural fit for date-based partitioning: `events` partitioned by `event_date`, `inventory_movements` by `movement_date`. Each run's new rows land in the partition corresponding to their date, and old partitions are never touched.
 
-  This alignment gives you three operational advantages:
+  This alignment gives you two operational advantages:
 
   - #strong[Backfill] is a partition replace: re-extract a date range, load into the corresponding partitions using @full-replace-load, done. The rest of the table is untouched.
-  - #strong[Retention] is a partition drop: `ALTER TABLE events DROP PARTITION '2024-01-01'` removes a day of history without scanning or rewriting anything.
   - #strong[Cost control] in columnar engines: queries that filter on `event_date` scan only the relevant partitions. Without partition pruning, a query over yesterday's events scans the entire table.
 
   #ecl-warning(
@@ -3928,16 +3904,14 @@
 
   // ---
 
+  // REVIEWED: author checked content above this line (2026-04-06)
+
   = Merge / Upsert
   <merge-upsert>
   #quote(block: true)[
     #strong[One-liner:] Match on a key, update if exists, insert if new. The workhorse of incremental loading -- and the most expensive operation in columnar engines.
   ]
 
-  // ---
-
-  == The Problem
-  <the-problem-2>
   The extraction side (@cursor-based-timestamp-extraction, @stateless-window-extraction) produces a batch of changed rows. The destination already has prior versions of some of those rows. The load needs to reconcile: insert the new ones, update the existing ones, and leave everything else untouched.
 
   // ---
@@ -4144,8 +4118,7 @@
 
   // ---
 
-  == The Problem
-  <the-problem-3>
+  == The MERGE Cost Ceiling
   MERGE cost in columnar engines scales per run: every execution reads the destination, matches keys, and rewrites the affected partitions. If a single MERGE costs $X$, running it 24 times per day costs $24 times X$ -- and the cost scales with table size and partition spread -- never batch size (see @merge-upsert). This creates a ceiling on extraction frequency: you can only afford to run as often as the MERGE budget allows.
 
   That ceiling directly limits purity. The less often you extract, the longer the destination drifts from the source between runs. Missed corrections, late-arriving data, and accumulated cursor gaps all widen with the interval. Running more often closes the gap -- but MERGE makes running more often expensive.
@@ -4330,8 +4303,7 @@
 
   // ---
 
-  == The Problem
-  <the-problem-4>
+  == Two Consumer Types
   The previous load strategies each optimize for one consumer type. @append-and-materialize gives you cheap appends and a full extraction log, but every read pays a `ROW_NUMBER()` dedup scan -- fine for analytical queries that run a few times a day, painful for an API that hits the table hundreds of times per minute. @merge-upsert gives you a clean current-state table with zero read overhead, but MERGE in columnar engines is expensive per run, which caps your extraction frequency.
 
   If you have consumers on both sides -- analysts who want history and operational systems that need low-latency point queries on current state -- neither pattern alone covers both without a painful tradeoff on the other side.
@@ -4405,8 +4377,7 @@
 
   // ---
 
-  == The Problem
-  <the-problem-5>
+  == Failure Residue
   A pipeline can die after extraction but before load, mid-load with half the batch written, or after load but before the cursor advances. Each failure point leaves different residue -- a dangling staging table, a partially written partition, a cursor pointing to data the destination never received. The extraction strategy determines what you pulled; this pattern determines whether the destination survives it.
 
   Full replace (@full-replace-load) sidesteps most of this: every run overwrites everything, so there's no residue from a prior failure to clean up. The load is idempotent by construction. The patterns below matter when you're running incremental loads -- @merge-upsert, @append-and-materialize, or @hybrid-append-merge -- where the destination accumulates state across runs and a bad load can corrupt that state permanently.
@@ -5377,7 +5348,7 @@
     kind: table,
   )
 
-  == The Problem
+  == Silent Corruption
   Most pipelines start with a single check: did it succeed? That binary signal covers maybe 40% of what can go wrong. A pipeline can succeed while producing garbage -- a query timed out and returned partial results, a full replace that used to take 3 minutes now takes 45 because the table grew 10x, the source schema changed and the loader silently dropped columns, or half the batch loaded while the other half timed out, leaving the destination with rows from two different points in time. Every one of these scenarios reports SUCCESS. Every one of them delivers broken data to consumers.
 
   Without structured #strong[observability];, you discover these problems when a stakeholder asks why the dashboard is wrong -- often days after the data actually broke. By that point the blast radius is wide: downstream models have consumed the bad data, reports have been sent, and the person asking is already frustrated. The monitoring pattern in this chapter is about catching those failures before anyone else does, ideally within minutes of the pipeline run that caused them.
@@ -5464,8 +5435,7 @@
     #strong[One-liner:] One row per table per run, raw measurements only -- everything else is a query on top.
   ]
 
-  == The Problem
-  <the-problem-1>
+  == What You Can't Measure
   The four layers from @monitoring-and-observability tell you #emph[what] to watch. This pattern is the #emph[how];: a single append-only table that captures raw measurements from every pipeline run, giving you a queryable history of everything your orchestrator doesn't track natively. Without it, monitoring lives in scattered logs, orchestrator UIs, and tribal knowledge -- none of which you can `SELECT` from at 7 AM when something is wrong.
 
   == The Pattern
@@ -5658,8 +5628,7 @@
     #strong[One-liner:] Per-table, per-query, per-consumer -- know where the money goes before the invoice arrives.
   ]
 
-  == The Problem
-  <the-problem-2>
+  == Invisible Spend
   Cloud data warehouses bill by bytes scanned, slots consumed, or storage volume -- and the bill arrives after the damage is done. A single bad pattern can dominate the monthly invoice: an unpartitioned scan that reads the entire table on every query, a MERGE on a table that should be a full replace, or a staging dataset nobody cleaned up accumulating for months. You won't know which one it was until you can attribute cost to individual tables and operations.
 
   Without per-table cost attribution, "costs went up 40%" is a mystery that sends you guessing. With it, you can point at the exact table and the exact operation that caused the spike -- and decide whether to fix the pattern, reduce the schedule frequency, or accept the cost because the freshness justifies it.
@@ -5777,8 +5746,7 @@
     #strong[One-liner:] "The data must be fresh by 8am" -- how to define, measure, and enforce freshness commitments.
   ]
 
-  == The Problem
-  <the-problem-3>
+  == Implicit Expectations
   Stakeholders care about one thing: is the data fresh when they need it? Without an explicit SLA, freshness expectations are implicit -- discovered only when violated, usually via an angry email or an angry call from your boss. A pipeline that finishes at 8:15 AM is fine until someone builds a report that refreshes at 8:00 AM, and now you have an SLA you didn't know about.
 
   I had a client who I #emph[told] -- but didn't write down -- that data updated once daily. They built automated collection emails that fired before midday, but most of their customers had already paid by then. The emails were going out with stale receivables data, and the client blamed the pipeline for the embarrassment. The fix wasn't technical -- it was documenting the SLA in the contract so both sides agreed on what "once daily" actually meant: data reflects the previous night's extraction, available by 9 AM, not refreshed throughout the day. #strong[Everything that isn't written down can be reinterpreted against you.] Document the SLA.
@@ -5931,8 +5899,7 @@
     #strong[One-liner:] Schema drift, row count drops, partial failures -- calibrate severity so not everything is an incident.
   ]
 
-  == The Problem
-  <the-problem-4>
+  == Fatigue vs. Blindness
   Pipelines fail silently. Zero rows extracted successfully, schema changed upstream, row counts drifting apart between source and destination -- all of these can happen while the orchestrator reports SUCCESS. The monitoring layer from @monitoring-and-observability and the health table from @the-health-table capture these signals; this pattern is about deciding which of them deserve to wake someone up.
 
   The calibration problem has two failure modes. 1. Too many alerts -- every run sends a notification, every minor discrepancy triggers a warning -- produces alert fatigue, and alert fatigue produces ignored alerts, and ignored alerts produce missed failures. 2. Too few alerts -- only page on total outages -- means silent data loss accumulates for days before anyone notices. \
@@ -6053,8 +6020,7 @@
     #strong[One-liner:] Most tables are independent. For the ones that aren't, group them so they update together -- but don't enforce strict ordering unless you have a real reason.
   ]
 
-  == The Problem
-  <the-problem-5>
+  == Frequency vs. Method
   With a handful of tables, scheduling is simple: run everything on a cron, wait for it to finish, done. At hundreds or thousands of tables, three questions dominate your scheduling decisions -- how often each table should update, how many extractions your source and infrastructure can handle at once, and which tables need to land in the same window. Get any of these wrong and the consequences are immediate: SLA breaches because heavy tables crowd out critical ones, angry DBAs because you're hammering their production system during business hours, or a pipeline that takes six hours because someone chained 200 independent tables into a single sequence years ago and nobody questioned it.
 
   == The Pattern
@@ -6166,8 +6132,7 @@
     #strong[One-liner:] Your pipeline is a guest on someone else's production database. Act like it.
   ]
 
-  == The Problem
-  <the-problem-6>
+  == Guest on Production
   READ-ONLY access doesn't mean zero impact. A full table scan on a 50-million-row table locks pages, consumes I/O, and competes with the application for CPU and memory -- and the DBA watching the monitoring dashboard doesn't care that your query is a harmless SELECT. Their job is to keep the application fast for the users who generate revenue; your extraction is a background process that, from their perspective, exists only to slow things down. If you're careless about when and how you extract, you'll lose access -- and if you're unlucky, you'll bring the database down on your way out.
 
   I had a client whose IT team didn't mention they ran full database backups between 5 and 6 AM. A load failed overnight, and the automatic retry kicked in at 5:30 AM -- right on top of the backup window. The database went down. It was back up within the hour, but the conversation about revoking my access lasted a week. The retry logic was fine -- I just didn't know the source's maintenance windows.
@@ -6273,8 +6238,7 @@
     #strong[One-liner:] Not every row needs the same refresh cadence -- partition your pipeline into hot, warm, and cold tiers so the tables that matter most get attention first.
   ]
 
-  == The Problem
-  <the-problem-7>
+  == One Size Fits None
   The naive approach is one schedule for everything: all tables, same cadence, same extraction method. It works when you have a dozen tables and a daily overnight window. It stops working when some of those tables need to be fresh within the hour while others haven't changed in months -- because now you're either over-refreshing cold data (wasting compute, money and source load) or under-refreshing hot data (delivering stale results to the consumers).
 
   The subtler version of this problem is not refreshing everything at the same #emph[frequency] but with the same #emph[method];. I had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was not. The DBA noticed before I did. The fix was splitting the table's extraction into tiers: recent data incrementally and often, historical data fully but rarely.
@@ -6387,8 +6351,7 @@
     #strong[One-liner:] Schema drift, row counts, null rates, freshness -- what to enforce at the boundary between source and destination.
   ]
 
-  == The Problem
-  <the-problem-8>
+  == Schema Drift
   Source schemas change without notice. A column gets renamed, a type changes from INT to VARCHAR, a new column appears when someone activates an ERP module, an old one disappears after a migration. The source team doesn't know your pipeline exists -- they won't tell you before they deploy a schema migration, and they shouldn't have to. The boundary between their system and yours is your responsibility to defend.
 
   Without a contract, drift propagates silently into the destination -- a dropped column becomes NULLs in downstream queries, a type change produces casting errors that surface three layers deep in a dashboard nobody connects back to the source, and a 90% row count drop looks like a quiet day until someone notices the month-end report is missing most of its data. By then the blast radius is wide and the root cause is buried. A data contract makes these boundaries explicit and checkable.
@@ -6528,8 +6491,7 @@
     #strong[One-liner:] 0 rows returned successfully is not the same as a silent failure. Gate the load on extraction status before advancing the cursor.
   ]
 
-  == The Problem
-  <the-problem-9>
+  == Zero-Row Ambiguity
   An extraction that returns 0 rows and reports SUCCESS could mean two things: the table genuinely had no changes since the last run, or the source was down, the query timed out silently, or the connection returned an empty result set instead of an error. Without a gate, these two scenarios are indistinguishable -- and the pipeline treats them identically, loading nothing and advancing the cursor past data it never read. For incremental tables, that gap is permanent. For full replace tables, it's worse: the destination gets truncated and replaced with nothing.
 
   This happens more often with APIs than with direct SQL connections, but SQL sources aren't immune. I had a client whose upstream team gave us a "database clone" that periodically truncated its tables before reloading them. If my extraction hit the window between truncate and reload, I'd read 0 rows from a table that should have had hundreds of thousands -- and my full replace would dutifully wipe the destination clean. It happened more than once before I gated it.
@@ -6630,8 +6592,7 @@
     #strong[One-liner:] Reloading 6 months of data without breaking prod -- how to backfill safely alongside live pipelines.
   ]
 
-  == The Problem
-  <the-problem-10>
+  == Reloading Without Downtime
   Something went wrong upstream -- a schema change, a bad deploy, a data corruption that drifted for weeks before anyone noticed -- and now you need to reload a historical range. The naive response is "just rerun everything," but a backfill that treats the source like a normal extraction competes with live scheduled runs for source connections, destination quota, and orchestrator capacity. If it runs unchunked during business hours, it violates every rule in @source-system-etiquette.
 
   Backfills aren't rare. If you're running hundreds of tables with clients who routinely correct old records, delete and re-enter documents, or run maintenance scripts that touch historical data, backfills are a weekly operation. A `start_date` override or a `full_refresh: true` flag should be tools you reach for without hesitation -- the pipeline that can't backfill safely is the one that drifts furthest from its source.
@@ -6734,8 +6695,6 @@
     #strong[One-liner:] Half the batch loaded, the other half didn't -- now what?
   ]
 
-  == The Problem
-  <the-problem-11>
   A pipeline run that processes multiple tables can fail partway through: 40 tables succeed, 10 fail. Rerunning the entire job wastes time reprocessing the 40 tables that already landed correctly. Not rerunning leaves 10 tables stale, and the staleness compounds with every subsequent run that doesn't fix them. The real problem is knowing which tables failed, at which step, and whether to retry now or wait for the next scheduled run.
 
   At scale, partial failures are daily. With hundreds of tables extracting from multiple sources, something fails every run -- a connection timeout on one source, a DML quota hit on the destination, a schema change on a table nobody warned you about. The pipeline that handles partial failures well is the one where failures are visible, scoped, and retriable without disrupting the tables that succeeded.
@@ -6806,8 +6765,7 @@
     #strong[One-liner:] Duplicates already landed. How to find them, quantify the damage, and deduplicate without losing data.
   ]
 
-  == The Problem
-  <the-problem-12>
+  == Silent Duplication
   Duplicates in the destination are a symptom, not a root cause -- they indicate a load strategy mismatch, a failed retry that double-wrote, or an append that should have been a merge. If you followed the patterns in this book (merge with the correct key, full replace where possible, append-and-materialize with a dedup view), duplicates should be rare. But when they happen, the damage is disproportionate: consumers don't notice until aggregations are wrong -- revenue doubled, counts inflated, joins producing unexpected fan-out -- and once they catch it, your data's credibility takes a hit that's hard to recover from. One episode of duplicates, even if you fix it in an hour, can make consumers question every number you produce for months.
 
   Checking for duplicates is fast -- a `GROUP BY pk HAVING COUNT(*) > 1` takes seconds. Run it before anything else. If the table is clean, the problem is downstream: most "duplicate" reports turn out to be bad JOINs on the consumer's side (a one-to-many fanout they didn't expect, a missing GROUP BY). But verify your side first -- it's cheaper than asking for their query.
@@ -6931,8 +6889,7 @@
     #strong[One-liner:] Source count vs destination count -- row-level, hash-level, and aggregate reconciliation.
   ]
 
-  == The Problem
-  <the-problem-13>
+  == Undetected Drift
   A load that completes without errors can still produce wrong results: missing rows, duplicate rows, stale data, wrong values. The pipeline reports success; the destination is quietly wrong. Without a verification step, discrepancies surface only when a consumer notices something off -- a report that doesn't tie out, a dashboard metric that jumped overnight, an analyst who ran the numbers twice and got different answers.
 
   Reconciliation is the scheduled check that the destination actually reflects the source. It runs after the load, compares what arrived against what should have arrived, and alerts when the numbers don't add up. It's not a replacement for staging validation (@full-scan-strategies) or extraction gates (@extraction-status-gates) -- those catch failures before the load commits. Reconciliation catches what those gates didn't see: rows that fell within tolerance, drift that accumulated over multiple runs, or discrepancies that only surface after downstream queries start running.
@@ -7002,8 +6959,7 @@
     #strong[One-liner:] A bad deploy corrupted 3 months of data -- identifying the blast radius and rebuilding.
   ]
 
-  == The Problem
-  <the-problem-14>
+  == Plausible Wrong Data
   Something broke and bad data has been landing for a while. A schema migration that silently changed types, a cursor that skipped a range, a load strategy that dropped a column, a conforming bug that mangled values. The pipeline reported success on every run because the failure was in the data, not in the execution -- no errors, no alerts, no signal that anything was wrong until someone downstream noticed the numbers didn't add up.
 
   The gap between when corruption starts and when it's detected is the blast radius. A bug introduced three months ago that nobody caught until today means three months of data in the destination is suspect, every downstream model that consumed it is suspect, and every report built on those models has been wrong for three months. The recovery isn't just reloading the data -- it's scoping the damage, fixing the root cause, rebuilding what's affected, and communicating what happened so consumers can reassess decisions they made on bad data.
@@ -7098,7 +7054,7 @@
     #strong[One-liner:] Land the movements, build the photo downstream. Resist the pressure to transform at extraction.
   ]
 
-  == The Problem
+  == One-Way Transformation
   The first request from every non-technical consumer sounds the same: "how much did we sell?" They want a total. They want it per month, per product, per warehouse. The temptation is to build that aggregation into the extraction -- `SELECT product_id, SUM(quantity) FROM order_lines GROUP BY product_id` -- and hand them exactly what they asked for. Clean, simple, one table with the numbers they need.
 
   Then they ask "which orders drove the spike in product X?" And the detail isn't in your warehouse, because you extracted the SUM and threw away the rows. You can't drill down from a total to its components. You can't recompute the aggregation with a different grouping. You can't debug a number that looks wrong because the individual records that produced it were never loaded. Every client who starts with "just give me the totals" eventually asks for the detail -- and if you aggregated at extraction, the only way to answer is to rebuild the pipeline.
@@ -7168,8 +7124,6 @@
     #strong[One-liner:] Partition by business date, cluster by consumer filters, enforce partition filters. The physical layout decisions that protect every downstream query.
   ]
 
-  == The Problem
-  <the-problem-1>
   A table without a partition scheme in a columnar engine forces a full scan on every query. An analyst filtering `orders` by last week's dates scans the entire table -- five years of history, every row, every column they selected -- and the bill reflects it. Partitioning by date means that same query reads only the seven partitions that contain last week's data, and the engine skips everything else. Clustering goes one level deeper: within those seven partitions, it organizes data so a filter on `customer_id` reads fewer blocks instead of scanning every row in the partition.
 
   Both decisions are made at load time, and both affect every downstream query for the lifetime of the table. The ECL engineer picks the partition key and the cluster keys -- two of the few load-time choices that directly shape what consumers pay.
@@ -7259,8 +7213,7 @@
     #strong[One-liner:] Materialized views, scheduled queries, and pre-cooked tables -- the serving layer you build on top of landed data to protect consumers from themselves.
   ]
 
-  == The Problem
-  <the-problem-2>
+  == Consumer Query Mistakes
   The pipeline did its job: the data landed correctly, partitioned, with metadata columns and clean types. The destination is a faithful clone of the source. Now an analyst opens their query editor, writes `SELECT * FROM orders_log`, and gets back 90 million rows -- every version of every order from the append log, duplicates and all. They aggregate on it, get numbers that are 3x what the source shows, and file a bug against your pipeline. The data is correct; the query is wrong.
 
   This is the gap the serving layer fills. The pipeline lands raw data. The serving layer builds clean, queryable surfaces on top of it -- dedup views that expose current state from append logs, flattening views that extract fields from JSON columns, materialized tables that pre-compute expensive aggregations so consumers don't pay for them on every query. None of this is in the pipeline. It's what you build after the data lands, as a service to the people who consume it.
@@ -7515,8 +7468,7 @@
     #strong[One-liner:] Engine-specific strategies for keeping query costs under control -- because BigQuery bills differently from Snowflake, and the optimizations don't transfer.
   ]
 
-  == The Problem
-  <the-problem-3>
+  == Engine-Specific Costs
   Cost optimization is engine-specific. What saves money on BigQuery (reducing bytes scanned) is irrelevant on Snowflake (which bills by warehouse time). Generic advice like "use partitions" applies everywhere, but the specifics -- what to partition on, how clustering interacts with the billing model, which operations are free and which are traps -- differ enough across engines that generic advice doesn't help with the decisions that actually move the bill.
 
   The ECL engineer's load-time decisions have permanent cost consequences on every consumer query. A partition key chosen at table creation, a clustering configuration, a table format -- these compound across every query for the lifetime of the table. This chapter is the engine-specific reference for making those decisions correctly, and for knowing which levers to pull when the cost monitoring from @cost-monitoring surfaces a table that's too expensive.
@@ -7643,8 +7595,7 @@
     #strong[One-liner:] Reconstruct past state from event tables, not snapshots. Events are cheaper to store and replay than periodic copies of the full state.
   ]
 
-  == The Problem
-  <the-problem-4>
+  == Snapshot Gaps
   A consumer asks "what was the inventory level on March 5?" or "what was the order status at 2pm last Tuesday?" If you only have the current state -- the latest version of each row from a full replace or a dedup view -- the answer is gone, overwritten by subsequent updates. The destination reflects right now, not any point in the past.
 
   Two mechanisms preserve history. An append-and-materialize log (@append-and-materialize) accumulates extracted versions over time -- each extraction appends rows tagged with `_extracted_at`, and prior versions survive alongside current ones until compaction. Event tables take a different approach -- `inventory_movements`, append-only `events` -- each row is something that happened, and the full history is in the log itself. Any point-in-time state is computable by replaying events up to the target date, without storing a single snapshot.
@@ -7801,8 +7752,7 @@
     #strong[One-liner:] Table and column naming at the destination: as-is from source, snake\_case, normalized? Pick a convention and apply it consistently -- changing it later is a full migration.
   ]
 
-  == The Problem
-  <the-problem-5>
+  == Names Are Permanent
   Source systems name things however they want: `OrderID`, `@ORDER_VIEW`, `invoice_line`, `OACT`, `Column Name With Spaces`. The destination needs identifiers that are consistent and queryable without quoting gymnastics. A column called `order` clashes with a reserved word on every engine, `@Status` collides with SQL Server's variable syntax, and `Column Name With Spaces` demands quotes everywhere it appears.
 
   This is a one-time decision with permanent consequences -- changing a naming convention on a running pipeline means rebuilding every table and rewriting every downstream query, view, and dashboard that touches those names. Identifier normalization is a conforming operation: it happens at load time, not downstream. Get it right and consistently applied, and downstream teams will (mostly) follow your lead. Get it wrong, and you'll find `Vw_Sales-backup_FINAL-JSmith_2026-05` in your catalog within the year.
