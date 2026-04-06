@@ -3447,7 +3447,7 @@
 
   + #strong["Can't you just get everything?"] Yes -- that's a full replace. It's the most correct approach but the slowest and most expensive. I do it periodically as a safety net. The incremental extraction runs between full replaces to keep the data fresh.
 
-  + #strong["How much data are we missing?"] Depends on the table and the source system. For well-behaved transactional tables, almost nothing -- seconds of lag at most. For tables fed by batch jobs or ERP period closes, the gap can be days. I size the overlap window to cover the worst case I've measured, and the periodic full replace catches anything beyond that.
+  + #strong["How much data are we missing?"] Depends on the table and the source system. For well-behaved transactional tables with reliable cursors, the gap is bounded by the extraction interval -- if you run every 15 minutes, you're at most 15 minutes behind. For tables fed by batch jobs or ERP period closes, the gap can be days. I size the overlap window to cover the worst case I've measured, and the periodic full replace catches anything beyond that.
 
   + #strong["Why can't the data just be right?"] Because "right" has a cost. A 7-day overlap window on a table with 100 million rows re-extracts 7 days of data on every run to catch the rare late arrival. A 30-day overlap re-extracts 30 days. At some point, the cost of absolute correctness exceeds the cost of the occasional missing row. The overlap window is where I draw that line, and the full replace is the safety net behind it.
 
@@ -3553,9 +3553,9 @@
 
   // ---
 
-  == Strategy 1: COALESCE
+  == The Naive Approach: COALESCE
   <strategy-1-coalesce>
-  The simplest single-query approach -- fall back to `created_at` when `updated_at` is NULL:
+  Fall back to `created_at` when `updated_at` is NULL:
 
   ```sql
   -- source: transactional
@@ -3564,87 +3564,57 @@
   WHERE COALESCE(updated_at, created_at) >= :last_run;
   ```
 
-  This works when `created_at` is reliably populated on INSERT -- application frameworks and ORMs set it by default. The query captures both populations: updated rows through `updated_at`, and never-updated rows through `created_at`.
-
-  #strong[Index usage.] `COALESCE(updated_at, created_at)` wraps the columns in a function, which prevents the optimizer from using indexes on either column directly. PostgreSQL supports a functional index on `COALESCE(updated_at, created_at)` that resolves this -- create it if the table is large enough that the full scan matters. MySQL and SQL Server don't support functional indexes in the same way, so the query planner may fall back to a full scan.
+  This works when `created_at` is reliably populated on INSERT. But `COALESCE` wraps the columns in a function, which prevents the optimizer from using indexes on either column directly. PostgreSQL supports a functional index on `COALESCE(updated_at, created_at)` -- MySQL and SQL Server don't. On large tables without the functional index, this degrades to a full scan.
 
   #ecl-warning(
     "COALESCE fails when both columns are NULL",
-  )[If the table has rows where both `updated_at` and `created_at` are NULL, `COALESCE` returns NULL and those rows vanish from every cursor-based extraction. Check `SELECT COUNT(\*) FROM orders WHERE updated_at IS NULL AND created_at IS NULL` before relying on this approach.]
+  )[If rows exist where both `updated_at` and `created_at` are NULL, `COALESCE` returns NULL and those rows vanish from every extraction. Check before relying on this.]
 
   // ---
 
-  == Strategy 2: Dual Cursor
+  == Dual Cursor via UNION ALL
   <strategy-2-dual-cursor>
-  Two separate queries, each optimized for its own population:
-
-  #strong[Inserts] -- cursor on `created_at` (or `id > :last_id` if `created_at` is unavailable):
+  Split the two populations into separate queries so each uses its own index:
 
   ```sql
   -- source: transactional
-  SELECT *
-  FROM orders
-  WHERE created_at >= :last_run_created;
+  SELECT * FROM orders
+    WHERE updated_at >= :last_run
+  UNION ALL
+  SELECT * FROM orders
+    WHERE created_at >= :last_run;
   ```
 
-  #strong[Updates] -- cursor on `updated_at`:
+  The first branch catches updates via `updated_at`. The second branch catches new inserts via `created_at`. Each branch hits its own index cleanly, no function wrapping, no optimizer guesswork.
 
-  ```sql
-  -- source: transactional
-  SELECT *
-  FROM orders
-  WHERE updated_at >= :last_run_updated;
-  ```
+  #strong[Overlap.] A row inserted at 09:00 and updated at 10:30 appears in both branches. The upsert or dedup at the destination handles the duplicate -- the later version wins, which is the correct outcome.
 
-  UNION the results and load as one batch. Each query uses its own index cleanly -- `created_at` for the insert cursor, `updated_at` for the update cursor -- with no function wrapping and no optimizer guesswork.
-
-  The alternative of combining them into a single `WHERE updated_at >= :last_run OR created_at >= :last_run` looks simpler but behaves worse: the OR forces the optimizer to choose between a full scan and a bitmap OR of two index scans, and the plan it picks varies by engine, table size, and statistics freshness. Two queries with a UNION is predictable across engines.
-
-  #strong[Cursor management.] Two cursors means two pieces of state to track and advance. If your orchestrator supports per-table metadata, storing both is straightforward. Otherwise, a dedicated state table works:
-
-  ```sql
-  -- destination: transactional (state table)
-  SELECT last_run_updated, last_run_created
-  FROM _pipeline_state
-  WHERE table_name = 'orders';
-  ```
-
-  #strong[Overlap between the two sets.] A row inserted at 09:00 and updated at 10:30 appears in both queries if `last_run_created` is before 09:00 and `last_run_updated` is before 10:30. The upsert in the destination handles the duplicate -- the second version (the update) overwrites the first (the insert), which is the correct outcome.
-
-  #ecl-warning(
-    "Fallback insert cursor without created_at",
-  )[When `created_at` doesn't exist, use `id > :last_id` for the insert cursor. This is @sequential-id-cursor applied to half the table. The same gap safety rules apply -- sequences with CACHE can produce out-of-order IDs, and a small overlap buffer absorbs them.]
+  If `created_at` doesn't exist either, use the Cursor + NULL Extraction approach below.
 
   // ---
 
-  == Strategy 3: Fix the Source
-  <strategy-3-fix-the-source>
-  Add an `AFTER INSERT` trigger that populates `updated_at` with the current timestamp on every INSERT:
-
-  ```sql
-  -- source: transactional (PostgreSQL)
-  CREATE OR REPLACE TRIGGER set_updated_at_on_insert
-  BEFORE INSERT ON orders
-  FOR EACH ROW
-  EXECUTE FUNCTION set_updated_at();
-  ```
-
-  Then backfill existing NULLs:
+  == Cursor + NULL Extraction
+  <strategy-3-cursor-plus-null>
+  When `created_at` is also unreliable or missing, extract everything the cursor catches plus every row that has no cursor at all:
 
   ```sql
   -- source: transactional
-  UPDATE orders
-  SET updated_at = created_at
-  WHERE updated_at IS NULL;
+  SELECT * FROM orders
+    WHERE updated_at >= :last_run
+  UNION ALL
+  SELECT * FROM orders
+    WHERE updated_at IS NULL;
   ```
 
-  After the backfill and trigger are in place, the standard @cursor-based-timestamp-extraction cursor works for both inserts and updates -- no dual cursor, no COALESCE, no workarounds.
+  The first branch is the normal cursor. The second branch re-extracts every row where `updated_at` is NULL on every run -- these are the rows the cursor will never see. If the NULL population is small (a few thousand rows from broken inserts), this is cheap. If it's large (the trigger never existed and half the table is NULL), the second branch approaches a full scan and a full replace (@full-scan-strategies) is simpler.
 
-  This is the cleanest outcome but requires three things: access to the source database, cooperation from the source team, and confidence that the trigger won't interfere with existing application logic. In practice, adding a trigger to a production table owned by another team is a conversation that can take weeks or never happen. Strategies 1 and 2 exist because Strategy 3 often isn't available.
+  The upsert or dedup handles the redundancy from re-extracting NULLs every run. As the source team fixes the trigger and the NULL population shrinks, the second branch gets cheaper until it eventually returns zero rows.
 
-  #ecl-warning(
-    "Batch the backfill carefully",
-  )[`UPDATE orders SET updated_at = created_at WHERE updated_at IS NULL` on a 50M-row table with 20M NULLs is a heavy write. Run it in batches during off-hours and coordinate with the source team so their monitoring doesn't flag the spike as an incident. The trigger should go live before the backfill starts -- otherwise, rows inserted between the backfill and trigger activation will still have NULLs.]
+  // ---
+
+  #ecl-tip(
+    "The real fix is upstream",
+  )[If the source team adds an `AFTER INSERT` trigger that populates `updated_at` and backfills existing NULLs, the standard @cursor-based-timestamp-extraction cursor works and the strategies above become unnecessary. This is outside the ECL boundary -- it's a conversation with the source team, not a pipeline change -- but it's worth having.]
 
   // ---
 
@@ -3656,11 +3626,11 @@
       align: (auto, auto),
       table.header([Situation], [Strategy]),
       table.hline(),
-      [`created_at` is reliable, table is small-to-medium], [COALESCE -- simplest, one query, one cursor],
-      [`created_at` is reliable, table is large, no functional index],
-      [Dual cursor -- each query hits its own index cleanly],
-      [`created_at` is NULL or unreliable], [Dual cursor with `id > :last_id` for the insert side],
-      [You have source access and team cooperation], [Fix the source -- eliminates the problem permanently],
+      [`created_at` is reliable, table is small], [COALESCE -- naive but works],
+      [`created_at` is reliable, table is large],
+      [Dual cursor -- each branch uses its own index],
+      [`created_at` is missing or unreliable], [Cursor + NULL extraction],
+      [NULL population is large (>50% of table)], [Full replace -- simpler than re-extracting NULLs every run],
     )],
     kind: table,
   )
@@ -3696,6 +3666,10 @@
 
   == The Problem
   The extraction patterns in Part II give you a dataset -- full table, scoped range, set of partitions -- and this page covers the destination-side mechanics: how to swap it in.
+
+  The fundamental constraint is scope alignment: *what you replace must match what you extracted.* All with all (full table extraction replaces the full table), or parts with parts (partition extraction replaces exactly those partitions). What breaks is replacing all with some -- if you truncate the destination and load only rows where `updated_at >= :last_run`, every row that wasn't recently modified vanishes. That's not a load strategy, it's data loss.
+
+  This makes full replace incompatible with cursor-based extraction (@cursor-based-timestamp-extraction, @cursor-from-another-table) and stateless windows on mutable fields like `updated_at` (@stateless-window-extraction), because those extract a subset of the table, not the whole thing. The extracted batch is a delta, and a delta cannot replace a complete table. Incremental extractions need append or merge strategies instead (see @append-only-load, @append-and-materialize).
 
   The naive TRUNCATE + INSERT leaves a window where the table is empty -- bad if anyone's querying it. Safer mechanisms exist, and the choice depends on how much downtime is acceptable and how much validation you want before committing.
 
@@ -5907,7 +5881,9 @@
       [#strong[Warning];],
       [Staleness \> 80% of SLA window],
       [Increase priority of next scheduled run; investigate if it's a trend],
-      [#strong[Breach];], [Staleness \> SLA window], [Alert via @alerting-and-notifications, investigate root cause, notify consumers],
+      [#strong[Breach];],
+      [Staleness \> SLA window],
+      [Alert via @alerting-and-notifications, investigate root cause, notify consumers],
       [#strong[Sustained breach];],
       [Multiple consecutive violations],
       [Escalate -- the schedule, the pattern, or the SLA itself needs to change],
@@ -8700,7 +8676,11 @@
       [Staging swap (@staging-swap)],
       [Warm (daily) + monthly full],
       [Sparse cross-product, activity-filtered extraction],
-      [`inventory_movements`], [Sequential ID cursor (@sequential-id-cursor)], [Append-only (@append-only-load)], [Hot], [Append-only activity log],
+      [`inventory_movements`],
+      [Sequential ID cursor (@sequential-id-cursor)],
+      [Append-only (@append-only-load)],
+      [Hot],
+      [Append-only activity log],
     )],
     kind: table,
   )
@@ -8817,8 +8797,16 @@
       [`order_id`, `product_id`, `line_num`, `quantity`, `unit_price`],
       [Detail with no timestamp],
       [@cursor-from-another-table, @detail-without-timestamp],
-      [`customers`], [`customer_id`], [`name`, `email`, `is_active`], [Soft-delete dimension], [@full-scan-strategies, @hard-rules-soft-rules],
-      [`products`], [`product_id`], [`name`, `price`, `category`], [Schema drift case], [@full-scan-strategies, @the-lies-sources-tell, @partial-column-loading],
+      [`customers`],
+      [`customer_id`],
+      [`name`, `email`, `is_active`],
+      [Soft-delete dimension],
+      [@full-scan-strategies, @hard-rules-soft-rules],
+      [`products`],
+      [`product_id`],
+      [`name`, `price`, `category`],
+      [Schema drift case],
+      [@full-scan-strategies, @the-lies-sources-tell, @partial-column-loading],
       [`invoices`],
       [`invoice_id`],
       [`customer_id`, `status`, `doc_status`, `created_at`, `updated_at`],
@@ -8829,14 +8817,22 @@
       [`invoice_id`, `product_id`, `quantity`, `unit_price`, `status`],
       [Independent detail lifecycle],
       [@detail-without-timestamp, @hard-delete-detection],
-      [`events`], [`event_id`], [`event_type`, `event_date`, `payload`], [Append-only, partitioned], [@sequential-id-cursor, @append-only-load],
+      [`events`],
+      [`event_id`],
+      [`event_type`, `event_date`, `payload`],
+      [Append-only, partitioned],
+      [@sequential-id-cursor, @append-only-load],
       [`sessions`], [(implicit)], [`session_id`, `user_id`, `started_at`], [Late-arriving data], [@late-arriving-data],
       [`metrics_daily`],
       [(composite)],
       [`metric_date`, `metric_name`, `value`],
       [Pre-aggregated, partition-replace],
       [@partition-swap, @scoped-full-replace],
-      [`inventory`], [(`sku_id`, `warehouse_id`)], [`on_hand`, `on_order`], [Sparse cross-product], [@sparse-table-extraction, @activity-driven-extraction],
+      [`inventory`],
+      [(`sku_id`, `warehouse_id`)],
+      [`on_hand`, `on_order`],
+      [Sparse cross-product],
+      [@sparse-table-extraction, @activity-driven-extraction],
       [`inventory_movements`],
       [`movement_id`],
       [`sku_id`, `warehouse_id`, `movement_type`, `quantity`, `movement_date`],
@@ -9409,7 +9405,11 @@
       columns: (16%, 21%, 21%, 21%, 21%),
       align: (auto, auto, auto, auto, auto),
       table.header(
-        [Engine], [Full replace (@full-replace-load)], [Append-only (@append-only-load)], [Merge / upsert (@merge-upsert)], [Append-and-materialize (@append-and-materialize)]
+        [Engine],
+        [Full replace (@full-replace-load)],
+        [Append-only (@append-only-load)],
+        [Merge / upsert (@merge-upsert)],
+        [Append-and-materialize (@append-and-materialize)],
       ),
       table.hline(),
       [#strong[BigQuery]],
