@@ -3150,6 +3150,8 @@
   - #strong[Open documents:] re-extract the full set on every run. They're mutable -- lines change, statuses shift, amounts adjust. The only way to be sure you have the current state is to pull it again.
   - #strong[Closed documents:] extract only the recently closed. Once posted, a closed invoice is frozen. In many jurisdictions, modifying a closed invoice is illegal -- this is one of the rare cases where a soft rule ("we never edit closed invoices") is backed by a hard rule (the law). See @hard-rules-soft-rules.
 
+  #figure(image("diagrams/0307-open-closed-split.svg", width: 95%))
+
   // ---
 
   == The Combination Query
