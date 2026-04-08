@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect x="0" y="0" width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Compaction: collapse the log to one row per key</text>
+
+  <!-- ═══ Before compaction (left) ═══ -->
+  <text x="155" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">orders_log (before)</text>
+
+  <rect x="20" y="46" width="270" height="130" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="20" y="46" width="270" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="58" width="270" height="4" fill="#ebdbb2"/>
+  <text x="55" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="130" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="220" y="57" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_extracted_at</text>
+  <line x1="27" y1="63" x2="283" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- 1001 x3 versions -->
+  <text x="55" y="76" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1001</text>
+  <text x="130" y="76" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">pending</text>
+  <text x="220" y="76" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">Mar 10</text>
+  <line x1="27" y1="81" x2="283" y2="81" stroke="#d5c4a1" stroke-width="0.2"/>
+
+  <text x="55" y="93" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1001</text>
+  <text x="130" y="93" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">shipped</text>
+  <text x="220" y="93" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">Mar 11</text>
+  <line x1="27" y1="98" x2="283" y2="98" stroke="#d5c4a1" stroke-width="0.2"/>
+
+  <rect x="21" y="99" width="268" height="16" fill="#79740e" opacity="0.04"/>
+  <rect x="21" y="99" width="3" height="16" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="55" y="111" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1001</text>
+  <text x="130" y="111" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">shipped</text>
+  <text x="220" y="111" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Mar 12</text>
+  <line x1="27" y1="115" x2="283" y2="115" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- 1002 x2 versions -->
+  <text x="55" y="128" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1002</text>
+  <text x="130" y="128" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">pending</text>
+  <text x="220" y="128" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">Mar 10</text>
+  <line x1="27" y1="133" x2="283" y2="133" stroke="#d5c4a1" stroke-width="0.2"/>
+
+  <rect x="21" y="134" width="268" height="16" fill="#79740e" opacity="0.04"/>
+  <rect x="21" y="134" width="3" height="16" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="55" y="146" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1002</text>
+  <text x="130" y="146" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">confirmed</text>
+  <text x="220" y="146" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Mar 12</text>
+  <line x1="27" y1="151" x2="283" y2="151" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- 1003 x2 -->
+  <text x="55" y="163" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1003</text>
+  <text x="130" y="163" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">pending</text>
+  <text x="220" y="163" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">Mar 11</text>
+
+  <!-- Summary -->
+  <text x="155" y="186" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">7 rows, 3 keys (growing every run)</text>
+
+  <!-- ═══ Arrow ═══ -->
+  <line x1="305" y1="110" x2="395" y2="110" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="395,107 402,110 395,113" fill="#79740e"/>
+  <text x="350" y="100" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">COMPACT</text>
+  <text x="350" y="124" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ROW_NUMBER() = 1</text>
+
+  <!-- ═══ After compaction (right) ═══ -->
+  <text x="555" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">orders_log (after)</text>
+
+  <rect x="410" y="46" width="270" height="80" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="410" y="46" width="270" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="410" y="58" width="270" height="4" fill="#ebdbb2"/>
+  <text x="445" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="520" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="610" y="57" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_extracted_at</text>
+  <line x1="417" y1="63" x2="673" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Only latest per key -->
+  <text x="445" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="520" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">shipped</text>
+  <text x="610" y="78" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 12</text>
+  <line x1="417" y1="84" x2="673" y2="84" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="445" y="98" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="520" y="98" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">confirmed</text>
+  <text x="610" y="98" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 12</text>
+  <line x1="417" y1="104" x2="673" y2="104" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="445" y="118" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="520" y="118" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">pending</text>
+  <text x="610" y="118" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 11</text>
+
+  <!-- Annotation -->
+  <text x="555" y="145" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">3 rows: one per key, latest only</text>
+  <text x="555" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">Storage reclaimed. Dedup view scan is trivial.</text>
+  <text x="555" y="170" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">Version history is gone.</text>
+
+  <!-- Legend -->
+  <rect x="20" y="194" width="3" height="8" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="29" y="201" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">survives compaction (latest per key)</text>
+
+  <rect x="260" y="194" width="10" height="8" fill="#d5c4a1" opacity="0.3" rx="2"/>
+  <text x="276" y="201" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">discarded (older versions)</text>
+
+  <text x="500" y="201" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">Run periodically. Frequency = storage cost vs history needs.</text>
+</svg>

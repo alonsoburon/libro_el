@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="190" viewBox="0 0 720 190">
+  <rect x="0" y="0" width="720" height="190" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">MERGE cost: transactional (per row) vs columnar (per partition)</text>
+
+  <!-- ═══ LEFT: Transactional ═══ -->
+  <text x="175" y="38" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Transactional (PostgreSQL, MySQL)</text>
+
+  <!-- Destination table with PK index -->
+  <rect x="30" y="48" width="290" height="100" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="30" y="48" width="290" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="30" y="60" width="290" height="4" fill="#ebdbb2"/>
+  <text x="175" y="59" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">orders (50M rows)</text>
+  <line x1="37" y1="66" x2="313" y2="66" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Rows as a block, with 3 highlighted by index seek -->
+  <rect x="37" y="68" width="276" height="74" fill="#458588" opacity="0.03" rx="2"/>
+
+  <!-- PK Index on left -->
+  <rect x="42" y="72" width="40" height="66" fill="#458588" opacity="0.08" rx="2"/>
+  <text x="62" y="84" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5" font-weight="600">PK</text>
+  <text x="62" y="94" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5" font-weight="600">INDEX</text>
+
+  <!-- 3 point writes scattered in the block -->
+  <rect x="110" y="76" width="22" height="10" fill="#d79921" opacity="0.25" rx="2"/>
+  <text x="121" y="84" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">1001</text>
+
+  <rect x="200" y="96" width="22" height="10" fill="#d79921" opacity="0.25" rx="2"/>
+  <text x="211" y="104" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">1003</text>
+
+  <rect x="160" y="116" width="22" height="10" fill="#79740e" opacity="0.25" rx="2"/>
+  <text x="171" y="124" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">1005</text>
+
+  <!-- Seek arrows from index to rows -->
+  <path d="M 82,80 L 108,80" stroke="#458588" stroke-width="0.8" fill="none"/>
+  <polygon points="106,78 110,80 106,82" fill="#458588"/>
+  <path d="M 82,100 L 198,100" stroke="#458588" stroke-width="0.8" fill="none"/>
+  <polygon points="196,98 200,100 196,102" fill="#458588"/>
+  <path d="M 82,120 L 158,120" stroke="#458588" stroke-width="0.8" fill="none"/>
+  <polygon points="156,118 160,120 156,122" fill="#458588"/>
+
+  <!-- Cost label -->
+  <text x="175" y="156" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">3 index seeks + 3 row writes</text>
+  <text x="175" y="168" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Cost scales with batch size (3), not table size (50M)</text>
+
+  <!-- ═══ Divider ═══ -->
+  <line x1="360" y1="32" x2="360" y2="178" stroke="#d5c4a1" stroke-width="0.5" stroke-dasharray="6,4"/>
+
+  <!-- ═══ RIGHT: Columnar ═══ -->
+  <text x="540" y="38" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Columnar (BigQuery, Snowflake)</text>
+
+  <!-- Destination table with partitions -->
+  <rect x="395" y="48" width="300" height="100" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="395" y="48" width="300" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="395" y="60" width="300" height="4" fill="#ebdbb2"/>
+  <text x="545" y="59" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">orders (50M rows, 30 partitions)</text>
+  <line x1="402" y1="66" x2="688" y2="66" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Partitions as blocks -->
+  <!-- Untouched partitions -->
+  <rect x="402" y="70" width="30" height="72" fill="#458588" opacity="0.04" rx="2"/>
+  <rect x="436" y="70" width="30" height="72" fill="#458588" opacity="0.04" rx="2"/>
+
+  <!-- Touched partition 1: full rewrite -->
+  <rect x="470" y="70" width="30" height="72" fill="#9d0006" opacity="0.08" rx="2"/>
+  <rect x="470" y="70" width="30" height="3" fill="#9d0006" opacity="0.3" rx="1"/>
+  <text x="485" y="110" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="6" font-weight="600">rewrite</text>
+
+  <!-- Untouched -->
+  <rect x="504" y="70" width="30" height="72" fill="#458588" opacity="0.04" rx="2"/>
+  <rect x="538" y="70" width="30" height="72" fill="#458588" opacity="0.04" rx="2"/>
+
+  <!-- Touched partition 2 -->
+  <rect x="572" y="70" width="30" height="72" fill="#9d0006" opacity="0.08" rx="2"/>
+  <rect x="572" y="70" width="30" height="3" fill="#9d0006" opacity="0.3" rx="1"/>
+  <text x="587" y="110" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="6" font-weight="600">rewrite</text>
+
+  <!-- Touched partition 3 -->
+  <rect x="606" y="70" width="30" height="72" fill="#9d0006" opacity="0.08" rx="2"/>
+  <rect x="606" y="70" width="30" height="3" fill="#9d0006" opacity="0.3" rx="1"/>
+  <text x="621" y="110" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="6" font-weight="600">rewrite</text>
+
+  <!-- More untouched -->
+  <rect x="640" y="70" width="30" height="72" fill="#458588" opacity="0.04" rx="2"/>
+  <text x="655" y="108" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">...</text>
+
+  <!-- Partition labels -->
+  <text x="417" y="90" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p1</text>
+  <text x="451" y="90" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p2</text>
+  <text x="485" y="84" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p3</text>
+  <text x="519" y="90" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p4</text>
+  <text x="553" y="90" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p5</text>
+  <text x="587" y="84" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p6</text>
+  <text x="621" y="84" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="5.5">p7</text>
+
+  <!-- Scan arrow across all partitions -->
+  <line x1="402" y1="146" x2="670" y2="146" stroke="#9d0006" stroke-width="1" stroke-dasharray="3,2"/>
+  <polygon points="668,143 675,146 668,149" fill="#9d0006"/>
+  <text x="540" y="154" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">scan all partitions to find matches</text>
+
+  <!-- Cost label -->
+  <text x="540" y="168" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">scan 50M rows + rewrite 3 partitions in full</text>
+  <text x="540" y="180" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Cost scales with table size + partition spread, not batch size</text>
+</svg>

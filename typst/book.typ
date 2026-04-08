@@ -3334,20 +3334,18 @@
     #strong[One-liner:] A row's timestamp predates the extraction window. It was modified retroactively, arrived late from a batch job, or was inserted by a slow-committing transaction.
   ]
 
+  #figure(image("diagrams/0309-late-arriving-data.svg", width: 95%))
+
   // ---
 
   == Behind the Cursor
-  A row lands in the source with an `updated_at` or `created_at` that's already behind your cursor or outside your window. The extraction ran at 10:00, picked up everything through 09:59, and advanced the cursor. At 10:05, a batch job inserts a row with `updated_at = 08:30`. That row is now permanently behind the cursor and will never be extracted.
+  A row lands in the source with an `updated_at` or `created_at` that's already behind your cursor or outside your window. The extraction ran at 10:00, picked up everything through 09:59, and advanced the cursor. At 10:05, a batch job inserts a row with `updated_at = 08:30`. That row is permanently behind the cursor and will never be extracted. Five mechanisms produce this:
 
-  This happens through more mechanisms than just "slow transactions":
-
-  - #strong[Retroactive corrections.] Support reopens a 3-day-old order and changes the shipping address. The `updated_at` fires with today's date -- fine, the cursor catches it. But in some systems, the correction sets `updated_at` to the original order date, not the correction date, meaning the row changes while the timestamp doesn't move forward.
+  - #strong[Retroactive corrections.] Support reopens a 3-day-old order and changes the shipping address. In some systems the correction resets `updated_at` to the original order date rather than the current date, so the row changes while its timestamp moves backward.
   - #strong[Batch imports.] An overnight job loads yesterday's POS transactions with `created_at = yesterday`. If your cursor already passed yesterday, those rows are invisible.
   - #strong[ERP period closes.] Accounting closes March and runs adjustments. The adjustments land with dates in March, but the close happens in April. A daily cursor in April never looks back at March.
-  - #strong[Slow-committing transactions.] A long-running transaction inserts a row at 09:50 but doesn't commit until 10:10. The `updated_at` is 09:50 (when the INSERT happened), but the row wasn't visible until 10:10 (when the COMMIT happened). If the extraction ran at 10:00, it couldn't see the row -- and the cursor already advanced past 09:50.
-  - #strong[Async replication lag.] The source is a read replica that's 30 seconds behind the primary. Your extraction reads from the replica, but the cursor advances based on wall-clock time. Rows committed on the primary in those 30 seconds are invisible until the next run -- if the cursor has already moved past them.
-
-  In every case, the row's timestamp says it should have been extracted already, but it wasn't visible when the extraction ran.
+  - #strong[Slow-committing transactions.] A long-running transaction inserts a row at 09:50 but doesn't commit until 10:10. The `updated_at` reflects the INSERT time, not the COMMIT time, so the extraction at 10:00 couldn't see the row and the cursor already moved past 09:50.
+  - #strong[Async replication lag.] The source is a read replica behind the primary by seconds or minutes. Rows committed on the primary during that lag window are invisible to the extraction, and the cursor advances past them.
 
   // ---
 
@@ -3532,22 +3530,11 @@
 
   // ---
 
-  == The Naive Approach: COALESCE
+  == Why Not COALESCE?
   <strategy-1-coalesce>
-  Fall back to `created_at` when `updated_at` is NULL:
+  The obvious first attempt is `COALESCE(updated_at, created_at) >= :last_run` -- fall back to `created_at` when `updated_at` is NULL. It works, but `COALESCE` wraps both columns in a function, which prevents the optimizer from using indexes on either one. PostgreSQL supports a functional index on the expression; MySQL and SQL Server don't. On large tables without the functional index, this degrades to a full scan. If both columns are NULL on any row, `COALESCE` returns NULL and that row vanishes from every extraction.
 
-  ```sql
-  -- source: transactional
-  SELECT *
-  FROM orders
-  WHERE COALESCE(updated_at, created_at) >= :last_run;
-  ```
-
-  This works when `created_at` is reliably populated on INSERT. But `COALESCE` wraps the columns in a function, which prevents the optimizer from using indexes on either column directly. PostgreSQL supports a functional index on `COALESCE(updated_at, created_at)` -- MySQL and SQL Server don't. On large tables without the functional index, this degrades to a full scan.
-
-  #ecl-warning(
-    "COALESCE fails when both columns are NULL",
-  )[If rows exist where both `updated_at` and `created_at` are NULL, `COALESCE` returns NULL and those rows vanish from every extraction. Check before relying on this.]
+  Use the Dual Cursor approach below instead.
 
   // ---
 
@@ -3597,6 +3584,8 @@
 
   // ---
 
+  #figure(image("diagrams/0310-create-vs-update.svg", width: 95%))
+
   == Choosing a Strategy
   <choosing-a-strategy>
   #figure(
@@ -3605,9 +3594,7 @@
       align: (auto, auto),
       table.header([Situation], [Strategy]),
       table.hline(),
-      [`created_at` is reliable, table is small], [COALESCE -- naive but works],
-      [`created_at` is reliable, table is large],
-      [Dual cursor -- each branch uses its own index],
+      [`created_at` is reliable], [Dual cursor -- each branch uses its own index],
       [`created_at` is missing or unreliable], [Cursor + NULL extraction],
       [NULL population is large (>50% of table)], [Full replace -- simpler than re-extracting NULLs every run],
     )],
@@ -3652,31 +3639,21 @@
 
   The naive TRUNCATE + INSERT leaves a window where the table is empty -- bad if anyone's querying it. Safer mechanisms exist, and the choice depends on how much downtime is acceptable and how much validation you want before committing.
 
+  #figure(image("diagrams/0401-full-replace-load.svg", width: 95%))
+
   // ---
 
-  == Truncate + Insert
+  == Why Not Truncate + Insert?
   <truncate-insert>
-  ```sql
-  -- destination: transactional
-  TRUNCATE TABLE orders;
-  INSERT INTO orders SELECT * FROM stg_orders;
-  ```
+  The naive approach is `TRUNCATE TABLE orders; INSERT INTO orders SELECT * FROM stg_orders`. The two operations aren't atomic -- between TRUNCATE and INSERT, the table is empty, and any consumer querying `orders` sees zero rows. If the INSERT fails halfway (connection drop, disk full, timeout), you're left with a partially loaded table and no way back, because TRUNCATE is DDL and can't be rolled back on most engines.
 
-  The two operations aren't atomic. Between TRUNCATE and INSERT, the table is empty -- any consumer querying `orders` sees zero rows. If the INSERT fails halfway (connection drop, disk full, timeout), you're left with a partially loaded table and no way back, because TRUNCATE is DDL and can't be rolled back.
-
-  This works when the load completes in seconds and no consumers query during the load window -- small reference tables, internal staging tables, tables loaded during a maintenance window where dashboards are offline. For anything with live consumers or a load time measured in minutes, use staging swap instead.
-
-  #ecl-warning(
-    "TRUNCATE is DDL, except PostgreSQL",
-  )[In MySQL, SQL Server, BigQuery, and Snowflake, `TRUNCATE` is a DDL statement that commits implicitly and cannot be rolled back. Wrapping `TRUNCATE; INSERT` in a `BEGIN...COMMIT` block does not make it atomic in these engines. PostgreSQL is the exception: `TRUNCATE` is transactional there, so wrapping both in a transaction gives you atomicity for free.]
+  PostgreSQL is the exception: `TRUNCATE` is transactional there, so wrapping both in a transaction gives you atomicity for free. But even on PostgreSQL, staging swap is strictly better -- you get the same atomicity plus a validation step before the data reaches production. Use staging swap instead.
 
   // ---
 
   == Staging Swap
   <load-staging-swap>
   Load into a staging table, validate, then swap to production. Consumers see complete data throughout -- the old version until the swap, the new version after.
-
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
 
   The validation step between load and swap is the key advantage over truncate + insert. If the extraction returned garbage -- zero rows from a silent failure, a schema change that dropped columns, a type mismatch that cast everything to NULL -- you catch it before it reaches production.
 
@@ -3746,16 +3723,13 @@
       align: (auto, auto),
       table.header([Situation], [Mechanism]),
       table.hline(),
-      [Small table, no live consumers, load takes seconds], [Truncate + Insert],
-      [Any table with live consumers or load \> 30 seconds], [Staging swap],
+      [Full table replacement], [Staging swap],
       [Partitioned table, replacing a bounded range], [Partition swap],
-      [PostgreSQL destination, need atomicity with minimal complexity],
-      [Truncate + Insert inside a transaction (PostgreSQL-only -- TRUNCATE is transactional there)],
     )],
     kind: table,
   )
 
-  All three are idempotent -- rerunning the same extraction and load produces the same destination state regardless of how many times you run it, with no accumulated state, no cursor, and no merge logic (see @idempotency). The shared failure mode is loading bad data into production before catching the problem, which only staging swap prevents through its validation step.
+  Both are idempotent -- rerunning the same extraction and load produces the same destination state regardless of how many times you run it, with no accumulated state, no cursor, and no merge logic (see @idempotency). The shared failure mode is loading bad data into production before catching the problem, which the staging swap's validation step prevents.
 
   #ecl-danger(
     "Validate before you swap -- an empty staging table is a silent wipe",
@@ -3766,11 +3740,11 @@
   == By Corridor
   #ecl-warning(
     "Transactional to columnar",
-  )[Staging swap is the standard for mutable tables. Partition swap for partitioned tables where only a slice needs replacing. Truncate + insert is viable for small reference tables loaded outside business hours. On BigQuery, prefer `bq cp` over DML for both staging swap and partition swap -- copy jobs are free (no slot consumption, no bytes-scanned charge) for same-region operations.]
+  )[Staging swap is the standard. Partition swap for partitioned tables where only a slice needs replacing. On BigQuery, prefer `bq cp` over DML for both staging swap and partition swap -- copy jobs are free (no slot consumption, no bytes-scanned charge) for same-region operations.]
 
   #ecl-info(
     "Transactional to transactional",
-  )[All three mechanisms work cleanly. PostgreSQL's transactional TRUNCATE makes truncate + insert atomic for free -- a significant advantage over columnar destinations. For staging swap, the `RENAME` approach inside a transaction is atomic and instant. One caveat: foreign keys referencing the production table will break during the rename. Disable FK checks or drop and recreate constraints as part of the swap if other tables reference the target.]
+  )[Both mechanisms work cleanly. PostgreSQL's transactional DDL means the `RENAME` approach inside a transaction is atomic and instant. One caveat: foreign keys referencing the production table will break during the rename. Disable FK checks or drop and recreate constraints as part of the swap if other tables reference the target.]
 
   // ---
 
@@ -3807,6 +3781,8 @@
   ```
 
   No `ON CONFLICT`, no `MERGE`, no `MATCHED` / `NOT MATCHED` logic. The destination table grows monotonically, just like the source.
+
+  #figure(image("diagrams/0402-append-only-load.svg", width: 95%))
 
   // ---
 
@@ -3961,6 +3937,8 @@
 
   All three produce the same result: rows that existed get overwritten, rows that didn't get inserted.
 
+  #figure(image("diagrams/0403-merge-mechanics.svg", width: 95%))
+
   The maintenance cost is in the column lists. A table with 5 columns is manageable; a table with 80 columns means 80 entries in the INSERT, 80 in the VALUES, and 79 in the UPDATE SET (everything except the key). Add a column to the source and you need to update three places in BigQuery/Snowflake, two in PostgreSQL. Multiply by however many tables you're loading this way and the MERGE statement itself becomes a schema-drift vector -- the exact failure mode covered in @merge-and-schema-evolution. Most production pipelines generate these statements dynamically from the staging table's schema at runtime, which eliminates the drift but requires a builder function per engine dialect. See @upsert-merge for per-engine syntax helpers and @dynamic-merge-generation for help on that builder function.
 
   // ---
@@ -3977,6 +3955,8 @@
 
   Snowflake rewrites affected micro-partitions, which is more granular than BigQuery's date-partition model but still means a MERGE touching scattered micro-partitions across the table is significantly more expensive than one touching a contiguous range.
 
+  #figure(image("diagrams/0403-merge-cost.svg", width: 95%))
+
   // ---
 
   == Key Selection
@@ -3989,7 +3969,7 @@
 
   #ecl-danger(
     "Non-unique keys compound duplicates",
-  )[If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and always bad. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see @duplicate-detection.]
+  )[If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and *always bad*. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see @duplicate-detection.]
 
   #ecl-warning(
     "Unenforced PKs cause silent data loss",
@@ -4085,7 +4065,6 @@
       align: (auto, auto, auto),
       table.header([Entity], [`evolve`], [`freeze`]),
       table.hline(),
-      [New table], [Create it], [Raise error],
       [New column], [Add it via `ALTER TABLE`], [Raise error],
       [Type change], [Widen if compatible], [Raise error],
     )],
@@ -4133,15 +4112,11 @@
   <by-corridor-2>
   #ecl-info(
     "Transactional to columnar",
-  )[MERGE is the most expensive DML operation in columnar engines. The cost scales with the number of partitions touched, not the batch size. Minimize partition spread in each batch, consider delete-insert as an alternative, and evaluate whether @append-and-materialize (append + dedup view) is cheaper -- it usually is, because most tables are read far less often than they're loaded, and the dedup scan on read is cheaper than a MERGE on every write.]
+  )[*MERGE is the most expensive DML operation in columnar engines*. The cost scales with the number of partitions touched, not the batch size. Minimize partition spread in each batch, consider delete-insert as an alternative, and evaluate whether @append-and-materialize (append + dedup view) is cheaper -- *it usually is*, because most tables are read far less often than they're loaded, and the dedup scan on read is cheaper than a MERGE on every write.]
 
   #ecl-warning(
     "Transactional to transactional",
-  )[`INSERT ... ON CONFLICT` is cheap -- each row is an index lookup + point write. Cost scales linearly with batch size. The primary key index handles conflict detection efficiently. For large batches (100K+ rows), load into a staging table first and run the `INSERT ... ON CONFLICT ... SELECT FROM staging` as a single statement rather than row-by-row inserts.]
-
-  // ---
-
-  // REVIEWED: author checked content above this line (2026-04-06)
+  )[`INSERT ... ON CONFLICT` is *very* cheap -- each row is an index lookup + point write. Cost scales linearly with batch size. The primary key index handles conflict detection efficiently. For large batches (100K+ rows), load into a staging table first and run the `INSERT ... ON CONFLICT ... SELECT FROM staging` as a single statement rather than row-by-row inserts.]
 
   // ---
 
@@ -4158,8 +4133,9 @@
 
   That ceiling directly limits purity. The less often you extract, the longer the destination drifts from the source between runs. Missed corrections, late-arriving data, and accumulated cursor gaps all widen with the interval. Running more often closes the gap -- but MERGE makes running more often expensive.
 
-  This pattern removes the per-run cost ceiling by replacing MERGE with a pure append. The load cost drops to near zero regardless of frequency, and the deduplication cost is paid separately -- once, on a schedule you control, decoupled from the extraction cadence.
-
+  This pattern removes the per-run cost ceiling by replacing MERGE with a pure append. The load cost drops to near zero regardless of frequency, and the deduplication cost is paid separately in two places:
+  1. On compaction, run on a schedule you control, to avoid the table growing too fast
+  2. On read, whenever the consumers query the dedup view.
   // ---
 
   == The Pattern
@@ -4205,7 +4181,7 @@
   <the-duplicate-reality>
   With a cursor-based extraction (@cursor-based-timestamp-extraction), most of the batch is genuinely new or changed rows, and duplicates come from the overlap buffer -- a small fraction of each run.
 
-  With a stateless window (@stateless-window-extraction), the situation inverts. A 7-day window re-extracts 7 days of data on every run, so if the pipeline runs daily, \~6/7 of each batch is rows the destination already has from previous runs -- deliberate duplicates built into the extraction window. The append log grows proportionally to window size × run frequency.
+  With a stateless window (@stateless-window-extraction), the situation inverts. A 7-day window re-extracts 7 days of data on every run, so if the pipeline runs daily, \~6/7ths of each batch is rows the destination already has from previous runs -- deliberate duplicates built into the extraction window. The append log grows proportionally to window size × run frequency.
 
   #ecl-warning(
     "Size retention to the extraction window",
@@ -4258,7 +4234,7 @@
   QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1;
   ```
 
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0404-compaction.svg", width: 95%))
 
   Compaction replaces the log with the deduplicated result -- every key retains its latest version, all duplicate extractions and historical versions are gone. Storage reclaims completely and the view's `ROW_NUMBER()` scan drops to near-trivial size. Compaction frequency determines how large the log gets between runs and how heavy the dedup scan is at peak, not how stale the view is -- the view always reflects the latest version of every row in the log.
 

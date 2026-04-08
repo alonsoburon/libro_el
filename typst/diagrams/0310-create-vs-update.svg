@@ -1,1 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="172" viewBox="0 0 800 172"><rect x="0" y="0" width="800" height="172" fill="#ffffff" rx="6"></rect><text x="400" y="22" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Dual cursors — created_at track + updated_at track</text><line x1="50" y1="66" x2="750" y2="66" stroke="#d5c4a1" stroke-width="1"></line><line x1="50" y1="63" x2="50" y2="69" stroke="#d5c4a1" stroke-width="1"></line><text x="50" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 1</text><line x1="190" y1="63" x2="190" y2="69" stroke="#d5c4a1" stroke-width="1"></line><text x="190" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 2</text><line x1="330" y1="63" x2="330" y2="69" stroke="#d5c4a1" stroke-width="1"></line><text x="330" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 3</text><line x1="470" y1="63" x2="470" y2="69" stroke="#d5c4a1" stroke-width="1"></line><text x="470" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 4</text><line x1="610" y1="63" x2="610" y2="69" stroke="#d5c4a1" stroke-width="1"></line><text x="610" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 5</text><line x1="750" y1="63" x2="750" y2="69" stroke="#d5c4a1" stroke-width="1"></line><text x="750" y="158" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Day 6</text><rect x="50" y="76" width="420" height="28" fill="#6c8ebf" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-o9py4n"><rect x="54" y="76" width="412" height="28"></rect></clipPath></defs><text x="260" y="90" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-o9py4n)">created_at cursor: new inserts</text></g><rect x="470" y="76" width="280" height="28" fill="#6c8ebf" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-4s6nao"><rect x="474" y="76" width="272" height="28"></rect></clipPath></defs><text x="610" y="90" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-4s6nao)">created_at: Day 3–5</text></g><rect x="50" y="110" width="280" height="28" fill="#b8a44e" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-17xgp4"><rect x="54" y="110" width="272" height="28"></rect></clipPath></defs><text x="190" y="124" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-17xgp4)">updated_at cursor: modified rows</text></g><rect x="330" y="110" width="420" height="28" fill="#b8a44e" rx="3" opacity="0.85"></rect><g><defs><clipPath id="clip-fht0fw"><rect x="334" y="110" width="412" height="28"></rect></clipPath></defs><text x="540" y="124" text-anchor="middle" dominant-baseline="central" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-weight="600" clip-path="url(#clip-fht0fw)">updated_at: Day 2–5</text></g><line x1="470" y1="62" x2="470" y2="140" stroke="#6c8ebf" stroke-width="1.5" stroke-dasharray="4,3"></line><text x="470" y="58" text-anchor="middle" fill="#6c8ebf" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">created HWM</text><line x1="330" y1="62" x2="330" y2="140" stroke="#b8a44e" stroke-width="1.5" stroke-dasharray="4,3"></line><text x="330" y="58" text-anchor="middle" fill="#b8a44e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">updated HWM</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="280" viewBox="0 0 720 280">
+  <rect x="0" y="0" width="720" height="280" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Create vs update separation: building the query step by step</text>
+
+  <!-- ═══ Source data (left side) ═══ -->
+  <rect x="15" y="32" width="250" height="128" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="15" y="32" width="250" height="18" fill="#ebdbb2" rx="4"/>
+  <rect x="15" y="46" width="250" height="4" fill="#ebdbb2"/>
+
+  <text x="55" y="44" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">order_id</text>
+  <text x="135" y="44" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">created_at</text>
+  <text x="225" y="44" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">updated_at</text>
+  <line x1="22" y1="50" x2="258" y2="50" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Row 1: updated recently, caught by cursor -->
+  <text x="55" y="66" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="135" y="66" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 10</text>
+  <text x="225" y="66" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Mar 13</text>
+  <line x1="22" y1="72" x2="258" y2="72" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 2: never updated, created recently -->
+  <rect x="16" y="73" width="248" height="18" fill="#9d0006" opacity="0.04"/>
+  <text x="55" y="86" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="135" y="86" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Mar 12</text>
+  <text x="225" y="86" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">NULL</text>
+  <line x1="22" y1="92" x2="258" y2="92" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 3: updated recently -->
+  <text x="55" y="106" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="135" y="106" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 13</text>
+  <text x="225" y="106" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Mar 14</text>
+  <line x1="22" y1="112" x2="258" y2="112" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 4: never updated -->
+  <rect x="16" y="113" width="248" height="18" fill="#9d0006" opacity="0.04"/>
+  <text x="55" y="126" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1004</text>
+  <text x="135" y="126" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Mar 14</text>
+  <text x="225" y="126" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">NULL</text>
+  <line x1="22" y1="132" x2="258" y2="132" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 5: never updated -->
+  <rect x="16" y="133" width="248" height="18" fill="#9d0006" opacity="0.04"/>
+  <text x="55" y="146" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1005</text>
+  <text x="135" y="146" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Mar 14</text>
+  <text x="225" y="146" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">NULL</text>
+
+  <!-- cursor label -->
+  <text x="140" y="170" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">cursor = Mar 13</text>
+
+  <!-- ═══ Three strategies stacked (right side) ═══ -->
+
+  <!-- Step 1: cursor only -->
+  <rect x="300" y="32" width="405" height="48" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="301" y="33" width="3" height="46" fill="#928374" opacity="0.3" rx="1"/>
+  <text x="316" y="48" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Cursor only</text>
+  <text x="316" y="63" fill="#7c6f64" font-family="monospace" font-size="8.5">updated_at >= :last_run</text>
+  <!-- Result -->
+  <text x="580" y="48" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">1001, 1003</text>
+  <text x="580" y="63" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">misses 1002, 1004, 1005</text>
+
+  <!-- Arrow -->
+  <path d="M 502,80 L 502,86" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="499,85 502,91 505,85" fill="#d5c4a1"/>
+
+  <!-- Step 2: COALESCE (not recommended) -->
+  <rect x="300" y="94" width="405" height="48" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4" opacity="0.5"/>
+  <rect x="301" y="95" width="3" height="46" fill="#928374" opacity="0.2" rx="1"/>
+  <text x="316" y="110" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">COALESCE (not recommended)</text>
+  <text x="316" y="125" fill="#928374" font-family="monospace" font-size="8.5" opacity="0.6">COALESCE(updated_at, created_at) >= :last_run</text>
+  <!-- Result -->
+  <text x="580" y="110" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">all 5 rows</text>
+  <text x="580" y="125" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">kills index usage</text>
+  <!-- Strikethrough line -->
+  <line x1="306" y1="118" x2="695" y2="118" stroke="#9d0006" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- Arrow -->
+  <path d="M 502,142 L 502,148" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="499,147 502,153 505,147" fill="#d5c4a1"/>
+
+  <!-- Step 3: Dual Cursor UNION ALL -->
+  <rect x="300" y="156" width="405" height="68" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="301" y="157" width="3" height="66" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="316" y="172" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Dual Cursor via UNION ALL</text>
+  <text x="316" y="188" fill="#458588" font-family="monospace" font-size="8.5">updated_at >= :last_run</text>
+  <text x="316" y="201" fill="#7c6f64" font-family="monospace" font-size="8.5">UNION ALL</text>
+  <text x="316" y="214" fill="#d65d0e" font-family="monospace" font-size="8.5">created_at >= :last_run</text>
+  <!-- Result -->
+  <text x="580" y="178" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">all 5 rows</text>
+  <text x="580" y="193" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">each branch indexed</text>
+  <text x="580" y="208" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">dedup handles overlap</text>
+
+  <!-- ═══ Legend ═══ -->
+  <rect x="15" y="192" width="8" height="8" fill="#458588" opacity="0.3" rx="1"/>
+  <text x="28" y="199" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">has updated_at (cursor catches it)</text>
+
+  <rect x="15" y="206" width="8" height="8" fill="#d65d0e" opacity="0.3" rx="1"/>
+  <text x="28" y="213" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">has created_at only</text>
+
+  <rect x="15" y="220" width="8" height="8" fill="#9d0006" opacity="0.15" rx="1"/>
+  <text x="28" y="227" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">NULL (invisible to cursor)</text>
+
+  <!-- Bottom note -->
+  <text x="360" y="258" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">If created_at is also missing: replace second branch with WHERE updated_at IS NULL</text>
+</svg>

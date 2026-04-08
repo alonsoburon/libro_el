@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="230" viewBox="0 0 720 230">
+  <rect x="0" y="0" width="720" height="230" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Late-arriving data: row lands behind the cursor, permanently missed</text>
+
+  <!-- Time axis -->
+  <line x1="40" y1="48" x2="700" y2="48" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="700,45 708,48 700,51" fill="#d5c4a1"/>
+
+  <g fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">
+    <text x="107" y="42" text-anchor="middle">08:00</text>
+    <text x="230" y="42" text-anchor="middle">09:00</text>
+    <text x="360" y="42" text-anchor="middle">10:00</text>
+    <text x="490" y="42" text-anchor="middle">10:05</text>
+    <text x="613" y="42" text-anchor="middle">11:00</text>
+  </g>
+  <g stroke="#d5c4a1" stroke-width="1">
+    <line x1="107" y1="45" x2="107" y2="51"/>
+    <line x1="230" y1="45" x2="230" y2="51"/>
+    <line x1="360" y1="45" x2="360" y2="51"/>
+    <line x1="490" y1="45" x2="490" y2="51"/>
+    <line x1="613" y1="45" x2="613" y2="51"/>
+  </g>
+
+  <!-- Cursor at 10:00 -->
+  <line x1="360" y1="54" x2="360" y2="155" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <circle cx="360" cy="54" r="3.5" fill="#d65d0e"/>
+  <rect x="323" y="57" width="74" height="13" fill="#ffffff" rx="2"/>
+  <text x="360" y="67" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">cursor = 10:00</text>
+
+  <!-- Run N: 5 blocks 24w, gap=21, pad=21 each side -->
+  <!-- Content: 21 + 24 + 21 + 24 + 21 + 24 + 21 + 24 + 21 + 24 + 21 = 246px -->
+  <!-- Container: 246px centered on 107..360 midpoint=233.5 -> x=110..356 -->
+  <!-- Actually align left edge to 08:00 tick: x=107, width=246 -> 107..353 -->
+  <!-- Better: x=107, width=253 (to 360). Pad=21. First block at 107+21=128. -->
+  <!-- Stride=45. Blocks: 128,173,218,263,308. Last edge=332. Right pad=360-332=28. Not 21. -->
+  <!-- For exact: container width = 21+24+21+24+21+24+21+24+21+24+21 = 246. x=114, end=360 -->
+  <!-- x=360-246=114. First block at 114+21=135. Stride=45. Blocks: 135,180,225,270,315. Last=339. Pad right=360-339=21. Yes! -->
+  <text x="40" y="90" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N</text>
+  <text x="40" y="103" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">at 10:00</text>
+
+  <rect x="114" y="76" width="246" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="114" y="76" width="246" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+
+  <rect x="135" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="147" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r1</text>
+
+  <rect x="180" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="192" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r3</text>
+
+  <rect x="225" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="237" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r4</text>
+
+  <rect x="270" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="282" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r5</text>
+
+  <rect x="315" y="82" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="327" y="99" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r6</text>
+
+  <!-- Late-arriving r2: appears at 10:05 but updated_at=08:30 -->
+  <rect x="478" y="82" width="24" height="26" fill="#9d0006" opacity="0.08" rx="3"/>
+  <rect x="478" y="82" width="24" height="26" fill="none" stroke="#9d0006" stroke-width="1.5" rx="3"/>
+  <text x="490" y="99" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">r2</text>
+  <text x="490" y="77" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">inserted 10:05</text>
+
+  <!-- Arrow from r2 back to 08:30 (between r1 at 135 and r3 at 180, so ~158) -->
+  <path d="M 490,108 L 490,135 Q 490,145 480,145 L 168,145 Q 158,145 158,135 L 158,114" stroke="#9d0006" stroke-width="1.2" fill="none" stroke-dasharray="4,3"/>
+  <polygon points="155,116 158,108 161,116" fill="#9d0006"/>
+  <rect x="275" y="138" width="108" height="13" fill="#ffffff" rx="2"/>
+  <text x="329" y="148" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">updated_at = 08:30</text>
+
+  <!-- Run N+1: same layout, container right-aligned to 11:00 tick -->
+  <!-- x=613-246=367. First block at 367+21=388. Stride=45. Blocks: 388,433,478,523,568. Last=592. Pad right=613-592=21. -->
+  <text x="40" y="168" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run N+1</text>
+  <text x="40" y="181" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">at 11:00</text>
+
+  <rect x="367" y="155" width="246" height="38" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="367" y="155" width="246" height="38" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+
+  <rect x="388" y="161" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="400" y="178" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r7</text>
+
+  <rect x="433" y="161" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="445" y="178" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r8</text>
+
+  <rect x="478" y="161" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="490" y="178" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r9</text>
+
+  <rect x="523" y="161" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="535" y="178" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r10</text>
+
+  <rect x="568" y="161" width="24" height="26" fill="#458588" opacity="0.14" rx="3"/>
+  <text x="580" y="178" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">r11</text>
+
+  <!-- Legend -->
+  <rect x="40" y="205" width="14" height="10" fill="#458588" opacity="0.14" rx="2"/>
+  <text x="60" y="213" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">captured row</text>
+
+  <rect x="185" y="204" width="14" height="12" fill="#9d0006" opacity="0.08" rx="2" stroke="#9d0006" stroke-width="1"/>
+  <text x="205" y="213" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">late arrival: behind cursor, never extracted</text>
+
+  <text x="530" y="213" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">Overlap window or full replace catches it.</text>
+</svg>

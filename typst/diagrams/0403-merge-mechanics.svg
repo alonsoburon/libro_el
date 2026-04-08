@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="210" viewBox="0 0 720 210">
+  <rect x="0" y="0" width="720" height="210" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">MERGE mechanics: match on key, update or insert</text>
+
+  <!-- ═══ Staging batch (left) ═══ -->
+  <text x="105" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Staging: _stg_orders</text>
+
+  <rect x="20" y="46" width="170" height="108" fill="#f9f5d7" stroke="#458588" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+  <rect x="20" y="46" width="170" height="16" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="20" y="58" width="170" height="4" fill="#458588" opacity="0.06"/>
+  <text x="52" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="105" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="158" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">total</text>
+  <line x1="27" y1="63" x2="183" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Row 1: exists in dest (will UPDATE) -->
+  <rect x="21" y="64" width="168" height="18" fill="#d79921" opacity="0.06"/>
+  <rect x="21" y="64" width="3" height="18" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="52" y="77" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="105" y="77" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">shipped</text>
+  <text x="158" y="77" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1 350</text>
+  <line x1="27" y1="82" x2="183" y2="82" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 2: exists in dest (will UPDATE) -->
+  <rect x="21" y="83" width="168" height="18" fill="#d79921" opacity="0.06"/>
+  <rect x="21" y="83" width="3" height="18" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="52" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="105" y="96" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">confirmed</text>
+  <text x="158" y="96" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">780</text>
+  <line x1="27" y1="101" x2="183" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 3: new (will INSERT) -->
+  <rect x="21" y="102" width="168" height="18" fill="#79740e" opacity="0.06"/>
+  <rect x="21" y="102" width="3" height="18" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="52" y="115" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1005</text>
+  <text x="105" y="115" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">pending</text>
+  <text x="158" y="115" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">220</text>
+  <line x1="27" y1="120" x2="183" y2="120" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 4: new (will INSERT) -->
+  <rect x="21" y="121" width="168" height="18" fill="#79740e" opacity="0.06"/>
+  <rect x="21" y="121" width="3" height="18" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="52" y="134" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1006</text>
+  <text x="105" y="134" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">pending</text>
+  <text x="158" y="134" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">95</text>
+
+  <!-- Staging labels -->
+  <text x="105" y="164" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">4-row batch from extraction</text>
+
+  <!-- ═══ MERGE arrows (center) ═══ -->
+  <!-- ON key match label -->
+  <rect x="210" y="72" width="90" height="14" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="255" y="82" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">ON order_id =</text>
+
+  <!-- MATCHED arrow (update) -->
+  <path d="M 195,75 L 210,75" stroke="#d79921" stroke-width="1.2" fill="none"/>
+  <path d="M 300,75 L 380,75" stroke="#d79921" stroke-width="1.2" fill="none"/>
+  <polygon points="380,72 387,75 380,78" fill="#d79921"/>
+  <text x="340" y="68" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">MATCHED: UPDATE</text>
+
+  <!-- NOT MATCHED arrow (insert) -->
+  <path d="M 195,120 L 230,120 Q 255,120 255,100 L 255,86" stroke="#79740e" stroke-width="1.2" fill="none"/>
+  <path d="M 255,86 L 255,100 Q 255,120 280,120 L 380,120" stroke="#79740e" stroke-width="1.2" fill="none" opacity="0"/>
+  <!-- Simpler: just go right -->
+  <path d="M 195,120 L 380,120" stroke="#79740e" stroke-width="1.2" fill="none"/>
+  <polygon points="380,117 387,120 380,123" fill="#79740e"/>
+  <text x="310" y="113" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">NOT MATCHED: INSERT</text>
+
+  <!-- ═══ Destination (right) ═══ -->
+  <text x="530" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Destination: orders</text>
+
+  <rect x="395" y="46" width="270" height="128" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="395" y="46" width="270" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="395" y="58" width="270" height="4" fill="#ebdbb2"/>
+  <text x="427" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="490" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="555" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">total</text>
+  <text x="625" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">action</text>
+  <line x1="402" y1="63" x2="658" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Row 1: UPDATED -->
+  <rect x="396" y="64" width="268" height="18" fill="#d79921" opacity="0.06"/>
+  <rect x="396" y="64" width="3" height="18" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="427" y="77" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="490" y="77" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">shipped</text>
+  <text x="555" y="77" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1 350</text>
+  <text x="625" y="77" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">updated</text>
+  <line x1="402" y1="82" x2="658" y2="82" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 2: unchanged -->
+  <text x="427" y="96" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="490" y="96" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">pending</text>
+  <text x="555" y="96" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">430</text>
+  <text x="625" y="96" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">untouched</text>
+  <line x1="402" y1="101" x2="658" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 3: UPDATED -->
+  <rect x="396" y="102" width="268" height="18" fill="#d79921" opacity="0.06"/>
+  <rect x="396" y="102" width="3" height="18" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="427" y="115" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="490" y="115" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">confirmed</text>
+  <text x="555" y="115" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">780</text>
+  <text x="625" y="115" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">updated</text>
+  <line x1="402" y1="120" x2="658" y2="120" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 4: unchanged -->
+  <text x="427" y="134" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1004</text>
+  <text x="490" y="134" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">pending</text>
+  <text x="555" y="134" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">310</text>
+  <text x="625" y="134" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">untouched</text>
+  <line x1="402" y1="139" x2="658" y2="139" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 5: INSERTED -->
+  <rect x="396" y="140" width="268" height="18" fill="#79740e" opacity="0.06"/>
+  <rect x="396" y="140" width="3" height="18" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="427" y="153" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1005</text>
+  <text x="490" y="153" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">pending</text>
+  <text x="555" y="153" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">220</text>
+  <text x="625" y="153" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">inserted</text>
+  <line x1="402" y1="158" x2="658" y2="158" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 6: INSERTED -->
+  <rect x="396" y="159" width="268" height="14" fill="#79740e" opacity="0.06"/>
+  <rect x="396" y="159" width="3" height="14" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="427" y="170" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1006</text>
+  <text x="490" y="170" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">pending</text>
+  <text x="555" y="170" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">95</text>
+  <text x="625" y="170" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">inserted</text>
+
+  <!-- ═══ Legend ═══ -->
+  <rect x="20" y="190" width="3" height="10" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="29" y="198" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">MATCHED: row existed, overwritten with new values</text>
+
+  <rect x="320" y="190" width="3" height="10" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="329" y="198" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">NOT MATCHED: new row, inserted</text>
+
+  <rect x="560" y="190" width="10" height="8" fill="#d5c4a1" opacity="0.3" rx="2"/>
+  <text x="576" y="197" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">untouched (not in batch)</text>
+</svg>

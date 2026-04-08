@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect x="0" y="0" width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Append-only load: new rows in, no matching, no rewriting</text>
+
+  <!-- ═══ Source (left) ═══ -->
+  <text x="165" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Source: events</text>
+
+  <rect x="30" y="46" width="270" height="120" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="30" y="46" width="270" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="30" y="58" width="270" height="4" fill="#ebdbb2"/>
+  <text x="90" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">event_id</text>
+  <text x="200" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">event_date</text>
+  <line x1="37" y1="63" x2="293" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Old rows (already loaded, dimmed) -->
+  <text x="90" y="78" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">501</text>
+  <text x="200" y="78" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 10</text>
+  <line x1="37" y1="83" x2="293" y2="83" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="90" y="96" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">502</text>
+  <text x="200" y="96" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 10</text>
+  <line x1="37" y1="101" x2="293" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="90" y="114" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">503</text>
+  <text x="200" y="114" text-anchor="middle" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 11</text>
+
+  <!-- Cursor line -->
+  <line x1="37" y1="120" x2="293" y2="120" stroke="#d65d0e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="165" y="131" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">cursor = 503</text>
+
+  <!-- New rows (to be extracted) -->
+  <rect x="31" y="134" width="268" height="30" fill="#79740e" opacity="0.06"/>
+  <rect x="31" y="134" width="3" height="30" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="90" y="146" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">504</text>
+  <text x="200" y="146" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 11</text>
+  <line x1="37" y1="151" x2="293" y2="151" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="90" y="162" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">505</text>
+  <text x="200" y="162" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 12</text>
+
+  <!-- ═══ Arrow ═══ -->
+  <line x1="310" y1="110" x2="350" y2="110" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="350,106 360,110 350,114" fill="#79740e"/>
+  <text x="335" y="102" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">INSERT</text>
+  <text x="335" y="124" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">id > 503</text>
+
+  <!-- ═══ Destination (right) ═══ -->
+  <text x="535" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Destination: events</text>
+
+  <rect x="400" y="46" width="270" height="120" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="400" y="46" width="270" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="400" y="58" width="270" height="4" fill="#ebdbb2"/>
+  <text x="460" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">event_id</text>
+  <text x="570" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">event_date</text>
+  <line x1="407" y1="63" x2="663" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Existing rows -->
+  <text x="460" y="78" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">501</text>
+  <text x="570" y="78" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 10</text>
+  <line x1="407" y1="83" x2="663" y2="83" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="460" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">502</text>
+  <text x="570" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 10</text>
+  <line x1="407" y1="101" x2="663" y2="101" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="460" y="114" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">503</text>
+  <text x="570" y="114" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 11</text>
+  <line x1="407" y1="119" x2="663" y2="119" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- New rows appended -->
+  <rect x="401" y="120" width="268" height="44" fill="#79740e" opacity="0.06"/>
+  <rect x="401" y="120" width="3" height="44" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="460" y="134" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">504</text>
+  <text x="570" y="134" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 11</text>
+  <line x1="407" y1="139" x2="663" y2="139" stroke="#d5c4a1" stroke-width="0.3"/>
+  <text x="460" y="152" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">505</text>
+  <text x="570" y="152" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 12</text>
+
+  <!-- Annotation -->
+  <text x="535" y="176" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">existing rows never read or rewritten</text>
+
+  <!-- Legend -->
+  <rect x="30" y="186" width="3" height="10" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="39" y="194" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">new rows (pure INSERT, no matching)</text>
+
+  <rect x="260" y="186" width="10" height="8" fill="#d5c4a1" opacity="0.3" rx="2"/>
+  <text x="276" y="193" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">already loaded (untouched)</text>
+
+  <text x="520" y="194" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">Cost scales with batch size, not table size.</text>
+</svg>
