@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect x="0" y="0" width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Hybrid append-merge: one extraction, two destinations</text>
+
+  <!-- ═══ Source extraction (left) ═══ -->
+  <rect x="20" y="60" width="140" height="80" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="20" y="60" width="140" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="72" width="140" height="4" fill="#ebdbb2"/>
+  <text x="90" y="71" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">_stg_orders</text>
+  <text x="90" y="86" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">extracted batch</text>
+
+  <rect x="27" y="94" width="126" height="40" fill="#458588" opacity="0.06" rx="2"/>
+  <text x="90" y="110" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1001, 1002, 1003</text>
+  <text x="90" y="124" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">changed rows from cursor</text>
+
+  <text x="90" y="48" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Extraction</text>
+
+  <!-- ═══ Fork: two arrows diverging ═══ -->
+  <!-- Top arrow: to columnar -->
+  <path d="M 160,85 L 220,85 Q 240,85 240,70 L 240,60 Q 240,50 260,50 L 330,50" stroke="#79740e" stroke-width="1.5" fill="none"/>
+  <polygon points="330,47 337,50 330,53" fill="#79740e"/>
+  <rect x="235" y="34" width="42" height="12" fill="#ffffff" rx="2"/>
+  <text x="256" y="43" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">INSERT</text>
+
+  <!-- Bottom arrow: to transactional -->
+  <path d="M 160,115 L 220,115 Q 240,115 240,130 L 240,140 Q 240,150 260,150 L 330,150" stroke="#458588" stroke-width="1.5" fill="none"/>
+  <polygon points="330,147 337,150 330,153" fill="#458588"/>
+  <rect x="232" y="148" width="50" height="12" fill="#ffffff" rx="2"/>
+  <text x="257" y="157" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">UPSERT</text>
+
+  <!-- ═══ Columnar destination (top right) ═══ -->
+  <rect x="340" y="30" width="360" height="66" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="340" y="30" width="360" height="16" fill="#79740e" opacity="0.06" rx="4"/>
+  <rect x="340" y="42" width="360" height="4" fill="#79740e" opacity="0.06"/>
+  <text x="440" y="41" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">BigQuery: orders_log</text>
+  <text x="600" y="41" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">(append-only)</text>
+
+  <!-- Log rows stacked -->
+  <text x="350" y="58" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">run 1:  1001 pending, 1002 pending</text>
+  <text x="350" y="70" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">run 2:  1001 shipped, 1003 pending</text>
+  <text x="350" y="82" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">run 3:  1001 shipped, 1002 confirmed, 1003 pending</text>
+
+  <!-- Consumer label -->
+  <text x="520" y="58" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">analysts query dedup VIEW</text>
+  <text x="520" y="70" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">history + replay available</text>
+  <text x="520" y="82" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">low frequency, high volume</text>
+
+  <!-- ═══ Transactional destination (bottom right) ═══ -->
+  <rect x="340" y="110" width="360" height="66" fill="#f9f5d7" stroke="#458588" stroke-width="1.5" rx="4"/>
+  <rect x="340" y="110" width="360" height="16" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="340" y="122" width="360" height="4" fill="#458588" opacity="0.06"/>
+  <text x="440" y="121" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">PostgreSQL: orders</text>
+  <text x="600" y="121" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">(current state)</text>
+
+  <!-- Current-state rows -->
+  <text x="350" y="140" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">1001  shipped     1 350</text>
+  <text x="350" y="152" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">1002  confirmed   430</text>
+  <text x="350" y="164" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">1003  pending     780</text>
+
+  <!-- Consumer label -->
+  <text x="520" y="140" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">APIs, app backends</text>
+  <text x="520" y="152" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">instant point queries</text>
+  <text x="520" y="164" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">high frequency, low volume</text>
+
+  <!-- ═══ Legend ═══ -->
+  <rect x="20" y="186" width="3" height="8" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="29" y="193" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">columnar: append log + dedup view (cheap writes, dedup on read)</text>
+
+  <rect x="400" y="186" width="3" height="8" fill="#458588" opacity="0.3" rx="1"/>
+  <text x="409" y="193" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">transactional: upsert to current state (cheap reads, no dedup)</text>
+</svg>

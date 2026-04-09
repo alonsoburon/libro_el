@@ -4309,72 +4309,39 @@
   = Hybrid Append-Merge
   <hybrid-append-merge>
   #quote(block: true)[
-    #strong[One-liner:] Extract once, load to two engines: append-only log in columnar, current-state table in transactional.
+    #strong[One-liner:] Extract once, load to two engines: append-only log in columnar, current-state table in transactional. The complexity ceiling of this book.
   ]
 
-  // ---
+  @append-and-materialize gives you cheap appends and a full extraction log, but every read pays a `ROW_NUMBER()` dedup scan -- fine for analytical queries that run a few times a day, painful for an API that hits the table hundreds of times per minute. @merge-upsert gives you a clean current-state table with zero read overhead, but MERGE in columnar engines is expensive per run, which caps extraction frequency. When you have consumers on both sides -- analysts who want history and operational systems that need low-latency point queries -- neither pattern alone covers both.
 
-  == Two Consumer Types
-  The previous load strategies each optimize for one consumer type. @append-and-materialize gives you cheap appends and a full extraction log, but every read pays a `ROW_NUMBER()` dedup scan -- fine for analytical queries that run a few times a day, painful for an API that hits the table hundreds of times per minute. @merge-upsert gives you a clean current-state table with zero read overhead, but MERGE in columnar engines is expensive per run, which caps your extraction frequency.
+  The solution is to extract once and load the same batch to two destinations, each playing to its strength:
 
-  If you have consumers on both sides -- analysts who want history and operational systems that need low-latency point queries on current state -- neither pattern alone covers both without a painful tradeoff on the other side.
+  + #strong[Columnar] (e.g.~BigQuery): append-only log table via pure INSERT. History lives here, and the dedup view from @append-and-materialize gives analysts current state when they need it.
+  + #strong[Transactional] (e.g.~PostgreSQL): current-state table via `INSERT ... ON CONFLICT UPDATE`. Instant point queries for APIs, app backends, and services that validate state before acting.
 
-  // ---
-
-  == The Pattern
-  <the-pattern-2>
-  Extract once. Load the same batch to two destinations in different engines, each playing to its strength:
-
-  + #strong[Columnar] (e.g.~BigQuery): append-only log table. Pure INSERT, near-zero load cost. History lives here -- analysts query it, and the dedup view from @append-and-materialize gives them current state when they need it. High-volume, low-frequency consumption
-
-  + #strong[Transactional] (e.g.~PostgreSQL): current-state table via `INSERT ... ON CONFLICT UPDATE`. Cheap upsert, instant point queries. Operational consumers -- APIs, application backends, services that validate state before acting (e.g.~stock check before order confirmation) -- read from here without touching the log. Best for high-frequency, low-volume consumption
-
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
-
-  The log gives you replay and history; the current table gives you low-latency reads without dedup overhead. Neither destination is redundant because each serves a consumer type the other engine handles poorly.
+  #figure(image("diagrams/0405-hybrid-append-merge.svg", width: 95%))
 
   // ---
 
-  == Why It Only Makes Sense with Two Destinations
+  == Why Two Engines
   <why-it-only-makes-sense-with-two-destinations>
-  On a single columnar engine, adding a current-state table means running a MERGE alongside the append -- you're paying the exact cost of @merge-upsert plus the append, which is strictly worse than choosing one or the other. On a single transactional engine, the append log doesn't give you anything that `INSERT ... ON CONFLICT` doesn't already handle cheaply, since transactional engines do upserts and point queries well on the same table.
+  On a single columnar engine, adding a current-state table means running a MERGE alongside the append -- strictly worse than choosing one or the other. On a single transactional engine, the append log doesn't give you anything that `INSERT ... ON CONFLICT` doesn't already handle cheaply.
 
   The pattern earns its complexity only when each destination plays to a different engine's strength. If you don't have two engines in your architecture, use @append-and-materialize for columnar or @merge-upsert for transactional and stop there.
 
   // ---
 
-  == The Complexity Ceiling
-  <the-complexity-ceiling>
-  This is the most operationally complex load strategy in this book, and for most pipelines it's the upper bound of what's reasonable. You're maintaining two destinations per table, two sets of failure modes, two retention policies, two schema-evolution policies, and the orchestrator needs to treat the pair as a unit. Every table you add to this pattern doubles the surface area you monitor.
+  == Orchestration
+  <orchestration>
+  The two writes must be treated as a single pipeline unit. If the append to columnar succeeds but the upsert to transactional fails, consumers see different versions of the truth depending on which engine they query.
+
+  #strong[Idempotency on both sides.] The append side is naturally idempotent if combined with the dedup view -- duplicate rows in the log don't corrupt the current state. The upsert side is idempotent by design (`INSERT ... ON CONFLICT UPDATE` with the same data produces the same result). A retry of the full pipeline unit is safe as long as both writes use the same batch.
+
+  #strong[Failure handling.] If either write fails, retry the full unit -- not just the failed half. Retrying only the failed side risks the two destinations drifting apart on `_extracted_at` if the batch is regenerated between retries.
 
   #ecl-warning(
     "Earn this complexity per table",
-  )[Don't apply it as a default. Most tables don't have both analytical and operational consumers. Run @append-and-materialize or @merge-upsert as the default and promote individual tables to @hybrid-append-merge only when a real consumer can't be served by the simpler strategy. If you find yourself putting more than a handful of tables through this pattern, reconsider whether the operational consumers truly need a separate engine or whether a compacted @append-and-materialize with a materialization schedule is good enough.]
-
-  // ---
-
-  == Orchestration
-  <orchestration>
-  The two writes must be treated as a single pipeline unit. If the append to columnar succeeds but the upsert to transactional fails, the log has a batch that the current-state table doesn't reflect -- consumers see different versions of the truth depending on which engine they query.
-
-  #strong[Idempotency on both sides.] The append side is naturally idempotent if combined with the dedup view from @append-and-materialize -- duplicate rows in the log don't corrupt the current state. The upsert side is idempotent by design (`INSERT ... ON CONFLICT UPDATE` with the same data produces the same result). A retry of the full pipeline unit is safe as long as both writes use the same batch.
-
-  #strong[Failure handling.] If either write fails, the orchestrator should retry the full unit -- not just the failed half. Retrying only the failed side risks the two destinations drifting apart on `_extracted_at` or `_batch_id` if the batch is regenerated between retries.
-
-  // ---
-
-  == When to Use This
-  <when-to-use-this>
-  - You already have both a columnar and a transactional engine in your architecture
-  - Operational consumers need low-latency point queries on current state (APIs, app backends, validation services) that a dedup view can't serve fast enough
-  - Analytical consumers need history or replay from the append log
-  - Without both consumer types, this pattern is overhead: use @append-and-materialize for columnar-only, @merge-upsert for transactional-only
-
-  // ---
-
-  == By Corridor
-  <by-corridor-4>
-  This pattern is inherently cross-corridor: columnar for the log side, transactional for the current-state side. It doesn't apply within a single corridor -- that's exactly why the simpler patterns exist.
+  )[This is the most operationally complex load strategy in the book: two destinations, two failure modes, two retention policies, two schema-evolution policies, and the orchestrator treats the pair as a unit. Don't apply it as a default. Most tables don't have both analytical and operational consumers. Promote individual tables to this pattern only when a real consumer can't be served by @append-and-materialize or @merge-upsert alone.]
 
   // ---
 
