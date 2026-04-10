@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Timezone conforming: naive to UTC shifts the month boundary</text>
+
+  <!-- ═══ Source value (left) ═══ -->
+  <rect x="16" y="56" width="180" height="56" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="16" y="56" width="180" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="16" y="68" width="180" height="4" fill="#ebdbb2"/>
+  <text x="106" y="67" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">Source: orders.created_at</text>
+  <text x="106" y="88" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">2026-03-31 23:30:00</text>
+  <text x="106" y="104" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">naive -- server is America/Santiago (UTC-3)</text>
+
+  <text x="106" y="44" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Source</text>
+
+  <!-- ═══ Fork arrows ═══ -->
+  <!-- Top: land as DATETIME (green) -->
+  <path d="M 196,72 L 236,72 Q 251,72 251,60 L 251,52 Q 251,42 266,42 L 326,42" stroke="#689d6a" stroke-width="1.5" fill="none"/>
+  <polygon points="326,39 333,42 326,45" fill="#689d6a"/>
+  <text x="290" y="34" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">land naive</text>
+
+  <!-- Bottom: convert to UTC (red) -->
+  <path d="M 196,100 L 236,100 Q 251,100 251,114 L 251,124 Q 251,134 266,134 L 326,134" stroke="#cc241d" stroke-width="1.5" fill="none"/>
+  <polygon points="326,131 333,134 326,137" fill="#cc241d"/>
+  <text x="290" y="146" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">convert to UTC</text>
+
+  <!-- ═══ Correct: land as DATETIME (top) ═══ -->
+  <rect x="336" y="26" width="368" height="46" fill="#689d6a" opacity="0.05" stroke="#689d6a" stroke-width="1" rx="4"/>
+  <rect x="336" y="26" width="4" height="46" fill="#689d6a" rx="2"/>
+
+  <text x="352" y="41" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">BigQuery DATETIME</text>
+  <text x="490" y="41" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">2026-03-31 23:30:00</text>
+
+  <text x="352" y="56" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">No timezone. GROUP BY month = March.</text>
+  <text x="352" y="67" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">Matches the source system's own reports.</text>
+
+  <!-- ═══ Wrong: land as TIMESTAMP (bottom) ═══ -->
+  <rect x="336" y="116" width="368" height="56" fill="#cc241d" opacity="0.05" stroke="#cc241d" stroke-width="1" rx="4"/>
+  <rect x="336" y="116" width="4" height="56" fill="#cc241d" rx="2"/>
+
+  <text x="352" y="131" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">BigQuery TIMESTAMP (always UTC)</text>
+  <text x="560" y="131" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">2026-04-01 02:30:00 UTC</text>
+
+  <text x="352" y="146" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">GROUP BY month = April. Revenue shifted to wrong month.</text>
+  <text x="352" y="158" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">March is short, April is inflated. CFO asks questions.</text>
+  <text x="352" y="168" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">Silently wrong -- no error, no warning, just wrong numbers.</text>
+
+  <!-- ═══ Legend ═══ -->
+  <line x1="16" y1="182" x2="704" y2="182" stroke="#ebdbb2" stroke-width="0.5"/>
+
+  <rect x="16" y="189" width="3" height="8" fill="#689d6a" opacity="0.4" rx="1"/>
+  <text x="25" y="196" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">naive stays naive: use DATETIME / TIMESTAMP_NTZ</text>
+
+  <rect x="370" y="189" width="3" height="8" fill="#cc241d" opacity="0.4" rx="1"/>
+  <text x="379" y="196" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">wrong UTC conversion: looks correct, silently shifts data</text>
+</svg>

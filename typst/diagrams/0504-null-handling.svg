@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Null handling: four representations of "nothing" in one column</text>
+
+  <!-- ═══ Source table ═══ -->
+  <text x="130" y="40" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Source: customers.email</text>
+
+  <rect x="40" y="48" width="180" height="100" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="40" y="48" width="180" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="40" y="60" width="180" height="4" fill="#ebdbb2"/>
+
+  <text x="90" y="59" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">customer_id</text>
+  <text x="175" y="59" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">email</text>
+
+  <text x="90" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">C-101</text>
+  <text x="175" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">ana@corp.com</text>
+  <line x1="47" y1="84" x2="213" y2="84" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="90" y="97" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">C-102</text>
+  <text x="175" y="97" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">NULL</text>
+  <line x1="47" y1="103" x2="213" y2="103" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="90" y="116" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">C-103</text>
+  <text x="175" y="116" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">''</text>
+  <line x1="47" y1="122" x2="213" y2="122" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="90" y="135" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">C-104</text>
+  <text x="175" y="135" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">N/A</text>
+
+  <!-- ═══ Source annotations ═══ -->
+  <text x="130" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">three different meanings:</text>
+  <text x="130" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">NULL = never populated</text>
+  <text x="130" y="183" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">'' = explicitly set to empty</text>
+  <text x="130" y="193" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">N/A = not applicable</text>
+
+  <!-- ═══ Fork arrows ═══ -->
+  <!-- Top: reflect source (green) -->
+  <path d="M 220,80 L 270,80 Q 285,80 285,66 L 285,56 Q 285,44 300,44 L 350,44" stroke="#689d6a" stroke-width="1.5" fill="none"/>
+  <polygon points="350,41 357,44 350,47" fill="#689d6a"/>
+  <text x="297" y="41" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">land as-is</text>
+
+  <!-- Bottom: COALESCE (red) -->
+  <path d="M 220,115 L 270,115 Q 285,115 285,131 L 285,141 Q 285,151 300,151 L 350,151" stroke="#cc241d" stroke-width="1.5" fill="none"/>
+  <polygon points="350,148 357,151 350,154" fill="#cc241d"/>
+  <text x="297" y="158" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">COALESCE(email, '')</text>
+
+  <!-- ═══ Correct destination (top) ═══ -->
+  <rect x="360" y="26" width="344" height="72" fill="#689d6a" opacity="0.05" stroke="#689d6a" stroke-width="1" rx="4"/>
+  <rect x="360" y="26" width="4" height="72" fill="#689d6a" rx="2"/>
+
+  <text x="376" y="41" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Reflect source</text>
+
+  <text x="376" y="56" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">ana@corp.com</text>
+  <text x="500" y="56" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">NULL</text>
+  <text x="570" y="56" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">''</text>
+  <text x="640" y="56" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">N/A</text>
+
+  <text x="376" y="72" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">4 distinct values. Downstream decides how to unify.</text>
+  <text x="376" y="84" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">Marketing: NULL = "ask customer". Billing: NULL = "not needed".</text>
+  <text x="376" y="94" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">Each consumer interprets with their own business context.</text>
+
+  <!-- ═══ Wrong destination (bottom) ═══ -->
+  <rect x="360" y="132" width="344" height="72" fill="#cc241d" opacity="0.05" stroke="#cc241d" stroke-width="1" rx="4"/>
+  <rect x="360" y="132" width="4" height="72" fill="#cc241d" rx="2"/>
+
+  <text x="376" y="147" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">COALESCE at ECL layer</text>
+
+  <text x="376" y="162" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">ana@corp.com</text>
+
+  <!-- Merged NULL and '' with bracket -->
+  <rect x="492" y="154" width="80" height="16" fill="#cc241d" opacity="0.08" rx="2"/>
+  <text x="532" y="165" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">''</text>
+  <text x="532" y="176" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">NULL and '' merged</text>
+
+  <text x="620" y="162" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">N/A</text>
+
+  <text x="376" y="189" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">3 values. "Never populated" and "explicitly empty" are now identical.</text>
+  <text x="376" y="200" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">Irreversible. No consumer can recover the distinction.</text>
+
+  <!-- ═══ Legend ═══ -->
+  <line x1="16" y1="206" x2="704" y2="206" stroke="#ebdbb2" stroke-width="0.5"/>
+
+  <rect x="40" y="211" width="3" height="8" fill="#689d6a" opacity="0.4" rx="1"/>
+  <text x="49" y="218" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">land as-is: downstream decides</text>
+
+  <rect x="290" y="211" width="3" height="8" fill="#cc241d" opacity="0.4" rx="1"/>
+  <text x="299" y="218" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">COALESCE in ECL: irreversible information loss</text>
+</svg>

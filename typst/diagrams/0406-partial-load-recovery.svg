@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="220" viewBox="0 0 760 220">
+  <rect width="760" height="220" fill="#ffffff" rx="6"/>
+  <text x="380" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Partial load recovery: retry the full batch</text>
+
+  <!-- ═══ Run 1: first attempt ═══ -->
+  <text x="16" y="50" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Run 1</text>
+  <text x="16" y="62" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">first attempt</text>
+
+  <!-- Partition boxes Run 1: P1-P8 success (green) -->
+  <rect x="120" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="146" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P1</text>
+  <text x="146" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="176" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="202" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P2</text>
+  <text x="202" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="232" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="258" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P3</text>
+  <text x="258" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="288" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="314" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P4</text>
+  <text x="314" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="344" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="370" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P5</text>
+  <text x="370" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="400" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="426" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P6</text>
+  <text x="426" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="456" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="482" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P7</text>
+  <text x="482" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="512" y="38" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="538" y="50" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P8</text>
+  <text x="538" y="62" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <!-- P9-P10: failure (red) -->
+  <rect x="568" y="38" width="52" height="30" fill="#cc241d" opacity="0.10" stroke="#cc241d" stroke-width="0.8" rx="3"/>
+  <text x="594" y="50" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P9</text>
+  <text x="594" y="62" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">fail</text>
+
+  <rect x="624" y="38" width="52" height="30" fill="#cc241d" opacity="0.10" stroke="#cc241d" stroke-width="0.8" rx="3"/>
+  <text x="650" y="50" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P10</text>
+  <text x="650" y="62" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">fail</text>
+
+  <!-- Run 1 annotation -->
+  <text x="700" y="50" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">8/10</text>
+  <text x="700" y="62" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">mixed state</text>
+
+  <!-- ═══ Arrow: retry full batch ═══ -->
+  <line x1="400" y1="74" x2="400" y2="112" stroke="#d65d0e" stroke-width="1.5"/>
+  <polygon points="397,112 400,119 403,112" fill="#d65d0e"/>
+  <rect x="350" y="84" width="100" height="14" fill="#ffffff" rx="2"/>
+  <text x="400" y="94" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">retry full batch</text>
+
+  <!-- ═══ Retry: second attempt ═══ -->
+  <text x="16" y="136" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Retry</text>
+  <text x="16" y="148" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">re-extract + re-load</text>
+
+  <!-- P1-P8: re-applied, idempotent (gold) -->
+  <rect x="120" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="146" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P1</text>
+  <text x="146" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="176" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="202" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P2</text>
+  <text x="202" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="232" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="258" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P3</text>
+  <text x="258" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="288" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="314" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P4</text>
+  <text x="314" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="344" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="370" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P5</text>
+  <text x="370" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="400" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="426" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P6</text>
+  <text x="426" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="456" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="482" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P7</text>
+  <text x="482" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <rect x="512" y="124" width="52" height="30" fill="#d79921" opacity="0.10" stroke="#d79921" stroke-width="0.8" rx="3"/>
+  <text x="538" y="136" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P8</text>
+  <text x="538" y="148" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">no-op</text>
+
+  <!-- P9-P10: applied for first time (green) -->
+  <rect x="568" y="124" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="594" y="136" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P9</text>
+  <text x="594" y="148" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <rect x="624" y="124" width="52" height="30" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="3"/>
+  <text x="650" y="136" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">P10</text>
+  <text x="650" y="148" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">ok</text>
+
+  <!-- Retry annotation -->
+  <text x="700" y="136" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">10/10</text>
+  <text x="700" y="148" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">complete</text>
+
+  <!-- ═══ Result box ═══ -->
+  <rect x="120" y="168" width="556" height="24" fill="#689d6a" opacity="0.06" rx="4"/>
+  <rect x="120" y="168" width="4" height="24" fill="#689d6a" rx="2"/>
+  <text x="134" y="184" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Result:</text>
+  <text x="180" y="184" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">10/10 loaded. No per-partition tracking needed. Idempotent load absorbs the 8 re-applied partitions.</text>
+
+  <!-- ═══ Legend ═══ -->
+  <rect x="120" y="202" width="10" height="8" fill="#689d6a" opacity="0.15" stroke="#689d6a" stroke-width="0.5" rx="1"/>
+  <text x="136" y="209" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">succeeded</text>
+
+  <rect x="220" y="202" width="10" height="8" fill="#cc241d" opacity="0.12" stroke="#cc241d" stroke-width="0.5" rx="1"/>
+  <text x="236" y="209" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">failed</text>
+
+  <rect x="300" y="202" width="10" height="8" fill="#d79921" opacity="0.12" stroke="#d79921" stroke-width="0.5" rx="1"/>
+  <text x="316" y="209" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">re-applied (idempotent, no-op)</text>
+</svg>

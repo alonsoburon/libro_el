@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="185" viewBox="0 0 720 185">
+  <rect width="720" height="185" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Type casting: explicit vs loader-inferred</text>
+
+  <!-- ═══ Source value (left) ═══ -->
+  <rect x="16" y="52" width="170" height="56" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="16" y="52" width="170" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="16" y="64" width="170" height="4" fill="#ebdbb2"/>
+  <text x="101" y="63" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">PostgreSQL: NUMERIC(18,6)</text>
+  <text x="101" y="84" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">123456789.123456</text>
+  <text x="101" y="100" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">invoice_lines.total</text>
+
+  <text x="101" y="44" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Source</text>
+
+  <!-- ═══ Fork: two paths ═══ -->
+  <!-- Top path: explicit cast (green/safe) -->
+  <path d="M 186,68 L 230,68 Q 245,68 245,56 L 245,50 Q 245,42 260,42 L 320,42" stroke="#689d6a" stroke-width="1.5" fill="none"/>
+  <polygon points="320,39 327,42 320,45" fill="#689d6a"/>
+  <rect x="228" y="28" width="60" height="12" fill="#ffffff" rx="2"/>
+  <text x="258" y="37" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">explicit DDL</text>
+
+  <!-- Bottom path: loader infers (red/dangerous) -->
+  <path d="M 186,92 L 230,92 Q 245,92 245,104 L 245,110 Q 245,118 260,118 L 320,118" stroke="#cc241d" stroke-width="1.5" fill="none"/>
+  <polygon points="320,115 327,118 320,121" fill="#cc241d"/>
+  <rect x="222" y="108" width="70" height="12" fill="#ffffff" rx="2"/>
+  <text x="257" y="117" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">loader infers</text>
+
+  <!-- ═══ Safe destination (top) ═══ -->
+  <rect x="330" y="28" width="374" height="40" fill="#689d6a" opacity="0.06" stroke="#689d6a" stroke-width="1" rx="4"/>
+  <rect x="330" y="28" width="4" height="40" fill="#689d6a" rx="2"/>
+  <text x="344" y="43" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">BigQuery: NUMERIC(38,9)</text>
+  <text x="500" y="43" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">123456789.123456000</text>
+  <text x="344" y="60" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Exact. Fixed-point arithmetic preserves every decimal.</text>
+
+  <!-- ═══ Dangerous destination (bottom) ═══ -->
+  <rect x="330" y="100" width="374" height="50" fill="#cc241d" opacity="0.06" stroke="#cc241d" stroke-width="1" rx="4"/>
+  <rect x="330" y="100" width="4" height="50" fill="#cc241d" rx="2"/>
+  <text x="344" y="115" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">BigQuery: FLOAT64</text>
+  <text x="470" y="115" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">123456789.12345600128...</text>
+  <text x="344" y="132" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">IEEE 754 floating point. Rounds after ~15 significant digits.</text>
+  <text x="344" y="144" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">x 1M rows = aggregate diverges from source. Accounting will find it.</text>
+
+  <!-- ═══ Legend ═══ -->
+  <line x1="16" y1="162" x2="704" y2="162" stroke="#ebdbb2" stroke-width="0.5"/>
+
+  <rect x="16" y="170" width="3" height="8" fill="#689d6a" opacity="0.4" rx="1"/>
+  <text x="25" y="177" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">explicit cast: define destination DDL with NUMERIC</text>
+
+  <rect x="350" y="170" width="3" height="8" fill="#cc241d" opacity="0.4" rx="1"/>
+  <text x="359" y="177" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">loader default: infers FLOAT64 for all numeric columns</text>
+</svg>

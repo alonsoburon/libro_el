@@ -4404,7 +4404,7 @@
 
   #strong[After confirmed load (correct).] The cursor advances only after the destination confirms the load succeeded -- a successful MERGE, a confirmed partition swap, a row count check on the target. This is the safe default: failures before confirmation mean the next run reprocesses the same batch, which is safe if the load is idempotent.
 
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
+  #figure(image("diagrams/0406-checkpoint-placement.svg", width: 95%))
 
   The gap between "load completes" and "cursor advances" is the vulnerability window. Keep it as small as possible -- ideally a single transaction that writes the data and updates the cursor atomically. When that's not possible (columnar engines don't support cross-table transactions), make the load idempotent so the reprocessing path is always safe.
 
@@ -4419,6 +4419,8 @@
   #strong[Append without compaction needs care.] Re-running the full batch appends all 10 partitions again, including the 8 that already landed. The dedup view handles it correctly (latest `_extracted_at` wins), but the log now has duplicate copies of the successful partitions. Not a correctness issue, but it inflates storage and slows the dedup scan until the next compaction.
 
   #strong[Full replace is immune.] The entire destination is rebuilt, so partial state from a prior failure is overwritten completely.
+
+  #figure(image("diagrams/0406-partial-load-recovery.svg", width: 95%))
 
   #ecl-warning(
     "Retry the full batch",
@@ -4496,6 +4498,8 @@
   FROM orders
   WHERE updated_at >= :last_run;
   ```
+
+  #figure(image("diagrams/0501-metadata-injection.svg", width: 95%))
 
   // ---
 
@@ -4649,6 +4653,8 @@
   FROM invoice_lines;
   ```
 
+  #figure(image("diagrams/0502-synthetic-key.svg", width: 95%))
+
   === Concatenation vs Hash
   <concatenation-vs-hash>
   Two approaches, with a clear winner for most cases:
@@ -4722,6 +4728,8 @@
   Cast explicitly in the extraction query, not at the destination. The source knows its type system better than whatever the loader infers, and implicit casts hide precision loss that you won't notice until someone in accounting finds a discrepancy six months later.
 
   That said, not all precision loss is negative. Very few tables need nanosecond precision -- second or microsecond is fine for most business data. The goal is to be deliberate about what you lose and what you keep, not to preserve every bit of precision across every column. A `DATETIME2(7)` truncated to `TIMESTAMP` (microseconds) is almost certainly fine. A `NUMERIC(18,6)` silently cast to `FLOAT64` is almost certainly not.
+
+  #figure(image("diagrams/0503-type-casting.svg", width: 95%))
 
   // ---
 
@@ -4884,6 +4892,9 @@
 
   == By Corridor
   <by-corridor-2>
+
+  #figure(image("diagrams/0503-type-gap.svg", width: 95%))
+
   #ecl-warning(
     "Transactional to columnar",
   )[The widest type gap. Type systems are fundamentally different -- transactional engines have dozens of specific types (`MONEY`, `SMALLINT`, `NCHAR(10)`, `DATETIME2(7)`) that columnar engines collapse into a handful (`INT64`, `FLOAT64`, `STRING`, `TIMESTAMP`). Explicit casting is mandatory because the loader's inference maps everything to the broadest compatible type, which is almost always `FLOAT64` for numbers and `STRING` for text. Define your destination DDL explicitly for every table.]
@@ -4909,6 +4920,8 @@
   ECL is about reflecting the source as faithfully as possible. If the source has NULL, land NULL. If the source has empty string, land empty string. If the source has `'N/A'`, land `'N/A'`. These are three different values with potentially three different meanings, and converting one to the other is a business decision -- it belongs downstream, not in the conforming layer.
 
   The temptation to "clean up" NULLs at extraction is strong, especially when you know downstream consumers will struggle with them. Resist it. A COALESCE in the extraction query looks harmless, but it makes an irreversible choice about what NULL means for every consumer of the table, and that choice may be wrong for some of them. A NULL `email` might mean "not provided" for the marketing team and "not applicable" for the billing team -- collapsing it to `''` destroys the distinction for both.
+
+  #figure(image("diagrams/0504-null-handling.svg", width: 95%))
 
   // ---
 
@@ -4995,6 +5008,8 @@
   The rule follows the same principle as @null-handling: reflect the source. If the source stores timezone-aware timestamps, land timezone-aware. If the source stores naive timestamps, land them as datetime -- not as timestamp with a timezone you guessed. Converting naive to UTC without being certain of the source timezone is worse than landing naive, because a wrong UTC conversion looks correct in the destination and silently shifts every row by however many hours you got wrong.
 
   Most transactional sources store naive timestamps. The application knows what timezone it means, but the column doesn't say -- and often nobody at the source team documented it either. That's the source's data quality problem. Your job is to land what the source gives you, not to retroactively assign timezone semantics that weren't there.
+
+  #figure(image("diagrams/0505-timezone-conforming.svg", width: 95%))
 
   // ---
 

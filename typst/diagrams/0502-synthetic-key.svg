@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270">
+  <rect width="720" height="270" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Synthetic key: hash immutable columns, ignore mutable ones</text>
+
+  <!-- ═══ Column group labels ═══ -->
+  <text x="270" y="38" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">IMMUTABLE (identity)</text>
+  <text x="570" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">MUTABLE (state)</text>
+
+  <!-- ═══ Table: invoice_lines ═══ -->
+  <rect x="60" y="46" width="644" height="72" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="60" y="46" width="644" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="60" y="58" width="644" height="4" fill="#ebdbb2"/>
+
+  <!-- Immutable column background -->
+  <rect x="61" y="62" width="416" height="54" fill="#689d6a" opacity="0.04"/>
+
+  <!-- Vertical separator -->
+  <line x1="478" y1="48" x2="478" y2="116" stroke="#d5c4a1" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Headers -->
+  <text x="60" y="57" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" dx="8"/>
+  <text x="130" y="57" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">company</text>
+  <text x="220" y="57" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">doc_type</text>
+  <text x="320" y="57" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">doc_number</text>
+  <text x="420" y="57" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">line</text>
+  <text x="540" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">amount</text>
+  <text x="645" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+
+  <!-- Row 1: Run 1 -->
+  <text x="76" y="78" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">Run 1</text>
+  <text x="130" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">ACME</text>
+  <text x="220" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">INV</text>
+  <text x="320" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">4521</text>
+  <text x="420" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1</text>
+  <text x="540" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">350.00</text>
+  <text x="645" y="78" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">open</text>
+  <line x1="67" y1="84" x2="697" y2="84" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 2: Run 2 (corrected) -->
+  <text x="76" y="98" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">Run 2</text>
+  <text x="130" y="98" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">ACME</text>
+  <text x="220" y="98" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">INV</text>
+  <text x="320" y="98" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">4521</text>
+  <text x="420" y="98" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">1</text>
+  <text x="540" y="98" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">380.00</text>
+  <text x="645" y="98" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">posted</text>
+
+  <!-- "corrected" annotation -->
+  <text x="710" y="98" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">corrected</text>
+
+  <!-- "identical" annotation on identity columns -->
+  <text x="270" y="112" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">identical both runs</text>
+
+  <!-- ═══ Hash flow: identity columns → MD5 → _source_key ═══ -->
+  <!-- Arrows from identity columns down to hash box -->
+  <line x1="130" y1="118" x2="130" y2="138" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+  <line x1="220" y1="118" x2="220" y2="138" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+  <line x1="320" y1="118" x2="320" y2="138" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+  <line x1="420" y1="118" x2="420" y2="138" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Converging lines to center -->
+  <line x1="130" y1="138" x2="270" y2="152" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+  <line x1="220" y1="138" x2="270" y2="152" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+  <line x1="320" y1="138" x2="270" y2="152" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+  <line x1="420" y1="138" x2="270" y2="152" stroke="#689d6a" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Hash function box -->
+  <rect x="200" y="152" width="140" height="24" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.8" rx="4"/>
+  <text x="270" y="168" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">MD5( 'ACME|INV|4521|1' )</text>
+
+  <!-- Arrow down to result -->
+  <line x1="270" y1="176" x2="270" y2="196" stroke="#689d6a" stroke-width="1"/>
+  <polygon points="267,196 270,203 273,196" fill="#689d6a"/>
+
+  <!-- Result: _source_key -->
+  <rect x="170" y="204" width="200" height="24" fill="#689d6a" opacity="0.08" stroke="#689d6a" stroke-width="1" rx="4"/>
+  <rect x="170" y="204" width="4" height="24" fill="#689d6a" rx="2"/>
+  <text x="184" y="220" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">_source_key</text>
+  <text x="275" y="220" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">= a3f2b8c1...</text>
+
+  <!-- "same both runs" annotation -->
+  <text x="270" y="240" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">same key both runs</text>
+
+  <!-- ═══ MERGE outcome (right side) ═══ -->
+  <!-- Correct outcome -->
+  <rect x="440" y="152" width="254" height="36" fill="#689d6a" opacity="0.06" rx="4"/>
+  <rect x="440" y="152" width="4" height="36" fill="#689d6a" rx="2"/>
+  <text x="456" y="166" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">MERGE on _source_key</text>
+  <text x="456" y="180" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Keys match → UPDATE amount and status</text>
+
+  <!-- Wrong outcome -->
+  <rect x="440" y="196" width="254" height="36" fill="#cc241d" opacity="0.06" rx="4"/>
+  <rect x="440" y="196" width="4" height="36" fill="#cc241d" rx="2"/>
+  <text x="456" y="210" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">If amount were in the hash:</text>
+  <text x="456" y="224" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Different key → INSERT duplicate row</text>
+
+  <!-- ═══ Legend ═══ -->
+  <line x1="16" y1="248" x2="704" y2="248" stroke="#ebdbb2" stroke-width="0.5"/>
+
+  <rect x="60" y="257" width="10" height="8" fill="#689d6a" opacity="0.12" stroke="#689d6a" stroke-width="0.5" rx="1"/>
+  <text x="76" y="264" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">immutable: feeds the hash, identifies the entity</text>
+
+  <rect x="370" y="257" width="10" height="8" fill="#d5c4a1" opacity="0.3" rx="1"/>
+  <text x="386" y="264" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">mutable: can change without affecting the key</text>
+</svg>
