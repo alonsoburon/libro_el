@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect x="0" y="0" width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Tiered freshness: each tier catches what the one above missed</text>
+
+  <!-- Time axis -->
+  <line x1="60" y1="44" x2="690" y2="44" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="690,41 698,44 690,47" fill="#d5c4a1"/>
+
+  <!-- Time markers -->
+  <text x="100" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">1y ago</text>
+  <line x1="100" y1="41" x2="100" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="260" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">3mo ago</text>
+  <line x1="260" y1="41" x2="260" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="460" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">7d ago</text>
+  <line x1="460" y1="41" x2="460" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="580" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">last run</text>
+  <line x1="580" y1="41" x2="580" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="660" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">now</text>
+  <line x1="660" y1="41" x2="660" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- ═══ Hot tier: last_run - lag_window to now ═══ -->
+  <rect x="460" y="54" width="200" height="30" fill="#d65d0e" opacity="0.06" rx="4"/>
+  <rect x="460" y="54" width="200" height="30" fill="none" stroke="#d65d0e" stroke-width="1" rx="4"/>
+  <rect x="461" y="55" width="3" height="28" fill="#d65d0e" opacity="0.3" rx="1"/>
+
+  <!-- Lag window portion within hot -->
+  <rect x="460" y="54" width="120" height="30" fill="#d65d0e" opacity="0.06" rx="4"/>
+  <rect x="460" y="54" width="120" height="30" fill="none" stroke="#d65d0e" stroke-width="0.5" stroke-dasharray="3,2" rx="4"/>
+
+  <!-- Hot labels -->
+  <text x="620" y="72" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">new data</text>
+  <text x="520" y="72" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">lag window</text>
+
+  <!-- Brace under hot -->
+  <line x1="460" y1="88" x2="660" y2="88" stroke="#d65d0e" stroke-width="0.8"/>
+  <line x1="460" y1="86" x2="460" y2="90" stroke="#d65d0e" stroke-width="0.8"/>
+  <line x1="660" y1="86" x2="660" y2="90" stroke="#d65d0e" stroke-width="0.8"/>
+  <text x="560" y="98" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">Hot: intraday incremental</text>
+  <text x="560" y="108" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">updated_at >= :last_run - INTERVAL '7 days'</text>
+
+  <!-- ═══ Warm tier: current month/quarter to now ═══ -->
+  <rect x="260" y="118" width="400" height="20" fill="#d79921" opacity="0.06" rx="4"/>
+  <rect x="260" y="118" width="400" height="20" fill="none" stroke="#d79921" stroke-width="1" rx="4"/>
+  <rect x="261" y="119" width="3" height="18" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="460" y="131" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Warm: daily rolling window or partition swap of current quarter</text>
+
+  <!-- ═══ Cold tier: everything ═══ -->
+  <rect x="60" y="146" width="600" height="20" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="60" y="146" width="600" height="20" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <rect x="61" y="147" width="3" height="18" fill="#458588" opacity="0.3" rx="1"/>
+  <text x="360" y="159" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Cold: weekly / on-demand full replace (safety net)</text>
+
+  <!-- ═══ Arrows showing catch-up ═══ -->
+  <text x="38" y="74" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">fresh</text>
+  <text x="38" y="86" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">gaps OK</text>
+
+  <line x1="38" y1="92" x2="38" y2="124" stroke="#d5c4a1" stroke-width="0.8"/>
+  <polygon points="35,122 38,128 41,122" fill="#d5c4a1"/>
+
+  <text x="38" y="135" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">cleanup</text>
+
+  <line x1="38" y1="140" x2="38" y2="150" stroke="#d5c4a1" stroke-width="0.8"/>
+  <polygon points="35,148 38,154 41,148" fill="#d5c4a1"/>
+
+  <text x="38" y="163" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">purity</text>
+  <text x="38" y="173" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">reset</text>
+
+  <!-- ═══ Legend ═══ -->
+  <rect x="60" y="196" width="3" height="8" fill="#d65d0e" opacity="0.3" rx="1"/>
+  <text x="69" y="203" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">hot: cursor + lag window re-reads behind it</text>
+
+  <rect x="280" y="196" width="3" height="8" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="289" y="203" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">warm: daily, catches what hot missed</text>
+
+  <rect x="500" y="196" width="3" height="8" fill="#458588" opacity="0.3" rx="1"/>
+  <text x="509" y="203" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">cold: full replace, catches everything</text>
+</svg>

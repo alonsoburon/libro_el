@@ -1046,7 +1046,7 @@
 
   - Reprocess all rows with `updated_at` in the last $n$ days on every run, not just since the last checkpoint
   - Reprocess all open/pending records unconditionally, regardless of timestamp -- their status can change without bumping `updated_at`
-  - Run a full replace of the current year once a week/day to catch anything the cursor missed
+  - Run a scoped replace (partition swap) of the current year once a week/day to catch anything the cursor missed
 
   Full replace sidesteps all of this. A table that gets fully replaced every run doesn't care whether `updated_at` is reliable -- the whole thing comes fresh. This is another reason to default to full replace and earn incremental complexity only when the table is genuinely too large or too slow to reload. See @purity-vs-freshness.
 
@@ -5645,7 +5645,7 @@
   <cost-attribution>
   The gap between "the pipeline costs \$X/month" and "table Y's MERGE costs \$X/month" is a join key: pipeline metadata (table name, run ID, schedule) matched against the destination's query audit log (bytes scanned, cost, duration). Without that join, you're stuck with aggregates that don't point anywhere useful.
 
-  Most columnar engines expose per-query cost through their information schema. BigQuery's `INFORMATION_SCHEMA.JOBS` tracks bytes processed, slot-milliseconds, and the destination table for every DML operation. Snowflake's `QUERY_HISTORY` provides similar detail. The per-table cost report is a straightforward aggregation:
+  Most columnar engines expose per-query metrics through their information schema. BigQuery's `INFORMATION_SCHEMA.JOBS` tracks bytes processed, slot-milliseconds, and the destination table for every DML operation -- cost is directly computable from bytes × price. Snowflake's `QUERY_HISTORY` tracks `bytes_scanned` and execution time, but per-query cost requires pro-rating warehouse credits across queries (Snowflake bills by warehouse uptime, not by query). The per-table cost report on BigQuery is a straightforward aggregation:
 
   ```sql
   -- destination: bigquery
@@ -5901,7 +5901,7 @@
 
   #figure(
     align(center)[#table(
-      columns: (6.42%, 31.55%, 62.03%),
+      columns: (10%, 30%, 60%),
       align: (auto, auto, auto),
       table.header([Severity], [Condition], [Example]),
       table.hline(),
@@ -6223,13 +6223,13 @@
   = Tiered Freshness
   <tiered-freshness>
   #quote(block: true)[
-    #strong[One-liner:] Not every row needs the same refresh cadence -- partition your pipeline into hot, warm, and cold tiers so the tables that matter most get attention first.
+    #strong[One-liner:] Split a large table's extraction by time range -- recent data fast and often, historical data slow and pure.
   ]
 
   == One Size Fits None
-  The naive approach is one schedule for everything: all tables, same cadence, same extraction method. It works when you have a dozen tables and a daily overnight window. It stops working when some of those tables need to be fresh within the hour while others haven't changed in months -- because now you're either over-refreshing cold data (wasting compute, money and source load) or under-refreshing hot data (delivering stale results to the consumers).
+  I had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was killing the source. The DBA noticed before I did. The fix was splitting the extraction by time range: recent data incrementally and often, historical data via partition swap nightly, and a weekly full replace as the safety net.
 
-  The subtler version of this problem is not refreshing everything at the same #emph[frequency] but with the same #emph[method];. I had an `orders` table that ran a full replace of the entire year's data many times a day. The frequency was right -- the table needed intraday updates -- but full-replacing twelve months of data every run was not. The DBA noticed before I did. The fix was splitting the table's extraction into tiers: recent data incrementally and often, historical data fully but rarely.
+  Most tables never need this -- a `products` lookup with 10k rows can full-replace every run without anyone noticing, and full replace at whatever cadence the consumer needs is always simpler and purer. Tiers earn their complexity when a table is too large or too expensive to full-replace at the frequency consumers demand.
 
   == The Tiers
   <the-tiers>
@@ -6237,58 +6237,39 @@
 
   === Hot (Intraday)
   <hot-intraday>
-  Tables or partitions with actively changing data: today's `orders`, open `invoices`, recent `events`. Refreshed multiple times per day via incremental extraction when necessary (@cursor-based-timestamp-extraction). The actual interval depends on the table's volume, source capacity, and consumer SLA -- a 500-row lookup table can refresh every few minutes while a 50M-row fact table might only sustain hourly.
-
-  The hot tier tolerates impurity. Slight gaps from late-arriving data or cursor lag aren't catastrophic here because the warm tier catches them on the next pass. This is where you accept a tradeoff: the data is fresh but might not be perfectly pure, and that's fine because purity comes later.
+  The recent slice -- today's `orders`, open `invoices`, the last week of `events`. Refreshed multiple times per day via incremental extraction with a lag window (@cursor-based-timestamp-extraction). The hot tier tolerates impurity: slight gaps from late-arriving data or cursor lag are acceptable because the warm tier catches them on its nightly pass.
 
   === Warm (Daily)
   <warm-daily>
-  Current month or current quarter -- data that still receives occasional updates but not at high frequency. Refreshed daily, often overnight when the source is under less load. The extraction method is either a full replace of the warm window (@rolling-window-replace) or incremental with a wider lag.
+  Current month or current quarter -- data that still receives occasional updates but not at high frequency. Refreshed daily, often overnight when the source is under less load. The extraction method is either a partition swap of the warm window (@rolling-window-replace, @partition-swap) or incremental with a wider lag.
 
-  This tier takes advantage of harder business boundaries. A closed month in an ERP is unlikely to change (though "unlikely" is not "impossible" -- see the soft rules in @hard-rules-soft-rules). The warm tier's job is to re-read recent history with enough depth to catch what the hot tier missed: late cursor updates, backdated transactions, documents that changed without updating their `updated_at`. Here purity is a lot more important, and you should expect your destination to be exactly equal to source 99% of the time after loading.
+  This tier takes advantage of harder business boundaries -- a closed month in an ERP is unlikely to change (though "unlikely" is not "impossible," see @hard-rules-soft-rules). The warm tier re-reads recent history with enough depth to catch what the hot tier missed: late cursor updates, backdated transactions, documents that changed without bumping `updated_at`. After the warm pass, source and destination should match within the warm window.
 
   === Cold (Weekly / On-Demand)
   <cold-weekly-on-demand>
   Historical data: prior years, closed fiscal periods, archived partitions. Refreshed on a slow cadence -- weekly, monthly, or only on demand for backfills and corrections. Full replace is the right method here because the volume is bounded and the frequency is low enough that the cost is negligible.
 
-  The cold tier is where @purity-vs-freshness plays out most directly: cold data trades freshness for purity. A weekly full replace of last year's data resets accumulated drift from the hot and warm tiers -- any row that was missed by a cursor, any late update that arrived outside the warm window, gets picked up here. The cold tier is your cleanup pass.
+  A weekly full replace resets accumulated drift from the hot and warm tiers -- any row that was missed by a cursor, any late update that arrived outside the warm window, gets picked up here. The cold tier is the purity checkpoint from @purity-vs-freshness applied on a schedule.
 
   === The Lag Window
   <the-lag-window>
-  The warm tier's extraction window needs to overlap with the hot tier's territory -- otherwise changes that happen between the last hot run and the warm run's cutoff fall through the gap. This overlap is the lag window: how far back the warm tier reads beyond its own boundary.
+  The hot tier's incremental extraction doesn't just grab rows since the last run -- it reads a trailing window behind the cursor (`updated_at >= :last_run - INTERVAL '7 days'`). That overlap catches late-arriving data, backdated corrections, and rows the cursor missed on previous runs. Without it, anything that lands behind the cursor after the hot run is permanently invisible until the warm or cold tier picks it up.
 
-  The right lag depends on how reliably the source system updates its cursors. For well-organized systems where every modification touches `updated_at`, 7 days of lag is enough -- especially when the cold tier runs weekly and catches anything the warm tier missed. For messier systems where documents get modified without updating any cursor (common in ERPs where back-office edits bypass the application layer), 30 days is safer. The decision is empirical: start at 7, watch for rows that appear in the cold tier's full replace but were never picked up by warm, and widen the window if it happens regularly.
+  The right lag depends on how reliably the source system updates its cursors. For well-organized systems where every modification touches `updated_at`, 7 days covers the common cases. For messier systems where documents get modified without updating any cursor (common in ERPs where back-office edits bypass the application layer), 30 days is safer. The decision is empirical: start at 7, watch for rows that appear in the warm or cold tier's pass but were never picked up by hot, and widen the window if it happens regularly.
 
-  The same logic applies between cold and warm. The cold tier's full replace naturally covers everything, so it doesn't need a lag window -- it reads the entire historical range. That's what makes it the safety net.
+  The warm tier reads its entire scope (current quarter) on every daily run, so its overlap with the hot zone is inherent -- no separate lag parameter needed. The cold tier's full replace covers everything by definition. Each tier downstream acts as the safety net for the tier above it.
 
-  == Assigning Tables to Tiers
-  <assigning-tables-to-tiers>
-  #figure(
-    align(center)[#table(
-      columns: (50%, 50%),
-      align: (auto, auto),
-      table.header([Signal], [Tier]),
-      table.hline(),
-      [Has active writes in the last hour], [Hot],
-      [Has writes in the last 7 days but not the last hour], [Warm],
-      [No writes in \> 7 days], [Cold],
-      [Append-only, partitioned by date], [Hot for today's partition, cold for everything else],
-      [Open documents (`invoices` with status = draft)], [Hot regardless of write frequency],
-    )],
-    kind: table,
-  )
+  #figure(image("diagrams/0608-tiered-freshness.svg", width: 95%))
 
-  Tier assignment can be static (configured per table in your orchestrator) or dynamic (based on recent activity signal from @activity-driven-extraction). Static is simpler and covers most cases -- you know which tables are transactional and which are archival. Dynamic earns its complexity when you have hundreds of tables and can't manually classify each one, or when the same table's activity profile shifts seasonally.
-
-  Most pipelines don't need all three tiers from day one. About two-thirds of tables in a typical pipeline are lookups and dimensions that full-replace daily and never need anything faster. Incrementalizing everything you can is tempting but generates more errors than it saves time -- or money. The simpler approach is to maximize full replace and reserve incremental for the cases that actually demand it. The tier system matters most for the remaining third.
-
-  Being in the hot tier doesn't automatically mean incremental. A `products` table with 10k rows that needs intraday freshness can full-replace every run without anyone noticing -- the volume is trivial, the extraction takes seconds, and you avoid maintaining cursor state entirely. The same applies to tables on a low-enough frequency: if you're only refreshing twice a day, a full replace of even a moderately large table might be cheaper than the complexity of tracking what changed. Incremental earns its place when the table is too large to full-replace at the cadence you need -- `events` growing by millions of rows per day, `orders` with years of history. For everything else, full replace at whatever frequency the consumer requires is simpler, purer, and usually fast enough.
+  == When Tiers Apply
+  <when-tiers-apply>
+  An `orders` table with years of history can't full-replace every 15 minutes -- so you split the extraction by time range: intraday incremental on the recent slice (hot), nightly partition swap on the current quarter (warm), weekly full replace on the entire table (cold). Three strategies on the same table, each covering a different time range at a different cadence. About two-thirds of tables in a typical pipeline never need this split -- full replace at the consumer's cadence handles them fine. Reserve tiered extraction for the tables where size or cost forces the compromise.
 
   == Month-End and Seasonal Shifts
   <month-end-and-seasonal-shifts>
   ERP systems behave differently at month-end and period close. Whether that affects your tiered schedule depends on who consumes the data and why.
 
-  If the extracted data drives quick decision-making -- collections teams chasing receivables before month-end, sales managers tracking targets -- consumers will ask for #emph[more] frequency. Promoting tables to the hot tier during the last week of the month gives them fresher data when the stakes are highest.
+  If the extracted data drives quick decision-making -- collections teams chasing receivables before month-end, sales managers tracking targets -- consumers will ask for #emph[more] frequency. Widening the hot tier's extraction window or increasing its cadence during the last week of the month gives them fresher data when the stakes are highest.
 
   If the extracted data feeds a historical analysis engine -- a data warehouse that produces reports after the period closes -- consumers will often ask for the #emph[opposite];: reduce extraction frequency during month-end to avoid competing with the ERP's own close process for database resources. The source system is already under pressure from period-end batch jobs, and your pipeline hammering it with intraday reads doesn't help anyone.
 
@@ -6302,11 +6283,11 @@
   - #strong[Warm];: daily cron, typically overnight
   - #strong[Cold];: weekly or monthly cron, or triggered manually for backfills
 
-  A table can move between tiers as business cycles shift. Month-end promotes some tables to hot; fiscal year rollover pushes last year's data from warm to cold; seasonal patterns (Black Friday, harvest season, enrollment periods) can temporarily increase the hot tier's population. If your orchestrator supports dynamic schedule assignment, encode these transitions as rules rather than manual changes.
+  The tier boundaries shift with business cycles. Month-end might widen the hot window or increase its cadence; fiscal year rollover pushes last year's partitions from warm into cold territory; seasonal patterns (Black Friday, harvest season, enrollment periods) can temporarily justify more aggressive extraction on tables that are normally daily. If your orchestrator supports dynamic schedule assignment, encode these transitions as rules rather than manual changes.
 
   #ecl-warning(
     "Don't mix tiers on the same cron",
-  )[This anti-pattern applies when you have tables at different cadences. If some tables need intraday freshness but share a cron with everything else, the hot tables wait in line behind cold tables that didn't need refreshing. Separate the schedules when you have tables that genuinely need different cadences.]
+  )[If the hot extraction shares a cron with everything else, it waits in line behind cold tables that didn't need refreshing. Separate the schedules so the hot tier runs independently at its own cadence.]
 
   #ecl-danger(
     "Same frequency, wrong method",
@@ -6324,9 +6305,9 @@
       [Three schedules to configure and monitor instead of one],
       [Cold-tier full replace acts as a purity checkpoint, resetting drift],
       [Lag window tuning is empirical -- too short misses rows, too long wastes reads],
-      [Tables can shift tiers as business needs change], [Dynamic tier assignment adds orchestrator complexity],
+      [Tier boundaries shift with business cycles (month-end, seasonal)], [Adjusting cadence and window size requires orchestrator flexibility],
       [Cost scales with actual freshness needs, not with table count],
-      [Month-end and seasonal shifts require manual or rule-based tier promotions],
+      [Month-end and seasonal shifts require manual or rule-based schedule changes],
     )],
     kind: table,
   )
@@ -6703,7 +6684,7 @@
   <extraction-succeeded-load-failed>
   The data was extracted correctly but the destination rejected it -- DML quota exceeded, permission error, schema mismatch, disk full. The extraction is valid and may still be sitting in staging; if it is, you can retry the load without re-extracting. If staging is ephemeral (cleaned up per run), the extraction has to run again.
 
-  Destination quotas are the most common cause at scale. Columnar engines like BigQuery impose daily DML limits, and a pipeline that runs hundreds of merges can exhaust the quota partway through -- the first 150 tables land fine, the remaining 50 get rejected. More quota helps, but the real fix is knowing which tables didn't land and retrying them in the next window when the quota resets. This is also where full replace earns its keep: a `DELETE + INSERT` or partition swap avoids the DML-heavy merge path entirely, and quota limits on batch loads are generally higher than on row-level DML.
+  Destination quotas are the most common cause at scale. BigQuery imposes per-table DML statement limits (1,500 per table per day for non-partitioned tables, per partition per day for partitioned ones), and a pipeline that runs frequent merges against the same tables can exhaust the quota partway through -- the first 150 loads land fine, the remaining 50 get rejected. More quota helps, but the real fix is knowing which tables didn't land and retrying them in the next window when the quota resets. This is also where full replace earns its keep: a `DELETE + INSERT` or partition swap avoids the DML-heavy merge path entirely, and quota limits on batch loads are generally higher than on row-level DML.
 
   === Load Partially Applied
   <load-partially-applied>
@@ -6783,9 +6764,7 @@
   == Detection
   === Row Count Comparison
   <row-count-comparison>
-  The simplest signal: compare `COUNT(*)` between source and destination. If the destination has more rows, you either have duplicates or you're missing hard-delete detection. Run hard-delete detection first (@hard-delete-detection) -- if after cleaning up deleted rows the destination still has more rows than the source, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness constraints).
-
-  Run `COUNT(*)` on the source and on the destination separately, then compare in your orchestrator or manually -- these are different engines, so there's no single query that spans both. If the destination has more rows after hard-delete cleanup, the excess can only be duplicate PKs (columnar engines don't enforce uniqueness). This ties directly to @reconciliation-patterns -- if reconciliation is already running on a schedule, it surfaces the count mismatch before anyone downstream notices.
+  The simplest signal: run `COUNT(*)` on the source and destination separately (different engines, no cross-query), then compare in your orchestrator. If the destination has more rows, you either have duplicates or you're missing hard-delete detection. Run hard-delete detection first (@hard-delete-detection) -- if after cleaning up deleted rows the destination still has a surplus, the excess can only be duplicate PKs. If @reconciliation-patterns is already running on a schedule, it surfaces the count mismatch before anyone downstream notices.
 
   === By Primary Key
   <by-primary-key>
@@ -7402,7 +7381,7 @@
   -- destination: snowflake
   SELECT
       order_id,
-      details:shipping:method::STRING AS shipping_method
+      details:shipping.method::STRING AS shipping_method
   FROM orders
   WHERE order_date = '2026-03-15';
   ```
@@ -7489,7 +7468,7 @@
 
   #strong[Slots vs on-demand.] Flat-rate pricing (reservations/slots) makes bytes-scanned irrelevant -- you pay for compute capacity, not data read. The optimization target shifts from "scan fewer bytes" to "avoid slot contention." Most of the advice above still helps because it reduces execution time, which frees slots for other queries.
 
-  #strong[Per-day cost limits.] BigQuery supports custom cost controls at the project and user level -- maximum bytes billed per query and per day. Set these before your first production run, not after the first surprise bill. A runaway retry loop is bounded by the daily limit instead of running until someone notices.
+  #strong[Per-day cost limits.] BigQuery supports custom cost controls natively: `maximum_bytes_billed` per query (set in the job config, rejects the query before it runs if it would exceed the limit), plus daily byte caps at both the project and per-user level (configured in BigQuery's quota settings, resets at midnight PT). Set these before your first production run, not after the first surprise bill. A runaway retry loop is bounded by the daily limit instead of running until someone notices.
 
   == Snowflake (Warehouse Time)
   <snowflake-warehouse-time>
