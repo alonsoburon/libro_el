@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="210" viewBox="0 0 720 210">
+  <rect x="0" y="0" width="720" height="210" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Nested JSON: land as-is, flatten downstream if needed</text>
+
+  <!-- ═══ Source table (left) ═══ -->
+  <text x="115" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Source: orders</text>
+
+  <rect x="20" y="46" width="190" height="70" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="20" y="46" width="190" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="58" width="190" height="4" fill="#ebdbb2"/>
+  <text x="55" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="145" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">details (JSONB)</text>
+  <line x1="27" y1="63" x2="203" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <text x="55" y="78" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="145" y="78" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">{shipping: {..}, items: [..]}</text>
+  <line x1="27" y1="84" x2="203" y2="84" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="55" y="98" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="145" y="98" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">{shipping: {..}, items: [..]}</text>
+
+  <!-- ═══ Arrow: land as-is ═══ -->
+  <line x1="215" y1="80" x2="255" y2="80" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="255,77 262,80 255,83" fill="#79740e"/>
+  <text x="238" y="72" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">as-is</text>
+
+  <!-- ═══ Destination table (center) ═══ -->
+  <text x="370" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Destination: orders</text>
+
+  <rect x="265" y="46" width="210" height="70" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="265" y="46" width="210" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="265" y="58" width="210" height="4" fill="#ebdbb2"/>
+  <text x="300" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="400" y="57" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">details (JSON/VARIANT)</text>
+  <line x1="272" y1="63" x2="468" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <text x="300" y="78" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="400" y="78" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">{shipping: {..}, items: [..]}</text>
+  <line x1="272" y1="84" x2="468" y2="84" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="300" y="98" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="400" y="98" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">{shipping: {..}, items: [..]}</text>
+
+  <!-- ECL boundary label -->
+  <text x="370" y="128" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">ECL boundary: JSON column stays JSON</text>
+
+  <!-- ═══ Downstream view (right, optional) ═══ -->
+  <line x1="480" y1="80" x2="495" y2="80" stroke="#928374" stroke-width="1" stroke-dasharray="3,2"/>
+  <polygon points="495,77 502,80 495,83" fill="#928374"/>
+  <text x="498" y="72" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">downstream</text>
+
+  <rect x="505" y="46" width="200" height="100" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+  <rect x="505" y="46" width="200" height="16" fill="#d5c4a1" opacity="0.2" rx="4"/>
+  <rect x="505" y="58" width="200" height="4" fill="#d5c4a1" opacity="0.2"/>
+  <text x="605" y="57" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">VIEW orders_flat (optional)</text>
+  <line x1="512" y1="63" x2="698" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Flattened columns -->
+  <text x="530" y="76" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="530" y="89" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">shipping_method</text>
+  <text x="530" y="102" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">shipping_city</text>
+  <text x="530" y="115" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">item_sku</text>
+  <text x="530" y="128" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">item_qty</text>
+  <text x="530" y="141" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">item_price</text>
+
+  <!-- Values -->
+  <text x="640" y="76" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">1001</text>
+  <text x="640" y="89" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">express</text>
+  <text x="640" y="102" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">Santiago</text>
+  <text x="640" y="115" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">A100</text>
+  <text x="640" y="128" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">2</text>
+  <text x="640" y="141" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">15.50</text>
+
+  <!-- ═══ Bottom labels ═══ -->
+  <!-- ECL zone -->
+  <rect x="20" y="160" width="455" height="20" fill="#79740e" opacity="0.04" rx="3"/>
+  <rect x="20" y="160" width="455" height="20" fill="none" stroke="#79740e" stroke-width="1" rx="3"/>
+  <text x="247" y="174" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">ECL layer: extract, conform types, load. JSON structure untouched.</text>
+
+  <!-- Downstream zone -->
+  <rect x="505" y="160" width="200" height="20" fill="#928374" opacity="0.04" rx="3"/>
+  <rect x="505" y="160" width="200" height="20" fill="none" stroke="#928374" stroke-width="1" stroke-dasharray="4,3" rx="3"/>
+  <text x="605" y="174" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Serving layer: flatten for consumers</text>
+
+  <!-- Legend -->
+  <rect x="20" y="193" width="12" height="8" fill="#79740e" opacity="0.1" rx="2" stroke="#79740e" stroke-width="1"/>
+  <text x="38" y="200" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">ECL scope (land as-is)</text>
+
+  <rect x="210" y="193" width="12" height="8" fill="#928374" opacity="0.06" rx="2" stroke="#928374" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="228" y="200" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">downstream (flatten if needed, not ECL's job)</text>
+</svg>

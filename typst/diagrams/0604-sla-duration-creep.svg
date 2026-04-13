@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect x="0" y="0" width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Extraction duration creep: comfortable SLA erodes over weeks</text>
+
+  <!-- Y axis -->
+  <line x1="80" y1="32" x2="80" y2="155" stroke="#d5c4a1" stroke-width="1"/>
+  <text x="40" y="96" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" transform="rotate(-90, 40, 96)">duration (min)</text>
+
+  <!-- Y ticks -->
+  <text x="72" y="150" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">0</text>
+  <line x1="76" y1="148" x2="80" y2="148" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="72" y="124" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">15</text>
+  <line x1="76" y1="122" x2="80" y2="122" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="72" y="98" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">30</text>
+  <line x1="76" y1="96" x2="80" y2="96" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="72" y="72" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">45</text>
+  <line x1="76" y1="70" x2="80" y2="70" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="72" y="46" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">60</text>
+  <line x1="76" y1="44" x2="80" y2="44" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- X axis -->
+  <line x1="80" y1="148" x2="690" y2="148" stroke="#d5c4a1" stroke-width="1"/>
+
+  <!-- SLA deadline line: pipeline starts at 08:00, SLA = data ready by 09:00, so 60 min budget -->
+  <!-- At y scale: 0min=148, 60min=44. Each min = (148-44)/60 = 1.73px -->
+  <!-- SLA at 50 min (leaves 10 min buffer for load): y = 148 - 50*1.73 = 61.5 -->
+  <line x1="80" y1="62" x2="690" y2="62" stroke="#9d0006" stroke-width="1.2" stroke-dasharray="6,3"/>
+  <rect x="620" y="52" width="68" height="14" fill="#ffffff" rx="2"/>
+  <text x="654" y="62" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">SLA: 09:00</text>
+
+  <!-- Buffer zone between SLA and comfortable -->
+  <!-- "Comfortable" at ~30 min: y=96 -->
+  <rect x="80" y="62" width="610" height="34" fill="#d79921" opacity="0.04"/>
+  <text x="688" y="82" text-anchor="end" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">buffer zone</text>
+
+  <!-- Bars: 20 days, each bar 24px wide, gap 6px, stride 30px -->
+  <!-- Start at x=90. 20 bars * 30 = 600px. Fits in 610px. -->
+  <!-- Duration values (minutes): gradually creeping up -->
+  <!-- Day 1-5: ~8-12 min (comfortable) -->
+  <!-- Day 6-10: ~15-20 min (still fine) -->
+  <!-- Day 11-15: ~25-35 min (entering buffer) -->
+  <!-- Day 16-18: ~40-48 min (tight) -->
+  <!-- Day 19-20: ~52-58 min (breaching) -->
+
+  <!-- Helper: min to y = 148 - min*1.73 -->
+  <!-- 8=134, 10=131, 9=132, 11=129, 12=127 -->
+  <!-- 15=122, 17=119, 16=120, 19=115, 20=113 -->
+  <!-- 25=105, 28=100, 30=96, 32=93, 35=87 -->
+  <!-- 40=79, 44=72, 48=65 -->
+  <!-- 52=58, 58=48 -->
+
+  <!-- Days 1-5: green, comfortable -->
+  <rect x="90" y="134" width="24" height="14" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="120" y="131" width="24" height="17" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="150" y="132" width="24" height="16" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="180" y="129" width="24" height="19" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="210" y="127" width="24" height="21" fill="#79740e" opacity="0.25" rx="2"/>
+
+  <!-- Days 6-10: green, still fine -->
+  <rect x="240" y="122" width="24" height="26" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="270" y="119" width="24" height="29" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="300" y="120" width="24" height="28" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="330" y="115" width="24" height="33" fill="#79740e" opacity="0.25" rx="2"/>
+  <rect x="360" y="113" width="24" height="35" fill="#79740e" opacity="0.25" rx="2"/>
+
+  <!-- Days 11-15: yellow, entering buffer -->
+  <rect x="390" y="105" width="24" height="43" fill="#d79921" opacity="0.25" rx="2"/>
+  <rect x="420" y="100" width="24" height="48" fill="#d79921" opacity="0.25" rx="2"/>
+  <rect x="450" y="96" width="24" height="52" fill="#d79921" opacity="0.25" rx="2"/>
+  <rect x="480" y="93" width="24" height="55" fill="#d79921" opacity="0.25" rx="2"/>
+  <rect x="510" y="87" width="24" height="61" fill="#d79921" opacity="0.3" rx="2"/>
+
+  <!-- Days 16-18: orange, tight -->
+  <rect x="540" y="79" width="24" height="69" fill="#d65d0e" opacity="0.3" rx="2"/>
+  <rect x="570" y="72" width="24" height="76" fill="#d65d0e" opacity="0.3" rx="2"/>
+  <rect x="600" y="65" width="24" height="83" fill="#d65d0e" opacity="0.35" rx="2"/>
+
+  <!-- Days 19-20: red, breaching SLA -->
+  <rect x="630" y="58" width="24" height="90" fill="#9d0006" opacity="0.2" rx="2"/>
+  <rect x="660" y="48" width="24" height="100" fill="#9d0006" opacity="0.25" rx="2"/>
+
+  <!-- X labels: every 5th day -->
+  <text x="102" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Day 1</text>
+  <text x="252" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Day 6</text>
+  <text x="402" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Day 11</text>
+  <text x="552" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Day 16</text>
+  <text x="672" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">Day 20</text>
+
+  <!-- Legend -->
+  <rect x="90" y="178" width="14" height="8" fill="#79740e" opacity="0.25" rx="2"/>
+  <text x="110" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">comfortable</text>
+
+  <rect x="210" y="178" width="14" height="8" fill="#d79921" opacity="0.25" rx="2"/>
+  <text x="230" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">buffer eroding</text>
+
+  <rect x="350" y="178" width="14" height="8" fill="#d65d0e" opacity="0.3" rx="2"/>
+  <text x="370" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">SLA at risk</text>
+
+  <rect x="470" y="178" width="14" height="8" fill="#9d0006" opacity="0.25" rx="2"/>
+  <text x="490" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">breach</text>
+
+  <text x="575" y="185" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">The signal was in the health table for weeks.</text>
+</svg>

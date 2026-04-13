@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect x="0" y="0" width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Charset encoding: what the driver does, what goes wrong</text>
+
+  <!-- ═══ Happy path (top) ═══ -->
+  <text x="20" y="42" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Correct declaration</text>
+
+  <!-- Source -->
+  <rect x="20" y="50" width="130" height="40" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <text x="85" y="66" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Source (Latin-1)</text>
+  <text x="85" y="80" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Mu#xF1;oz</text>
+
+  <!-- Arrow -->
+  <line x1="155" y1="70" x2="210" y2="70" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="210,67 217,70 210,73" fill="#79740e"/>
+  <text x="183" y="62" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">charset=latin1</text>
+
+  <!-- Driver -->
+  <rect x="220" y="50" width="130" height="40" fill="#f9f5d7" stroke="#79740e" stroke-width="1" rx="4"/>
+  <text x="285" y="66" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Driver converts</text>
+  <text x="285" y="80" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">Latin-1 bytes -> UTF-8</text>
+
+  <!-- Arrow -->
+  <line x1="355" y1="70" x2="410" y2="70" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="410,67 417,70 410,73" fill="#79740e"/>
+
+  <!-- Destination -->
+  <rect x="420" y="50" width="130" height="40" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <text x="485" y="66" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Destination (UTF-8)</text>
+  <text x="485" y="80" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Mu&#xF1;oz</text>
+
+  <!-- Check mark -->
+  <text x="560" y="74" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="12">&#x2713;</text>
+
+  <!-- ═══ Mojibake path (middle) ═══ -->
+  <text x="20" y="108" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Wrong declaration: says UTF-8, actually Latin-1</text>
+
+  <!-- Source -->
+  <rect x="20" y="116" width="130" height="40" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <text x="85" y="132" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Source (Latin-1)</text>
+  <text x="85" y="146" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Mu&#xF1;oz</text>
+
+  <!-- Arrow -->
+  <line x1="155" y1="136" x2="210" y2="136" stroke="#d65d0e" stroke-width="1.5"/>
+  <polygon points="210,133 217,136 210,139" fill="#d65d0e"/>
+  <text x="183" y="128" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">charset=utf8</text>
+
+  <!-- Driver -->
+  <rect x="220" y="116" width="130" height="40" fill="#f9f5d7" stroke="#d65d0e" stroke-width="1" rx="4"/>
+  <text x="285" y="132" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Driver misreads</text>
+  <text x="285" y="146" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">Latin-1 byte 0xF1 as UTF-8</text>
+
+  <!-- Arrow -->
+  <line x1="355" y1="136" x2="410" y2="136" stroke="#d65d0e" stroke-width="1.5"/>
+  <polygon points="410,133 417,136 410,139" fill="#d65d0e"/>
+
+  <!-- Destination -->
+  <rect x="420" y="116" width="130" height="40" fill="#f9f5d7" stroke="#9d0006" stroke-width="1.5" rx="4"/>
+  <text x="485" y="132" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Destination (UTF-8)</text>
+  <text x="485" y="146" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Mu&#xC3;&#xB1;oz</text>
+
+  <!-- X mark -->
+  <text x="560" y="140" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12">&#x2717;</text>
+  <text x="590" y="132" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">mojibake</text>
+  <text x="590" y="144" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">data still there,</text>
+  <text x="590" y="154" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">just misinterpreted</text>
+
+  <!-- ═══ Legend ═══ -->
+  <rect x="20" y="176" width="3" height="10" fill="#79740e" opacity="0.3" rx="1"/>
+  <text x="29" y="184" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">correct: declare actual source encoding, driver converts automatically</text>
+
+  <rect x="420" y="176" width="3" height="10" fill="#9d0006" opacity="0.3" rx="1"/>
+  <text x="429" y="184" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">wrong declaration: loads silently, corrupts non-ASCII characters</text>
+</svg>

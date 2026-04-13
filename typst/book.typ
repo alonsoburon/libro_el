@@ -4669,7 +4669,7 @@
 
   == NULL in Key Columns
   <null-in-key-columns>
-  Most hash functions return NULL if any input is NULL. A row with `company_code = 'ACME'` and `document_number = NULL` produces `MD5(CONCAT('ACME', '|', NULL))` → NULL. Every row with a NULL in the same position produces the same NULL hash, and the MERGE treats them all as the same entity -- or worse, misses them entirely because `NULL != NULL` in the match condition.
+  Most hash functions return NULL if any input is NULL. But whether NULL reaches the hash depends on the engine's `CONCAT` behavior: BigQuery, Snowflake, and MySQL propagate NULL through `CONCAT` (so `MD5(CONCAT('ACME', '|', NULL))` → NULL), while PostgreSQL and SQL Server silently treat NULL as empty string in `CONCAT()` (so `MD5(CONCAT('ACME', '|', NULL))` → a valid hash of `'ACME|'`). The PostgreSQL/SQL Server behavior is arguably worse: two rows with different NULL columns produce the same hash instead of failing loudly, and the MERGE silently collapses them into one entity.
 
   COALESCE every column to a sentinel before hashing:
 
@@ -4969,7 +4969,7 @@
   <downstream-consequences>
   These are real, and you should document them -- but they're not your problem to fix in the ECL layer.
 
-  #strong[`GROUP BY` behavior varies per engine.] BigQuery and PostgreSQL group NULLs together (all NULL values in one group). Some engines don't. An analyst who writes `GROUP BY status` and gets a NULL group isn't looking at a bug -- they're looking at data that has NULLs in the status column, which is what the source has.
+  #strong[`GROUP BY` groups NULLs together.] The SQL standard treats NULLs as "not distinct" for grouping, and every major engine follows this -- BigQuery, Snowflake, PostgreSQL, MySQL, SQL Server, ClickHouse, Redshift. An analyst who writes `GROUP BY status` and gets a NULL group isn't looking at a bug -- they're looking at data that has NULLs in the status column, which is what the source has.
 
   #strong[`COUNT(column)` vs `COUNT(*)`.] `COUNT(*)` counts all rows. `COUNT(status)` excludes rows where `status IS NULL`. Analysts who don't know this will report incorrect counts and blame the data. Document the NULL rate per column if it's significant, but don't COALESCE to inflate the count.
 
@@ -4985,7 +4985,7 @@
   <by-corridor-3>
   #ecl-warning(
     "Transactional to columnar",
-  )[Columnar destinations are permissive with NULLs -- BigQuery, Snowflake, ClickHouse, and Redshift all accept NULL in any column regardless of the DDL. There's no NOT NULL enforcement to worry about, so NULLs from the source land without friction. The downstream behavior differences (GROUP BY, COUNT) are the consumer's responsibility.]
+  )[Columnar destinations don't enforce UNIQUE or PK constraints, but they *do* enforce NOT NULL when declared -- BigQuery rejects inserting NULLs into REQUIRED columns, Snowflake enforces NOT NULL on standard tables, ClickHouse columns are non-nullable by default (you must explicitly opt into `Nullable()`), and Redshift enforces NOT NULL. If the source has NULLs in a column the destination declared NOT NULL, the load fails. Match the destination DDL to the source's actual nullability.]
 
   #ecl-info(
     "Transactional to transactional",
@@ -5112,6 +5112,8 @@
 
   The only thing you need to get right is the declaration. If you tell the driver the source is UTF-8 and it's actually Latin-1, the conversion produces mojibake silently. If you tell it Latin-1 and it's actually Windows-1252, you lose a handful of characters (curly quotes, em dashes, ellipsis) that exist in Windows-1252 but not in Latin-1. Get the encoding right on the connection string and the rest takes care of itself.
 
+  #figure(image("diagrams/0506-charset-encoding.svg", width: 95%))
+
   // ---
 
   == Where It Happens
@@ -5153,16 +5155,17 @@
   #strong[Declare the encoding on the connection.] Every driver has a parameter for this:
 
   ```python
-  # SQLAlchemy -- Latin-1 source
+  # SQLAlchemy + PyMySQL -- Latin-1 MySQL source
   engine = create_engine(
-      "mssql+pyodbc://user:pass@host/db",
-      connect_args={"charset": "latin1"}
+      "mysql+pymysql://user:pass@host/db?charset=latin1"
   )
 
-  # SQLAlchemy -- Windows-1252 source (common for Excel-origin data)
+  # SQLAlchemy + pyodbc -- SQL Server with Windows-1252
+  # Encoding handled via ODBC driver connection string
   engine = create_engine(
-      "mssql+pyodbc://user:pass@host/db",
-      connect_args={"charset": "cp1252"}
+      "mssql+pyodbc://user:pass@host/db"
+      "?driver=ODBC+Driver+18+for+SQL+Server"
+      "&ClientCharset=CP1252"
   )
   ```
 
@@ -5170,7 +5173,7 @@
 
   #strong[Validate after load.] Run the canary check above on the first load and after any connection configuration change. Encoding problems are deterministic -- if the canary passes, every row is fine. If it fails, every non-ASCII row is affected.
 
-  #strong[CSV-specific.] When the encoding isn't declared in the file, try `chardet` or `cchardet` (Python libraries) to detect it from the byte content. These aren't 100% accurate but they're better than guessing. Once detected, pass the encoding explicitly to your CSV reader: `pandas.read_csv(path, encoding='cp1252')`.
+  #strong[CSV-specific.] When the encoding isn't declared in the file, try `charset-normalizer` (the modern default, used by `requests` since 2.28) or `chardet` to detect it from the byte content. These aren't 100% accurate but they're better than guessing. Once detected, pass the encoding explicitly to your CSV reader: `pandas.read_csv(path, encoding='cp1252')`. Better yet, convert the source to Parquet first -- Parquet is always UTF-8 internally and eliminates the encoding problem entirely.
 
   // ---
 
@@ -5178,7 +5181,7 @@
   <collation-traps>
   Collation is related to encoding but distinct: encoding determines #emph[how bytes map to characters];, collation determines #emph[how characters compare and sort];. A correct encoding with a mismatched collation produces data that loads correctly but behaves differently in queries.
 
-  #strong[Case sensitivity.] PostgreSQL respects the table or column `COLLATE` setting -- `WHERE name = 'García'` might or might not match `'GARCÍA'` depending on the collation. BigQuery is always case-sensitive in string comparisons, with no collation configuration. A JOIN that works on a case-insensitive source fails on BigQuery because `'garcia' != 'García'`.
+  #strong[Case sensitivity.] PostgreSQL respects per-column `COLLATE` settings -- `WHERE name = 'García'` might or might not match `'GARCÍA'` depending on the collation. BigQuery defaults to case-sensitive binary comparison, and while it now supports `COLLATE` clauses (e.g. `'und:ci'` for case-insensitive), most tables use the default. A JOIN that works on a case-insensitive source fails on BigQuery because `'garcia' != 'García'`.
 
   #strong[Accent sensitivity.] A source with accent-insensitive collation treats `café` and `cafe` as equal. A destination with binary collation (the default on most columnar engines) treats them as different values. A JOIN on a text column that "always worked" on the source returns fewer rows on the destination, and the missing rows are the ones with accented characters.
 
@@ -5263,7 +5266,9 @@
 
   Land it as-is. The structure, the nesting, the array of items -- all of it arrives at the destination exactly as the source stores it. No field selection, no type inference on nested values, no decision about whether `shipping.address` should be its own table.
 
-  This works well when consumers are data-conscious and comfortable with JSON query syntax. BigQuery's `JSON_EXTRACT_SCALAR(details, '$.shipping.method')`, Snowflake's `details:shipping:method`, PostgreSQL's `details->>'shipping'->'method'` -- all of these give consumers access to every field without the ECL layer making structural decisions on their behalf.
+  #figure(image("diagrams/0507-nested-json.svg", width: 95%))
+
+  This works well when consumers are data-conscious and comfortable with JSON query syntax. BigQuery's `JSON_EXTRACT_SCALAR(details, '$.shipping.method')`, Snowflake's `details:shipping.method`, PostgreSQL's `details->'shipping'->>'method'` -- all of these give consumers access to every field without the ECL layer making structural decisions on their behalf.
 
   // ---
 
@@ -5291,7 +5296,7 @@
 
   This is downstream's problem, not the ECL layer's. Land the JSON as-is and let the consumer or the transformation layer handle schema evolution within the blob. The ECL layer doesn't parse the JSON, so it doesn't break when the JSON changes -- which is exactly the property you want.
 
-  The one exception: when schema mutation causes the #emph[load itself] to fail. BigQuery `STRUCT` is schema-on-write -- every row must match the declared field names and types. If the JSON gains a new field that the `STRUCT` definition doesn't include, the load rejects the row. Two options:
+  The one exception: when schema mutation causes the #emph[load itself] to fail. BigQuery `STRUCT` is schema-on-write -- every row must match the declared field names and types. If the JSON gains a new field that the `STRUCT` definition doesn't include, the load rejects the row by default (BigQuery's `ignoreUnknownValues` option silently drops extra fields instead, but that's data loss). Two options:
 
   #strong[Land as `STRING` instead of `STRUCT`.] The destination stores the raw JSON text with no schema enforcement. Any valid JSON string loads successfully regardless of what fields it contains. Consumers parse the JSON at query time. This is the safest choice for mutating JSON because the schema is the consumer's problem, not the load's problem.
 
@@ -5305,7 +5310,7 @@
   <by-corridor-6>
   #ecl-info(
     "Transactional to columnar",
-  )[Native JSON support varies significantly. #strong[BigQuery]: `JSON` type (schema-on-read, recommended) or `STRUCT`/`REPEATED` (typed, schema-on-write). Use `JSON` for mutating data, `STRUCT` only when the schema is genuinely stable and you need the query performance. Landing as `STRING` is always safe. #strong[Snowflake]: `VARIANT` is schema-on-read and handles arbitrary JSON natively. The natural choice -- flexible, queryable, doesn't break on schema changes. #strong[ClickHouse]: `JSON` type (experimental in recent versions) or `String`. ClickHouse's JSON support is less mature -- `String` with `JSONExtract\*` functions is the safe choice. #strong[Redshift]: `SUPER` type accepts semi-structured data. Queryable with `PartiQL` syntax.]
+  )[Native JSON support varies significantly. #strong[BigQuery]: `JSON` type (schema-on-read, recommended) or `STRUCT`/`REPEATED` (typed, schema-on-write). Use `JSON` for mutating data, `STRUCT` only when the schema is genuinely stable and you need the query performance. Landing as `STRING` is always safe. #strong[Snowflake]: `VARIANT` is schema-on-read and handles arbitrary JSON natively. The natural choice -- flexible, queryable, doesn't break on schema changes. #strong[ClickHouse]: `JSON` type (production-ready since late 2024) or `String`. For older ClickHouse versions, `String` with `JSONExtract\*` functions is the safe fallback. #strong[Redshift]: `SUPER` type accepts semi-structured data. Queryable with `PartiQL` syntax.]
 
   #ecl-info(
     "Transactional to transactional",
@@ -5324,13 +5329,13 @@
     #strong[One-liner:] Row counts tell you the pipeline ran. They don't tell you it ran #emph[well];, or that the data it produced is worth trusting.
   ]
 
-  This chapter covers 15 patterns in four clusters:
+  This chapter covers 15 operational concerns in four clusters:
 
   #figure(
     align(center)[#table(
       columns: (22%, 78%),
       align: (auto, auto),
-      table.header([Cluster], [Patterns]),
+      table.header([Cluster], [Sections]),
       table.hline(),
       [*Observability*], [Monitoring (6.1), Health Table (6.2), Cost Monitoring (6.3), SLA Management (6.4)],
       [*Scheduling*], [Alerting (6.5), Scheduling & Dependencies (6.6), Source Etiquette (6.7), Tiered Freshness (6.8)],
@@ -5344,7 +5349,7 @@
   == Silent Corruption
   Most pipelines start with a single check: did it succeed? That binary signal covers maybe 40% of what can go wrong. A pipeline can succeed while producing garbage -- a query timed out and returned partial results, a full replace that used to take 3 minutes now takes 45 because the table grew 10x, the source schema changed and the loader silently dropped columns, or half the batch loaded while the other half timed out, leaving the destination with rows from two different points in time. Every one of these scenarios reports SUCCESS. Every one of them delivers broken data to consumers.
 
-  Without structured #strong[observability];, you discover these problems when a stakeholder asks why the dashboard is wrong -- often days after the data actually broke. By that point the blast radius is wide: downstream models have consumed the bad data, reports have been sent, and the person asking is already frustrated. The monitoring pattern in this chapter is about catching those failures before anyone else does, ideally within minutes of the pipeline run that caused them.
+  Without structured #strong[observability];, you discover these problems when a stakeholder asks why the dashboard is wrong -- often days after the data actually broke. By that point the blast radius is wide: downstream models have consumed the bad data, reports have been sent, and the person asking is already frustrated. The monitoring approach in this chapter is about catching those failures before anyone else does, ideally within minutes of the pipeline run that caused them.
 
   The key insight is that you need to track more than pass/fail, but you also need to resist the urge to track everything. Every metric you record has a storage cost and a cognitive cost -- someone has to look at it, and if the dashboard has 40 numbers, nobody looks at any of them carefully. The goal is a small set of raw measurements that cover the important failure modes, from which you can derive everything else.
 
@@ -5352,7 +5357,7 @@
   <four-layers-of-pipeline-observability>
   Observability breaks into four layers, each covering a different failure mode. You don't need all of them on day one -- Run Health and Data Health cover the critical cases, and the other two earn their place as your pipeline count grows.
 
-  === 1. Run Health
+  === Run Health
   <run-health>
   The basics: did the pipeline run, did it succeed, and how long did it take? Every orchestrator tracks this natively -- run status, duration, dependency graphs -- so there's rarely anything to build here. What the orchestrator gives you for free is already enough.
 
@@ -5360,7 +5365,7 @@
 
   Retry counts are worth recording if your pipeline retries on transient failures. A job that succeeds on the third retry every day is masking an unstable connection or a source system under load.
 
-  === 2. Data Health
+  === Data Health
   <data-health>
   This is where monitoring earns its keep. Run Health tells you the pipeline executed; Data Health tells you what the pipeline produced.
 
@@ -5376,13 +5381,13 @@
 
   #strong[Schema fingerprints and null rates] are worth tracking here as changes between runs, but enforcement -- what to do when they change -- belongs in @data-contracts.
 
-  === 3. Source Health
+  === Source Health
   <source-health>
   Source health metrics are less about your pipeline and more about the system you're extracting from. Query duration at the source, isolated from load performance, tells you whether the source database is degrading or whether your extraction query needs tuning. Timeout frequency -- queries that hit the threshold even when they eventually return on retry -- reveals instability before it becomes a failure.
 
   Source system load impact is worth tracking for a less obvious reason: it's a sales tool. If you can demonstrate that your extraction uses less than 1% of the source database's capacity, you can sell the pipeline as a lightweight, non-invasive solution to more technical stakeholders who are nervous about letting you query their production system. See @source-system-etiquette for the full treatment.
 
-  === 4. Load Health
+  === Load Health
   <load-health>
   Load #strong[cost] generally matters more than load duration. Duration tends to be stable for a given table size and load strategy -- it's predictable and boring. Cost is the variable that shifts under your feet: a MERGE on BigQuery at 100k rows costs differently than at 10M, DML pricing changes without warning, and switching from full replace to incremental changes the operation type entirely. Tracking `load_seconds` is still useful for spotting bottlenecks, but if you had to pick one dimension to watch on the load side, it's cost -- and @cost-monitoring covers how to capture and attribute it.
 
@@ -5399,9 +5404,7 @@
   In a single-orchestrator setup, the orchestrator's native UI covers items 1 and 2 well enough. Items 3 and 4 come from the health table and the cost monitoring layer from @cost-monitoring. In a multi-orchestrator setup, the health table is the only place where all four numbers converge -- which is why it exists.
 
   == The Pattern
-  // TODO: Convert mermaid diagram to Typst or embed as SVG
-
-  The pattern is straightforward: after every pipeline run, append a row to a health table. One row per table per run, with the raw measurements needed to answer the four morning questions. Everything else -- dashboards, alerts, SLA reports -- is a query on top of this table. @the-health-table covers the schema, the column-by-column rationale, and how to populate it.
+  After every pipeline run, append a row to a health table. One row per table per run, with the raw measurements needed to answer the four morning questions. Everything else -- dashboards, alerts, SLA reports -- is a query on top of this table. @the-health-table covers the schema, the column-by-column rationale, and how to populate it.
 
   == Anti-Patterns
   #ecl-warning(
@@ -5429,7 +5432,7 @@
   ]
 
   == What You Can't Measure
-  The four layers from @monitoring-and-observability tell you #emph[what] to watch. This pattern is the #emph[how];: a single append-only table that captures raw measurements from every pipeline run, giving you a queryable history of everything your orchestrator doesn't track natively. Without it, monitoring lives in scattered logs, orchestrator UIs, and tribal knowledge -- none of which you can `SELECT` from at 7 AM when something is wrong.
+  The four layers from @monitoring-and-observability tell you #emph[what] to watch. This pattern is the #emph[how:] a single append-only table that captures raw measurements from every pipeline run, giving you a queryable history of everything your orchestrator doesn't track natively. Without it, monitoring lives in scattered logs, orchestrator UIs, and tribal knowledge -- none of which you can `SELECT` from at 7 AM when something is wrong.
 
   == The Pattern
   <the-pattern-1>
@@ -5636,7 +5639,7 @@
 
   #strong[Storage costs] are predictable but sneaky at scale. Append logs grow with every run, and without compaction that growth is unbounded (@append-and-materialize covers compaction). Staging tables that outlive their load job are dead weight, though in practice orphaned staging is more of a schema hygiene issue than a cost problem -- at \~\$0.02/GB/month in BigQuery, a few hundred GB of staging is annoying but not alarming. The compute cost of accidentally querying unpartitioned staging is usually worse than storing it.
 
-  #strong[Extraction costs] are easy to forget because querying your own PostgreSQL is free. But some sources meter reads: API rate limits, licensed query slots (SAP HANA, some SaaS platforms), or egress charges from cloud-hosted sources. Also sometimes extracting over VPNs incurs in bandwidth costs. Overlapping extraction windows in stateless patterns (@stateless-window-extraction) re-extract the same rows deliberately -- the overlap is correct, but its cost in time and source-side load should be visible and known.
+  #strong[Extraction costs] are easy to forget because querying your own PostgreSQL is free. But some sources meter reads: API rate limits, licensed query slots (SAP HANA, some SaaS platforms), or egress charges from cloud-hosted sources. Extracting over VPNs can also incur bandwidth costs. Overlapping extraction windows in stateless patterns (@stateless-window-extraction) re-extract the same rows deliberately -- the overlap is correct, but its cost in time and source-side load should be visible and known.
 
   === Cost Attribution
   <cost-attribution>
@@ -5819,13 +5822,7 @@
 
   #strong[Extraction duration creep] turns a comfortable SLA into a tight one over months. The health table's `extraction_seconds` column (@the-health-table) catches this trend before it becomes a breach -- a 3-minute extraction that silently creeps to 25 minutes eats into your buffer without anyone noticing until the SLA breaks.
 
-  ```
-  Example line graph, X axis is time (last 30 days), Y axis is max staleness (measured as distance from last successful timestamp to SLA)
-
-  Have a static line on Y axis representing max tolerated staleness (24 hours) and a line that grows past it.
-
-  Something LIKE that, think about a table that updates once daily starting at 8 to end at 9, with SLA at 930. and it exceeds it, maybe Y axis should be different.
-  ```
+  #figure(image("diagrams/0604-sla-duration-creep.svg", width: 95%))
 
   #strong[Stale joins at consumption] are the subtler freshness problem. `orders` and `order_lines` can extract and load independently -- there's no dependency between them at load time. But if only one of the two refreshes on a given run, consumers joining them will see orphan records: order lines pointing at a non-existent order header, or a refreshed header missing today's new lines. The SLA for header-detail pairs should cover both tables on the same schedule, not because the pipeline requires it, but because the consumer's query does (@scheduling-and-dependencies).
 
@@ -6040,7 +6037,7 @@
   <how-many-concurrency-and-source-load>
   Every concurrent extraction consumes RAM and CPU on your pipeline infrastructure #emph[and] an open connection plus query load on the source. Getting the concurrency level wrong hurts in both directions: too few concurrent extractions and your pipeline takes hours longer than it should, too many and you overload the source system or exhaust your own memory.
 
-  Start conservative -- 3 to 5 concurrent extractions per source for a typical transactional database. The beefiest production setups might run up to 8 tables concurrently against a strong source, but mostly during off-peak hours when the source has headroom. Monitor source response times and pipeline memory, and increase the limit only when you have evidence that both sides can handle it.
+  Start conservative -- 3 to 5 concurrent extractions per source for a typical transactional database. Larger production setups might run up to 8 tables concurrently against a well-provisioned source, but mostly during off-peak hours when the source has headroom. Monitor source response times and pipeline memory, and increase the limit only when you have evidence that both sides can handle it.
 
   The mechanism is your orchestrator's concurrency controls -- run queues, tag-based limits, or pool-based workers. The limit itself comes from knowing your environment: what the source can tolerate and what your infrastructure can sustain.
 
@@ -6176,11 +6173,9 @@
 
   The tradeoff: you hold an open connection and server-side cursor for the entire duration, so the source is occupied for longer even though the per-second load is lighter. Schedule batched reads for off-peak hours, and make sure the source's connection pool can accommodate a long-lived session alongside normal application traffic.
 
-  ```sql
-  -- Batched read: 100k rows at a time, server-side cursor
-  -- source: transactional
-  -- engine: sqlalchemy (pseudocode)
-
+  ```python
+  # Batched read: 100k rows at a time, server-side cursor
+  # source: transactional (SQLAlchemy)
   with engine.connect() as conn:
       result = conn.execution_options(
           stream_results=True
@@ -6359,7 +6354,7 @@
 
   #strong[Dropped columns] -- no decision gets made without the source system. A column disappearing could be a deliberate removal, a migration gone wrong, or a temporary rollback. Set up tolerances: if the column was created yesterday and disappeared today, it was probably a rollback and you can let it go. If a column that's been there for months vanishes, fail the load and investigate. The tolerance depends on how the downstream uses the column -- a critical join key disappearing is different from an unused description field being cleaned up.
 
-  #strong[Type changes] -- fail, cast, or warn. See \#Type Mapping below for how to handle the mapping itself.
+  #strong[Type changes] -- fail, cast, or warn. See @type-mapping below for how to handle the mapping itself.
 
   === Volume Contract
   <volume-contract>
@@ -6389,7 +6384,7 @@
 
   === Post-Load (Validation)
   <post-load-validation>
-  Run checks after the load completes: destination row count vs source, schema matches expected, null rates within bounds. Your orchestrator's post-load check primitives are built for this -- ideally run them as part of the load job so the check and the data it validates stay in sync. At scale, though, the overhead of inline checks on every table may not fit in the schedule window (see \#The Cost of Checking), and running validation on a separate, less frequent cadence becomes the practical tradeoff: you lose immediate detection but keep the pipeline on time.
+  Run checks after the load completes: destination row count vs source, schema matches expected, null rates within bounds. Your orchestrator's post-load check primitives are built for this -- ideally run them as part of the load job so the check and the data it validates stay in sync. At scale, though, the overhead of inline checks on every table may not fit in the schedule window (see @the-cost-of-checking), and running validation on a separate, less frequent cadence becomes the practical tradeoff: you lose immediate detection but keep the pipeline on time.
 
   Post-load validation catches problems that pre-load gates can't see: rows that were lost during the load itself, type coercions that silently truncated values, partition misalignment that put data in the wrong place. The tradeoff is that by the time you detect the problem, the bad data is already in the destination -- you're limiting blast radius rather than preventing damage.
 
@@ -6775,7 +6770,7 @@
       [Append-only done right (@append-only-load) handles edge cases with `ON CONFLICT DO NOTHING` or a dedup view. Raw INSERT with no conflict handling and no dedup layer produces duplicates from retries, overlap buffers, or upstream replays],
       [Merge key too specific],
       [The merge key includes a column that changes between extractions (e.g., `_extracted_at`, a hash that incorporates load metadata), so the merge never matches existing rows and every re-extraction INSERTs instead of UPDATing],
-      [NOLOCK page #strong[desync];],
+      [NOLOCK page desync],
       [SQL Server NOLOCK reads can return the same row twice if a page split moves it mid-scan -- duplicates arrive in a single extraction, before the load strategy even runs],
     )],
     kind: table,
