@@ -11,5 +11,9 @@ typst/main.pdf
 # Claude Code local settings
 .claude/settings.local.json
 
+# Dependencies
+node_modules/
+__pycache__/
+
 # Stray files
 schedule 1.md

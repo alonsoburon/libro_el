@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect x="0" y="0" width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Detail without timestamp -- parent cursor cascades via FK</text>
+
+  <text x="155" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Parent: orders (has updated_at)</text>
+  <text x="555" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Detail: order_lines (no updated_at)</text>
+
+  <!-- ============ Parent table: orders ============ -->
+  <rect x="20" y="46" width="270" height="92" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="20" y="46" width="270" height="18" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="60" width="270" height="4" fill="#ebdbb2"/>
+  <text x="155" y="58" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">orders</text>
+
+  <text x="55" y="74" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">order_id</text>
+  <text x="135" y="74" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">status</text>
+  <text x="230" y="74" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">updated_at</text>
+  <line x1="27" y1="78" x2="283" y2="78" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- cursor column tint -->
+  <rect x="180" y="64" width="105" height="72" fill="#458588" opacity="0.06" rx="2"/>
+
+  <!-- row 1: 1001 (unchanged) -->
+  <text x="55" y="92" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="135" y="92" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">shipped</text>
+  <text x="230" y="92" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Mar 1 09:12</text>
+  <line x1="27" y1="98" x2="283" y2="98" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- row 2: 1002 (CHANGED) -->
+  <rect x="22" y="100" width="266" height="18" fill="#d65d0e" opacity="0.14" rx="2"/>
+  <text x="55" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1002</text>
+  <text x="135" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">pending</text>
+  <text x="230" y="112" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="700">Mar 3 14:08</text>
+  <line x1="27" y1="118" x2="283" y2="118" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- row 3: 1003 (unchanged) -->
+  <text x="55" y="132" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="135" y="132" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">confirmed</text>
+  <text x="230" y="132" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Feb 28 17:40</text>
+
+  <!-- cursor line -->
+  <line x1="22" y1="103" x2="288" y2="103" stroke="#d65d0e" stroke-width="0.8" stroke-dasharray="3,2" opacity="0.6"/>
+  <text x="296" y="106" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">&gt; cursor</text>
+
+  <!-- ============ Cascade arrow (middle) ============ -->
+  <line x1="295" y1="111" x2="415" y2="111" stroke="#d65d0e" stroke-width="1.6"/>
+  <polygon points="415,107 423,111 415,115" fill="#d65d0e"/>
+  <text x="358" y="105" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">FK cascade</text>
+  <text x="358" y="124" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">order_id = 1002</text>
+
+  <!-- ============ Detail table: order_lines ============ -->
+  <rect x="425" y="46" width="280" height="132" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="425" y="46" width="280" height="18" fill="#ebdbb2" rx="4"/>
+  <rect x="425" y="60" width="280" height="4" fill="#ebdbb2"/>
+  <text x="565" y="58" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">order_lines</text>
+
+  <text x="460" y="74" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">order_id</text>
+  <text x="525" y="74" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">line_num</text>
+  <text x="600" y="74" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">qty</text>
+  <text x="665" y="74" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">price</text>
+  <line x1="432" y1="78" x2="698" y2="78" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- row 1: 1001/1 (dim) -->
+  <text x="460" y="92" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="525" y="92" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1</text>
+  <text x="600" y="92" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">50</text>
+  <text x="665" y="92" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">12.50</text>
+  <line x1="432" y1="98" x2="698" y2="98" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- row 2: 1002/1 (HIGHLIGHT) -->
+  <rect x="427" y="100" width="276" height="18" fill="#d65d0e" opacity="0.14" rx="2"/>
+  <text x="460" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1002</text>
+  <text x="525" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1</text>
+  <text x="600" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">8</text>
+  <text x="665" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">45.00</text>
+  <line x1="432" y1="118" x2="698" y2="118" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- row 3: 1002/2 (HIGHLIGHT) -->
+  <rect x="427" y="120" width="276" height="18" fill="#d65d0e" opacity="0.14" rx="2"/>
+  <text x="460" y="132" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1002</text>
+  <text x="525" y="132" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">2</text>
+  <text x="600" y="132" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">3</text>
+  <text x="665" y="132" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">120.00</text>
+  <line x1="432" y1="138" x2="698" y2="138" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- row 4: 1002/3 (HIGHLIGHT) -->
+  <rect x="427" y="140" width="276" height="18" fill="#d65d0e" opacity="0.14" rx="2"/>
+  <text x="460" y="152" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1002</text>
+  <text x="525" y="152" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">3</text>
+  <text x="600" y="152" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">1</text>
+  <text x="665" y="152" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">9.99</text>
+  <line x1="432" y1="158" x2="698" y2="158" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- row 5: 1003/1 (dim) -->
+  <text x="460" y="172" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="525" y="172" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1</text>
+  <text x="600" y="172" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">20</text>
+  <text x="665" y="172" text-anchor="middle" fill="#bdae93" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">7.25</text>
+
+  <!-- ============ SQL filter label ============ -->
+  <rect x="20" y="150" width="385" height="28" fill="#d65d0e" opacity="0.06" stroke="#d65d0e" stroke-width="0.8" rx="3"/>
+  <text x="212" y="162" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">extraction filter</text>
+  <text x="212" y="173" text-anchor="middle" fill="#3c3836" font-family="'Consolas', 'Courier New', monospace" font-size="8.5">WHERE order_id IN (SELECT order_id FROM orders WHERE updated_at &gt; :cursor)</text>
+
+  <!-- ============ Bottom note ============ -->
+  <text x="360" y="198" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">Works if the parent's updated_at fires on any line change. If not, see hash-based detection (3.8) or activity-driven (2.7).</text>
+  <text x="360" y="212" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">The parent's cursor IS the detail's cursor -- the FK carries the change boundary.</text>
+</svg>

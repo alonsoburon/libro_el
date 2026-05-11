@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect x="0" y="0" width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Sources of duplicates: four common paths into the destination</text>
+
+  <!-- Source 1: Overlap buffer (blue) -->
+  <rect x="20" y="32" width="220" height="34" fill="#458588" fill-opacity="0.06" stroke="#458588" stroke-width="1" rx="4"/>
+  <rect x="20" y="32" width="220" height="12" fill="#458588" fill-opacity="0.18" rx="4"/>
+  <rect x="20" y="40" width="220" height="4" fill="#458588" fill-opacity="0.18"/>
+  <text x="28" y="41" fill="#076678" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Overlap buffer</text>
+  <rect x="183" y="34" width="50" height="9" fill="#458588" fill-opacity="0.25" rx="2"/>
+  <text x="208" y="41" text-anchor="middle" fill="#076678" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">+2 rows</text>
+  <text x="28" y="58" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">cursor re-reads last hour as safety margin</text>
+
+  <!-- Source 2: Pipeline retry (yellow) -->
+  <rect x="20" y="74" width="220" height="34" fill="#d79921" fill-opacity="0.06" stroke="#d79921" stroke-width="1" rx="4"/>
+  <rect x="20" y="74" width="220" height="12" fill="#d79921" fill-opacity="0.22" rx="4"/>
+  <rect x="20" y="82" width="220" height="4" fill="#d79921" fill-opacity="0.22"/>
+  <text x="28" y="83" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Pipeline retry</text>
+  <rect x="183" y="76" width="50" height="9" fill="#d79921" fill-opacity="0.22" rx="2"/>
+  <text x="208" y="83" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">+3 rows</text>
+  <text x="28" y="100" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">partial load, retry double-writes batch</text>
+
+  <!-- Source 3: Source-side duplicate (orange) -->
+  <rect x="20" y="116" width="220" height="34" fill="#d65d0e" fill-opacity="0.06" stroke="#d65d0e" stroke-width="1" rx="4"/>
+  <rect x="20" y="116" width="220" height="12" fill="#d65d0e" fill-opacity="0.18" rx="4"/>
+  <rect x="20" y="124" width="220" height="4" fill="#d65d0e" fill-opacity="0.18"/>
+  <text x="28" y="125" fill="#af3a03" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Source-side duplicate</text>
+  <rect x="183" y="118" width="50" height="9" fill="#d65d0e" fill-opacity="0.18" rx="2"/>
+  <text x="208" y="125" text-anchor="middle" fill="#af3a03" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">+1 row</text>
+  <text x="28" y="142" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">no unique constraint, two rows share key</text>
+
+  <!-- Source 4: Dual cursor overlap (green) -->
+  <rect x="20" y="158" width="220" height="34" fill="#79740e" fill-opacity="0.06" stroke="#79740e" stroke-width="1" rx="4"/>
+  <rect x="20" y="158" width="220" height="12" fill="#79740e" fill-opacity="0.20" rx="4"/>
+  <rect x="20" y="166" width="220" height="4" fill="#79740e" fill-opacity="0.20"/>
+  <text x="28" y="167" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Dual cursor overlap</text>
+  <rect x="183" y="160" width="50" height="9" fill="#79740e" fill-opacity="0.20" rx="2"/>
+  <text x="208" y="167" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">+1 row</text>
+  <text x="28" y="184" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">created_at and updated_at both fire</text>
+
+  <!-- Converging arrows: from each source right edge (x=240) to destination left (x=430) at y=112 -->
+  <path d="M 240 49 C 320 49, 360 100, 428 110" fill="none" stroke="#458588" stroke-width="1.2" stroke-opacity="0.7"/>
+  <polygon points="428,107 435,110 428,113" fill="#458588" fill-opacity="0.85"/>
+
+  <path d="M 240 91 C 320 91, 370 108, 428 112" fill="none" stroke="#d79921" stroke-width="1.2" stroke-opacity="0.7"/>
+  <polygon points="428,109 435,112 428,115" fill="#d79921" fill-opacity="0.9"/>
+
+  <path d="M 240 133 C 320 133, 370 116, 428 114" fill="none" stroke="#d65d0e" stroke-width="1.2" stroke-opacity="0.7"/>
+  <polygon points="428,111 435,114 428,117" fill="#d65d0e" fill-opacity="0.85"/>
+
+  <path d="M 240 175 C 320 175, 360 125, 428 116" fill="none" stroke="#79740e" stroke-width="1.2" stroke-opacity="0.7"/>
+  <polygon points="428,113 435,116 428,119" fill="#79740e" fill-opacity="0.85"/>
+
+  <!-- Destination table (right) -->
+  <text x="555" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Destination: orders (raw load)</text>
+
+  <rect x="437" y="46" width="240" height="124" fill="#f9f5d7" stroke="#cc241d" stroke-width="1.5" rx="4"/>
+  <rect x="437" y="46" width="240" height="16" fill="#ebdbb2" rx="4"/>
+  <rect x="437" y="58" width="240" height="4" fill="#ebdbb2"/>
+  <text x="470" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="540" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="600" y="57" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">total</text>
+  <text x="652" y="57" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_extracted_at</text>
+  <line x1="444" y1="63" x2="670" y2="63" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Row 1 clean -->
+  <text x="470" y="76" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="540" y="76" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">pending</text>
+  <text x="600" y="76" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1 200</text>
+  <text x="652" y="76" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">14:00</text>
+  <line x1="444" y1="82" x2="670" y2="82" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 2 duplicate (overlap buffer, blue tint) -->
+  <rect x="438" y="83" width="238" height="14" fill="#458588" fill-opacity="0.10"/>
+  <text x="470" y="94" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
+  <text x="540" y="94" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">pending</text>
+  <text x="600" y="94" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1 200</text>
+  <text x="652" y="94" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">15:00</text>
+  <line x1="444" y1="100" x2="670" y2="100" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 3 duplicate (retry, yellow tint) -->
+  <rect x="438" y="101" width="238" height="14" fill="#d79921" fill-opacity="0.12"/>
+  <text x="470" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="540" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">confirmed</text>
+  <text x="600" y="112" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">430</text>
+  <text x="652" y="112" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">15:02</text>
+  <line x1="444" y1="118" x2="670" y2="118" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 4 duplicate (source-side, orange tint) -->
+  <rect x="438" y="119" width="238" height="14" fill="#d65d0e" fill-opacity="0.10"/>
+  <text x="470" y="130" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1002</text>
+  <text x="540" y="130" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">confirmed</text>
+  <text x="600" y="130" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">430</text>
+  <text x="652" y="130" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">15:02</text>
+  <line x1="444" y1="136" x2="670" y2="136" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 5 duplicate (dual cursor, green tint) -->
+  <rect x="438" y="137" width="238" height="14" fill="#79740e" fill-opacity="0.10"/>
+  <text x="470" y="148" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="540" y="148" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">shipped</text>
+  <text x="600" y="148" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">780</text>
+  <text x="652" y="148" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">15:05</text>
+  <line x1="444" y1="154" x2="670" y2="154" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <!-- Row 6 second dual cursor copy -->
+  <rect x="438" y="155" width="238" height="14" fill="#79740e" fill-opacity="0.10"/>
+  <text x="470" y="166" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1003</text>
+  <text x="540" y="166" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">shipped</text>
+  <text x="600" y="166" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">780</text>
+  <text x="652" y="166" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">15:05</text>
+
+  <!-- Destination caption -->
+  <text x="557" y="183" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">without dedup, all four pile up</text>
+
+  <!-- Bottom resolution caption -->
+  <rect x="20" y="200" width="680" height="14" fill="#79740e" fill-opacity="0.05" rx="3"/>
+  <rect x="20" y="200" width="680" height="14" fill="none" stroke="#79740e" stroke-width="0.8" rx="3"/>
+  <text x="360" y="210" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">the dedup view (4.4) or MERGE (4.3) absorbs all four</text>
+</svg>

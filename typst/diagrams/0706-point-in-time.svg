@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect x="0" y="0" width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Point-in-time from an append-only event log</text>
+  <text x="360" y="32" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">any as-of date is reconstructable by summing movements &#8804; that date</text>
+
+  <!-- Entity label -->
+  <text x="40" y="55" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">inventory_movements</text>
+  <text x="40" y="66" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">SKU=A100 / W1</text>
+
+  <!-- Timeline axis -->
+  <line x1="170" y1="110" x2="700" y2="110" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="700,107 708,110 700,113" fill="#d5c4a1"/>
+
+  <!-- Month tick labels -->
+  <g fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">
+    <text x="190" y="128" text-anchor="middle">Jan 1</text>
+    <text x="370" y="128" text-anchor="middle">Jan 20</text>
+    <text x="500" y="128" text-anchor="middle">Feb 1</text>
+    <text x="630" y="128" text-anchor="middle">Feb 15</text>
+  </g>
+  <g stroke="#d5c4a1" stroke-width="0.8">
+    <line x1="190" y1="107" x2="190" y2="113"/>
+    <line x1="370" y1="107" x2="370" y2="113"/>
+    <line x1="500" y1="107" x2="500" y2="113"/>
+    <line x1="630" y1="107" x2="630" y2="113"/>
+  </g>
+
+  <!-- Event positions (linear mapping Jan 1 = 190, Feb 15 = 630, ~9.78 px/day) -->
+  <!-- Jan 5: 190 + 4*9.78  = 229 -->
+  <!-- Jan 10: 190 + 9*9.78 = 278 -->
+  <!-- Jan 15: 190 + 14*9.78= 327 -->
+  <!-- Jan 20: 190 + 19*9.78= 376 -->
+  <!-- Feb 1:  190 + 31*9.78= 493 -->
+
+  <!-- As-of line 1: Jan 18 (between Jan 15 and Jan 20) ~ 190 + 17*9.78 = 356 -->
+  <line x1="356" y1="40" x2="356" y2="180" stroke="#9d0006" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="328" y="40" width="56" height="13" fill="#ffffff" rx="2"/>
+  <text x="356" y="50" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">as-of Jan 18</text>
+
+  <!-- As-of line 2: Feb 5 ~ 190 + 35*9.78 = 532 -->
+  <line x1="532" y1="40" x2="532" y2="180" stroke="#9d0006" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <rect x="504" y="40" width="56" height="13" fill="#ffffff" rx="2"/>
+  <text x="532" y="50" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">as-of Feb 5</text>
+
+  <!-- Event blocks above the line -->
+  <!-- Jan 5: +100 (green) -->
+  <rect x="217" y="76" width="24" height="26" fill="#79740f" opacity="0.16" rx="3"/>
+  <rect x="217" y="76" width="24" height="26" fill="none" stroke="#79740f" stroke-width="0.8" rx="3"/>
+  <text x="229" y="93" text-anchor="middle" fill="#79740f" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">+100</text>
+  <text x="229" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 5</text>
+
+  <!-- Jan 10: -30 (orange) -->
+  <rect x="266" y="76" width="24" height="26" fill="#d65d0e" opacity="0.16" rx="3"/>
+  <rect x="266" y="76" width="24" height="26" fill="none" stroke="#d65d0e" stroke-width="0.8" rx="3"/>
+  <text x="278" y="93" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">-30</text>
+  <text x="278" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 10</text>
+
+  <!-- Jan 15: +50 (green) -->
+  <rect x="315" y="76" width="24" height="26" fill="#79740f" opacity="0.16" rx="3"/>
+  <rect x="315" y="76" width="24" height="26" fill="none" stroke="#79740f" stroke-width="0.8" rx="3"/>
+  <text x="327" y="93" text-anchor="middle" fill="#79740f" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">+50</text>
+  <text x="327" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 15</text>
+
+  <!-- Jan 20: -10 (orange) -->
+  <rect x="364" y="76" width="24" height="26" fill="#d65d0e" opacity="0.16" rx="3"/>
+  <rect x="364" y="76" width="24" height="26" fill="none" stroke="#d65d0e" stroke-width="0.8" rx="3"/>
+  <text x="376" y="93" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">-10</text>
+  <text x="376" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 20</text>
+
+  <!-- Feb 1: -20 (orange) -->
+  <rect x="481" y="76" width="24" height="26" fill="#d65d0e" opacity="0.16" rx="3"/>
+  <rect x="481" y="76" width="24" height="26" fill="none" stroke="#d65d0e" stroke-width="0.8" rx="3"/>
+  <text x="493" y="93" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">-20</text>
+  <text x="493" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Feb 1</text>
+
+  <!-- Reconstructed state boxes below the line -->
+  <!-- As-of Jan 18: 100 - 30 + 50 = 120 -->
+  <rect x="395" y="142" width="96" height="36" fill="#458588" opacity="0.08" rx="4"/>
+  <rect x="395" y="142" width="96" height="36" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <text x="443" y="155" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">state @ Jan 18</text>
+  <text x="443" y="167" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">100 - 30 + 50</text>
+  <text x="443" y="176" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">qty = 120</text>
+
+  <!-- Connector from Jan 18 line to state box -->
+  <path d="M 356,165 L 395,165" stroke="#458588" stroke-width="0.8" fill="none" stroke-dasharray="2,2"/>
+
+  <!-- As-of Feb 5: 120 - 10 - 20 = 90 (actually 100-30+50-10-20=90) -->
+  <rect x="571" y="142" width="116" height="36" fill="#458588" opacity="0.08" rx="4"/>
+  <rect x="571" y="142" width="116" height="36" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <text x="629" y="155" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">state @ Feb 5</text>
+  <text x="629" y="167" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">100 - 30 + 50 - 10 - 20</text>
+  <text x="629" y="176" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">qty = 90</text>
+
+  <!-- Connector from Feb 5 line to state box -->
+  <path d="M 532,165 L 571,165" stroke="#458588" stroke-width="0.8" fill="none" stroke-dasharray="2,2"/>
+
+  <!-- Side labels: above = events, below = derived state -->
+  <text x="165" y="89" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">events</text>
+  <text x="165" y="164" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">derived state</text>
+
+  <!-- Bottom caption / legend -->
+  <rect x="40" y="200" width="10" height="8" fill="#79740f" opacity="0.16" rx="2" stroke="#79740f" stroke-width="0.6"/>
+  <text x="55" y="207" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">stock-in</text>
+
+  <rect x="105" y="200" width="10" height="8" fill="#d65d0e" opacity="0.16" rx="2" stroke="#d65d0e" stroke-width="0.6"/>
+  <text x="120" y="207" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">stock-out</text>
+
+  <text x="700" y="207" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">snapshots are derivable; events are not</text>
+</svg>

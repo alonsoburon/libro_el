@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="260" viewBox="0 0 720 260">
+  <rect x="0" y="0" width="720" height="260" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">The lies sources tell: what they claim vs what actually happens</text>
+
+  <!-- Column headers -->
+  <rect x="20" y="30" width="305" height="20" fill="#ebdbb2" opacity="0.5" rx="3"/>
+  <rect x="335" y="30" width="365" height="20" fill="#d65d0e" opacity="0.12" rx="3"/>
+  <text x="30" y="44" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600" letter-spacing="0.5">CLAIM</text>
+  <text x="345" y="44" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600" letter-spacing="0.5">REALITY</text>
+
+  <!-- Row 1: schema stable -->
+  <rect x="20" y="55" width="305" height="32" fill="#ebdbb2" opacity="0.18" rx="3"/>
+  <rect x="335" y="55" width="365" height="32" fill="#d65d0e" opacity="0.08" rx="3"/>
+  <text x="30" y="69" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">&#x2713;</text>
+  <text x="44" y="69" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-style="italic">&#x201C;The schema is stable.&#x201D;</text>
+  <text x="44" y="81" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">documented, agreed, signed off</text>
+  <text x="345" y="69" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="359" y="69" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5">until a column appears next quarter.</text>
+  <text x="359" y="81" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">products gains <tspan font-family="monospace" fill="#d65d0e">discontinued_at</tspan>, no migration notice</text>
+
+  <!-- Row 2: updated_at reliable -->
+  <rect x="20" y="91" width="305" height="32" fill="#ebdbb2" opacity="0.18" rx="3"/>
+  <rect x="335" y="91" width="365" height="32" fill="#d65d0e" opacity="0.08" rx="3"/>
+  <text x="30" y="105" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">&#x2713;</text>
+  <text x="44" y="105" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-style="italic">&#x201C;<tspan font-family="monospace" font-style="normal">updated_at</tspan> is reliable.&#x201D;</text>
+  <text x="44" y="117" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">trigger updates it on every write</text>
+  <text x="345" y="105" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="359" y="105" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5">until a bulk update bypasses the trigger.</text>
+  <text x="359" y="117" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">ops script touches 50k rows, cursor misses them all</text>
+
+  <!-- Row 3: PKs unique -->
+  <rect x="20" y="127" width="305" height="32" fill="#ebdbb2" opacity="0.18" rx="3"/>
+  <rect x="335" y="127" width="365" height="32" fill="#d65d0e" opacity="0.08" rx="3"/>
+  <text x="30" y="141" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">&#x2713;</text>
+  <text x="44" y="141" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-style="italic">&#x201C;Primary keys are unique and stable.&#x201D;</text>
+  <text x="44" y="153" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">email serves as the customer key</text>
+  <text x="345" y="141" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="359" y="141" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5">until a customer registers twice with the same email.</text>
+  <text x="359" y="153" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">no unique index, merge upsert silently collapses two people</text>
+
+  <!-- Row 4: no deletes -->
+  <rect x="20" y="163" width="305" height="32" fill="#ebdbb2" opacity="0.18" rx="3"/>
+  <rect x="335" y="163" width="365" height="32" fill="#d65d0e" opacity="0.08" rx="3"/>
+  <text x="30" y="177" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">&#x2713;</text>
+  <text x="44" y="177" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-style="italic">&#x201C;Deletes don&#x2019;t happen, we use soft deletes.&#x201D;</text>
+  <text x="44" y="189" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5"><tspan font-family="monospace">is_active = false</tspan> is the policy</text>
+  <text x="345" y="177" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="359" y="177" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5">until support hard-deletes a draft invoice.</text>
+  <text x="359" y="189" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">row vanishes from source, destination keeps a ghost</text>
+
+  <!-- Row 5: timezones -->
+  <rect x="20" y="199" width="305" height="32" fill="#ebdbb2" opacity="0.18" rx="3"/>
+  <rect x="335" y="199" width="365" height="32" fill="#d65d0e" opacity="0.08" rx="3"/>
+  <text x="30" y="213" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">&#x2713;</text>
+  <text x="44" y="213" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-style="italic">&#x201C;Timestamps have timezones.&#x201D;</text>
+  <text x="44" y="225" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">everything is in UTC, the docs say so</text>
+  <text x="345" y="213" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="359" y="213" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5">until you find naive <tspan font-family="monospace" fill="#d65d0e">TIMESTAMP</tspan> storing local time.</text>
+  <text x="359" y="225" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">BigQuery treats it as UTC, every value is off by hours</text>
+
+  <!-- Row 6: data clean -->
+  <rect x="20" y="235" width="305" height="22" fill="#ebdbb2" opacity="0.18" rx="3"/>
+  <rect x="335" y="235" width="365" height="22" fill="#d65d0e" opacity="0.08" rx="3"/>
+  <text x="30" y="249" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">&#x2713;</text>
+  <text x="44" y="249" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" font-style="italic">&#x201C;The data is clean.&#x201D;</text>
+  <text x="345" y="249" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="359" y="249" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5">until you find <tspan font-family="monospace" fill="#d65d0e">-1</tspan> quantities, <tspan font-family="monospace" fill="#d65d0e">NULL</tspan> FKs, 5 spellings of &#x201C;active&#x201D;.</text>
+</svg>

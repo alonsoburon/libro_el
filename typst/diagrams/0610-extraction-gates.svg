@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect x="0" y="0" width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Extraction status gates: resolving zero-row ambiguity</text>
+
+  <!-- START node -->
+  <rect x="280" y="30" width="160" height="30" fill="#ebdbb2" stroke="#7c6f64" stroke-width="1.2" rx="15"/>
+  <text x="360" y="49" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Extraction returned 0 rows</text>
+
+  <line x1="360" y1="60" x2="360" y2="72" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="357,71 360,77 363,71" fill="#7c6f64"/>
+
+  <!-- Decision 1: known-empty period -->
+  <rect x="265" y="77" width="190" height="30" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="360" y="90" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Known-empty period?</text>
+  <text x="360" y="101" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">weekend / holiday / idle source</text>
+
+  <!-- D1 YES: straight left to expected_empty terminal -->
+  <line x1="265" y1="92" x2="207" y2="92" stroke="#79740e" stroke-width="1.2"/>
+  <polygon points="208,89 202,92 208,95" fill="#79740e"/>
+  <text x="234" y="88" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">YES</text>
+
+  <!-- D1 NO down -->
+  <line x1="360" y1="107" x2="360" y2="118" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="357,117 360,123 363,117" fill="#7c6f64"/>
+  <text x="370" y="116" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">NO</text>
+
+  <!-- Decision 2: baseline non-zero -->
+  <rect x="265" y="123" width="190" height="30" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="360" y="136" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Baseline rows &gt; 0?</text>
+  <text x="360" y="147" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">recent historical row count</text>
+
+  <!-- D2 NO: straight left to baseline_zero terminal -->
+  <line x1="265" y1="138" x2="207" y2="138" stroke="#79740e" stroke-width="1.2"/>
+  <polygon points="208,135 202,138 208,141" fill="#79740e"/>
+  <text x="234" y="134" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">NO</text>
+
+  <!-- D2 YES down -->
+  <line x1="360" y1="153" x2="360" y2="164" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="357,163 360,169 363,163" fill="#7c6f64"/>
+  <text x="370" y="162" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">YES</text>
+
+  <!-- Decision 3: extraction succeeded -->
+  <rect x="265" y="169" width="190" height="30" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="360" y="182" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Query succeeded?</text>
+  <text x="360" y="193" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">no timeout, no error</text>
+
+  <!-- D3 YES: route right to zero_rows_suspicious (emphasized orange) -->
+  <line x1="455" y1="180" x2="513" y2="180" stroke="#d65d0e" stroke-width="1.8"/>
+  <polygon points="512,177 519,180 512,183" fill="#d65d0e"/>
+  <text x="484" y="176" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">YES</text>
+
+  <!-- D3 NO: route right and down to extraction_failure (red) -->
+  <line x1="455" y1="190" x2="475" y2="190" stroke="#9d0006" stroke-width="1"/>
+  <line x1="475" y1="190" x2="475" y2="217" stroke="#9d0006" stroke-width="1"/>
+  <line x1="475" y1="217" x2="513" y2="217" stroke="#9d0006" stroke-width="1"/>
+  <polygon points="512,214 519,217 512,220" fill="#9d0006"/>
+  <text x="461" y="208" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">NO</text>
+
+  <!-- ═══ Terminals on the LEFT (PASS) ═══ -->
+  <!-- expected_empty: aligned with Decision 1 -->
+  <rect x="60" y="77" width="142" height="30" fill="#79740e" opacity="0.08" rx="4"/>
+  <rect x="60" y="77" width="142" height="30" fill="none" stroke="#79740e" stroke-width="1.2" rx="4"/>
+  <text x="72" y="92" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">✓</text>
+  <text x="86" y="91" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="700">PASS</text>
+  <text x="118" y="91" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">· no-op load</text>
+  <text x="135" y="102" text-anchor="middle" fill="#7c6f64" font-family="monospace" font-size="8.5">expected_empty</text>
+
+  <!-- baseline_zero: aligned with Decision 2 -->
+  <rect x="60" y="123" width="142" height="30" fill="#79740e" opacity="0.08" rx="4"/>
+  <rect x="60" y="123" width="142" height="30" fill="none" stroke="#79740e" stroke-width="1.2" rx="4"/>
+  <text x="72" y="138" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">✓</text>
+  <text x="86" y="137" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="700">PASS</text>
+  <text x="118" y="137" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">· sparse table</text>
+  <text x="135" y="148" text-anchor="middle" fill="#7c6f64" font-family="monospace" font-size="8.5">baseline_zero</text>
+
+  <!-- ═══ Terminals on the RIGHT (BLOCK) ═══ -->
+  <!-- zero_rows_suspicious: EMPHASIZED (the main case the section teaches) -->
+  <rect x="519" y="160" width="190" height="40" fill="#d65d0e" opacity="0.12" rx="4"/>
+  <rect x="519" y="160" width="190" height="40" fill="none" stroke="#d65d0e" stroke-width="2" rx="4"/>
+  <text x="531" y="179" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="546" y="178" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="700">BLOCK load</text>
+  <text x="614" y="178" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">main case</text>
+  <text x="614" y="192" text-anchor="middle" fill="#7c6f64" font-family="monospace" font-size="9" font-weight="600">zero_rows_suspicious</text>
+
+  <!-- extraction_failure -->
+  <rect x="519" y="206" width="190" height="24" fill="#9d0006" opacity="0.07" rx="4"/>
+  <rect x="519" y="206" width="190" height="24" fill="none" stroke="#9d0006" stroke-width="1" rx="4"/>
+  <text x="531" y="223" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">✗</text>
+  <text x="546" y="222" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="700">BLOCK</text>
+  <text x="585" y="222" fill="#7c6f64" font-family="monospace" font-size="8.5">extraction_failure</text>
+</svg>

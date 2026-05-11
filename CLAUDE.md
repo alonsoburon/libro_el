@@ -129,11 +129,15 @@ SELECT id, updated_at FROM orders WHERE id IN (1, 2);
 ```
 
 #### Diagrams
-- Use Mermaid fenced blocks (` ```mermaid `)
+The book has two diagram surfaces:
+
+**Obsidian vault (draft / research notes)** -- use Mermaid fenced blocks (` ```mermaid `):
 - Prefer flowchart TD for data flows, erDiagram for schemas, sequenceDiagram for process interactions
 - Keep diagrams simple, max 10-12 nodes. Split complex flows into multiple diagrams.
 - Use consistent node naming: `src_*` for sources, `stg_*` for staging, `tgt_*` for targets
 - Line breaks inside node labels: use `<br>` (HTML), never `\n`. Mermaid does not support `\n`.
+
+**Published Typst book (`typst/book.typ`)** -- hand-crafted SVGs in `typst/diagrams/`, embedded via `#figure(image("diagrams/XXYY-name.svg", width: 95%))`. See the **SVG Diagram Conventions** section below for the full style spec.
 
 #### Corridors in Pattern Files
 - Most patterns apply to both corridors (Transactional → Columnar and Transactional → Transactional).
@@ -221,9 +225,48 @@ Decisions made during writing that apply across all chapters. Check these before
 
 ### Publishing Toolchain
 - **Typst** for typesetting and page layout. Screen-first design (SQL codeblocks need width), with print as a secondary output.
-- **Custom SVGs** for charts and diagrams. The `_charts/` framework may be redesigned with a new visual style -- the current aesthetic is not final. Charts are authored externally and embedded into Typst as SVGs.
+- **Hand-crafted SVGs** for charts and diagrams in `typst/diagrams/`. The legacy `_charts/` framework (JS-rendered) is being replaced by direct SVGs -- new diagrams go into `typst/diagrams/`.
 - **CetZ-plot** (Typst library) is available for simple inline data charts that should inherit book typography and colors.
 - Workflow: write prose in Obsidian → import into Typst source files → design reusable layout components → embed SVG charts → `typst compile` → PDF.
+
+#### Build & Render Commands
+```bash
+# Compile the book to PDF (silent on success)
+typst compile typst/book.typ typst/book.pdf
+
+# Watch mode for iterative editing
+typst watch typst/book.typ typst/book.pdf
+
+# Render a single SVG to PNG for visual review (rsvg-convert is available)
+rsvg-convert -w 1080 typst/diagrams/XXYY-name.svg -o /tmp/preview.png
+
+# Validate an SVG before committing
+xmllint --noout typst/diagrams/XXYY-name.svg
+```
+
+When working on diagrams, always render to PNG and visually inspect before declaring done -- subagents writing SVGs by hand routinely produce overlap, clipped text, or routing issues that only show up when rendered.
+
+#### SVG Diagram Conventions
+These invariants are matched across every diagram in `typst/diagrams/` and must be preserved for new ones:
+
+- **Filename**: `XXYY-kebab-case-name.svg` where `XX` is the chapter and `YY` is the section within it (e.g. `0610-extraction-gates.svg` for §6.10).
+- **viewBox**: `0 0 720 H` where `H` is typically 200-240. Width is fixed; height adapts to content.
+- **Palette** (gruvbox light, no other colors):
+  - bg `#ffffff`, header `#ebdbb2`, lines `#d5c4a1`
+  - text `#3c3836`, muted `#7c6f64`, dim `#928374`
+  - blue `#458588`, orange `#d65d0e`, green `#79740e`, red `#9d0006`, yellow `#d79921`
+  - Fills usually at opacity 0.06-0.30
+- **Font**: `'Segoe UI', system-ui, sans-serif` throughout. Title centered at y=18, font-size 13, fill `#7c6f64`, letter-spacing 0.3.
+- **No em-dashes (`—`)** anywhere in the SVG. Use `--` in body text (matches the SQL-comment convention from the book's punctuation palette).
+- **XML comments must NOT contain `--`** -- XML rejects double-hyphen inside comments. Use `===` or plain text instead.
+- **Embedding**: `#figure(image("diagrams/XXYY-name.svg", width: 95%))`, placed inside a section's prose right after the paragraph that introduces the concept.
+- **Recurring visual idioms** (reuse when fit):
+  - *Nested layers / tiers where each catches what the previous missed*: see `0608-tiered-freshness.svg`, `0614-reconciliation-levels.svg`
+  - *Decision-tree flowcharts with colored terminals*: see `0610-extraction-gates.svg`, `0615-corruption-recovery.svg`
+  - *Side-by-side correct vs wrong*: see `0506-charset-encoding.svg`, `0704-analyst-queries.svg`
+  - *Multi-table flow with curved connecting arrows*: see `0207-activity-driven.svg`, `0613-duplicate-sources.svg`
+
+When in doubt about a new diagram, find the closest existing idiom and adapt it -- consistency across the book is itself a feature.
 
 ### Key Terminology
 - **EL**: Extract-Load with zero transformation (theoretical ideal)

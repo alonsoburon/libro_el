@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="250" viewBox="0 0 720 250">
+  <rect x="0" y="0" width="720" height="250" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Partition pruning: same query, different filter, different bill</text>
+
+  <!-- ============ LEFT PANEL (no filter, expensive) ============ -->
+  <text x="180" y="42" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">No partition filter</text>
+  <text x="33" y="42" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600">&#x2717;</text>
+
+  <!-- Partitioned table (left): 10 monthly blocks, all red -->
+  <rect x="20" y="54" width="320" height="60" fill="#f9f5d7" stroke="#9d0006" stroke-width="1" rx="4"/>
+  <rect x="20" y="54" width="320" height="14" fill="#ebdbb2" rx="4"/>
+  <rect x="20" y="66" width="320" height="2" fill="#ebdbb2"/>
+  <text x="180" y="64" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">orders  (partitioned by order_date, monthly)</text>
+
+  <!-- 10 partition blocks: red fill -->
+  <rect x="26" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="58" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="90" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="122" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="154" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="186" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="218" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="250" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="282" y="74" width="28" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+  <rect x="314" y="74" width="20" height="34" fill="#9d0006" opacity="0.28" stroke="#9d0006" stroke-width="0.8" rx="2"/>
+
+  <!-- Month labels -->
+  <text x="40" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-01</text>
+  <text x="72" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-02</text>
+  <text x="104" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-03</text>
+  <text x="136" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-04</text>
+  <text x="168" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-05</text>
+  <text x="200" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-06</text>
+  <text x="232" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-07</text>
+  <text x="264" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-08</text>
+  <text x="296" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-09</text>
+  <text x="324" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-10</text>
+
+  <!-- SQL caption (left) -->
+  <rect x="20" y="134" width="320" height="22" fill="#9d0006" opacity="0.06" stroke="#9d0006" stroke-width="0.8" rx="3"/>
+  <text x="30" y="149" fill="#9d0006" font-family="'Consolas', 'Courier New', monospace" font-size="9">SELECT * FROM orders;</text>
+
+  <!-- Bytes scanned (left) -->
+  <text x="20" y="174" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Partitions scanned:</text>
+  <text x="125" y="174" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">10 of 10  (full table)</text>
+  <text x="20" y="188" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Bytes scanned:</text>
+  <text x="125" y="188" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">500 GB</text>
+  <text x="265" y="188" text-anchor="end" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="600">$$$</text>
+
+  <!-- ============ Vertical divider ============ -->
+  <line x1="360" y1="36" x2="360" y2="200" stroke="#d5c4a1" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- ============ RIGHT PANEL (with filter, cheap) ============ -->
+  <text x="540" y="42" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">With partition filter</text>
+  <text x="393" y="42" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600">&#x2713;</text>
+
+  <!-- Partitioned table (right) -->
+  <rect x="380" y="54" width="320" height="60" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="380" y="54" width="320" height="14" fill="#ebdbb2" rx="4"/>
+  <rect x="380" y="66" width="320" height="2" fill="#ebdbb2"/>
+  <text x="540" y="64" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">orders  (partitioned by order_date, monthly)</text>
+
+  <!-- 10 partition blocks: 8 dimmed/pruned, 2 green (2024-09, 2024-10) -->
+  <rect x="386" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="418" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="450" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="482" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="514" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="546" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="578" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <rect x="610" y="74" width="28" height="34" fill="#928374" opacity="0.10" stroke="#928374" stroke-width="0.6" stroke-dasharray="2,2" rx="2"/>
+  <!-- Green (scanned) -->
+  <rect x="642" y="74" width="28" height="34" fill="#79740e" opacity="0.30" stroke="#79740e" stroke-width="1" rx="2"/>
+  <rect x="674" y="74" width="20" height="34" fill="#79740e" opacity="0.30" stroke="#79740e" stroke-width="1" rx="2"/>
+
+  <!-- Month labels (right) -->
+  <text x="400" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-01</text>
+  <text x="432" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-02</text>
+  <text x="464" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-03</text>
+  <text x="496" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-04</text>
+  <text x="528" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-05</text>
+  <text x="560" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-06</text>
+  <text x="592" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-07</text>
+  <text x="624" y="122" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">2024-08</text>
+  <text x="656" y="122" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="6" font-weight="600">2024-09</text>
+  <text x="684" y="122" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="6" font-weight="600">2024-10</text>
+
+  <!-- Pruned bracket annotation -->
+  <text x="496" y="135" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5" font-style="italic">pruned (not read)</text>
+  <text x="670" y="135" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5" font-weight="600">scanned</text>
+
+  <!-- SQL caption (right) -->
+  <rect x="380" y="140" width="320" height="22" fill="#79740e" opacity="0.06" stroke="#79740e" stroke-width="0.8" rx="3"/>
+  <text x="388" y="155" fill="#79740e" font-family="'Consolas', 'Courier New', monospace" font-size="9">SELECT * FROM orders WHERE order_date &gt;= '2024-09-01';</text>
+
+  <!-- Bytes scanned (right) -->
+  <text x="380" y="180" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Partitions scanned:</text>
+  <text x="485" y="180" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">2 of 10  (rest pruned)</text>
+  <text x="380" y="194" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Bytes scanned:</text>
+  <text x="485" y="194" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">50 GB</text>
+  <text x="625" y="194" text-anchor="end" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="600">$</text>
+  <text x="700" y="194" text-anchor="end" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">(10x cheaper)</text>
+
+  <!-- ============ Bottom annotation: require_partition_filter ============ -->
+  <rect x="20" y="212" width="680" height="28" fill="#d79921" opacity="0.06" stroke="#d79921" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+  <text x="32" y="223" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">advanced</text>
+  <text x="360" y="223" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">require_partition_filter = TRUE  (BigQuery)</text>
+  <text x="360" y="234" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">enforces the filter at the table level: consumers literally cannot run a full scan; unfiltered queries fail at parse time.</text>
+</svg>

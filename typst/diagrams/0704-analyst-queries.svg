@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect x="0" y="0" width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Current state from append-only: the analyst foot-gun made visible</text>
+
+  <!-- LEFT panel: naive / wrong -->
+  <rect x="20" y="32" width="335" height="170" fill="#fbf1c7" stroke="#9d0006" stroke-width="1" rx="4"/>
+  <rect x="20" y="32" width="335" height="18" fill="#9d0006" opacity="0.12" rx="4"/>
+  <rect x="20" y="44" width="335" height="6" fill="#9d0006" opacity="0.12"/>
+  <text x="32" y="45" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">&#x2717;  Naive: SELECT * FROM orders_log</text>
+
+  <!-- SQL block left -->
+  <rect x="30" y="56" width="315" height="32" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="0.5" rx="3"/>
+  <text x="38" y="69" fill="#3c3836" font-family="'Consolas', 'Menlo', monospace" font-size="8.5">SELECT order_id, status, total FROM orders_log</text>
+  <text x="38" y="82" fill="#3c3836" font-family="'Consolas', 'Menlo', monospace" font-size="8.5">WHERE order_id = 42;</text>
+
+  <!-- Result table left -->
+  <rect x="30" y="94" width="315" height="74" fill="#ffffff" stroke="#d5c4a1" stroke-width="0.8" rx="3"/>
+  <rect x="30" y="94" width="315" height="14" fill="#ebdbb2" rx="3"/>
+  <rect x="30" y="104" width="315" height="4" fill="#ebdbb2"/>
+  <text x="55" y="104" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="120" y="104" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="190" y="104" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">total</text>
+  <text x="285" y="104" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_extracted_at</text>
+
+  <text x="55" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">42</text>
+  <text x="120" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">pending</text>
+  <text x="190" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">100.00</text>
+  <text x="285" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">2026-05-08 02:00</text>
+  <line x1="36" y1="124" x2="340" y2="124" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="55" y="134" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">42</text>
+  <text x="120" y="134" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">confirmed</text>
+  <text x="190" y="134" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">100.00</text>
+  <text x="285" y="134" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">2026-05-09 02:00</text>
+  <line x1="36" y1="138" x2="340" y2="138" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="55" y="148" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">42</text>
+  <text x="120" y="148" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">shipped</text>
+  <text x="190" y="148" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">100.00</text>
+  <text x="285" y="148" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">2026-05-10 02:00</text>
+  <line x1="36" y1="152" x2="340" y2="152" stroke="#d5c4a1" stroke-width="0.3"/>
+
+  <text x="55" y="162" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">42</text>
+  <text x="120" y="162" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">delivered</text>
+  <text x="190" y="162" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">100.00</text>
+  <text x="285" y="162" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">2026-05-11 02:00</text>
+
+  <!-- 4x callout -->
+  <rect x="30" y="174" width="68" height="20" fill="#9d0006" opacity="0.12" rx="3"/>
+  <text x="64" y="187" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">4 rows / 1 order</text>
+  <text x="104" y="187" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">SUM(total) inflated 4x.</text>
+  <text x="252" y="187" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">Scanned: 50 GB</text>
+
+  <!-- RIGHT panel: correct -->
+  <rect x="365" y="32" width="335" height="170" fill="#fbf1c7" stroke="#79740e" stroke-width="1" rx="4"/>
+  <rect x="365" y="32" width="335" height="18" fill="#79740e" opacity="0.12" rx="4"/>
+  <rect x="365" y="44" width="335" height="6" fill="#79740e" opacity="0.12"/>
+  <text x="377" y="45" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">&#x2713;  Correct: query the dedup view, latest only</text>
+
+  <!-- SQL block right -->
+  <rect x="375" y="56" width="315" height="58" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="0.5" rx="3"/>
+  <text x="383" y="69" fill="#3c3836" font-family="'Consolas', 'Menlo', monospace" font-size="8.5">SELECT order_id, status, total FROM orders_log</text>
+  <text x="383" y="82" fill="#3c3836" font-family="'Consolas', 'Menlo', monospace" font-size="8.5">WHERE order_id = 42</text>
+  <text x="383" y="95" fill="#3c3836" font-family="'Consolas', 'Menlo', monospace" font-size="8.5">QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id</text>
+  <text x="383" y="108" fill="#3c3836" font-family="'Consolas', 'Menlo', monospace" font-size="8.5">  ORDER BY _extracted_at DESC) = 1;</text>
+
+  <!-- or: dedup view -->
+  <text x="375" y="124" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">or simply: SELECT * FROM orders WHERE order_id = 42;  (dedup view from 7.3)</text>
+
+  <!-- Result table right -->
+  <rect x="375" y="130" width="315" height="38" fill="#ffffff" stroke="#d5c4a1" stroke-width="0.8" rx="3"/>
+  <rect x="375" y="130" width="315" height="14" fill="#ebdbb2" rx="3"/>
+  <rect x="375" y="140" width="315" height="4" fill="#ebdbb2"/>
+  <text x="400" y="140" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">order_id</text>
+  <text x="465" y="140" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">status</text>
+  <text x="535" y="140" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">total</text>
+  <text x="630" y="140" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_extracted_at</text>
+
+  <text x="400" y="156" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">42</text>
+  <text x="465" y="156" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">delivered</text>
+  <text x="535" y="156" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">100.00</text>
+  <text x="630" y="156" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">2026-05-11 02:00</text>
+
+  <!-- 1 row callout -->
+  <rect x="375" y="174" width="68" height="20" fill="#79740e" opacity="0.12" rx="3"/>
+  <text x="409" y="187" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">1 row, latest</text>
+  <text x="449" y="187" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">current state. Aggregations correct.</text>
+  <text x="630" y="187" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">Scanned: ~12 GB</text>
+
+  <!-- Bottom shared note -->
+  <rect x="20" y="210" width="680" height="20" fill="#79740e" opacity="0.06" rx="3"/>
+  <rect x="20" y="210" width="680" height="20" fill="none" stroke="#79740e" stroke-width="1" rx="3"/>
+  <text x="360" y="224" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">the dedup view (7.3) is the contract surface for analysts; raw _log tables are not safe to query directly</text>
+</svg>

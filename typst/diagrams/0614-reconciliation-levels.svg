@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect x="0" y="0" width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Reconciliation levels: each catches what the previous missed</text>
+
+  <!-- Cost axis -->
+  <line x1="60" y1="44" x2="690" y2="44" stroke="#d5c4a1" stroke-width="1"/>
+  <polygon points="690,41 698,44 690,47" fill="#d5c4a1"/>
+  <text x="100" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">cheap</text>
+  <line x1="100" y1="41" x2="100" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="360" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">medium</text>
+  <line x1="360" y1="41" x2="360" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+  <text x="620" y="38" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">expensive</text>
+  <line x1="620" y1="41" x2="620" y2="47" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- Level 1: row count (narrow, top) -->
+  <rect x="460" y="54" width="200" height="30" fill="#d65d0e" opacity="0.06" rx="4"/>
+  <rect x="460" y="54" width="200" height="30" fill="none" stroke="#d65d0e" stroke-width="1" rx="4"/>
+  <rect x="461" y="55" width="3" height="28" fill="#d65d0e" opacity="0.3" rx="1"/>
+  <text x="560" y="68" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Level 1: row count -- daily, cheap</text>
+  <text x="560" y="78" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">catches volume drops, missing batches</text>
+
+  <!-- Level 2: sum / checksum (medium width, middle) -->
+  <rect x="260" y="96" width="400" height="30" fill="#d79921" opacity="0.06" rx="4"/>
+  <rect x="260" y="96" width="400" height="30" fill="none" stroke="#d79921" stroke-width="1" rx="4"/>
+  <rect x="261" y="97" width="3" height="28" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="460" y="110" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Level 2: sum / checksum on key columns -- weekly, medium</text>
+  <text x="460" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">catches silent value drift; misses identity swaps that net to the same total</text>
+
+  <!-- Level 3: PK-by-PK comparison (widest, bottom) -->
+  <rect x="60" y="138" width="600" height="30" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="60" y="138" width="600" height="30" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <rect x="61" y="139" width="3" height="28" fill="#458588" opacity="0.3" rx="1"/>
+  <text x="360" y="152" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Level 3: PK-by-PK comparison -- on demand, expensive</text>
+  <text x="360" y="162" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">catches identity drift, missing/extra rows by primary key; comprehensive but slow</text>
+
+  <!-- Cascade arrows on the left margin -->
+  <text x="38" y="68" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">volume</text>
+  <text x="38" y="78" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">first pass</text>
+
+  <line x1="38" y1="84" x2="38" y2="102" stroke="#d5c4a1" stroke-width="0.8"/>
+  <polygon points="35,100 38,106 41,100" fill="#d5c4a1"/>
+
+  <text x="38" y="114" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">values</text>
+
+  <line x1="38" y1="120" x2="38" y2="144" stroke="#d5c4a1" stroke-width="0.8"/>
+  <polygon points="35,142 38,148 41,142" fill="#d5c4a1"/>
+
+  <text x="38" y="156" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">identity</text>
+  <text x="38" y="166" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="6">last resort</text>
+
+  <!-- Legend -->
+  <rect x="60" y="196" width="3" height="8" fill="#d65d0e" opacity="0.3" rx="1"/>
+  <text x="69" y="203" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">level 1: row count, runs daily</text>
+
+  <rect x="260" y="196" width="3" height="8" fill="#d79921" opacity="0.3" rx="1"/>
+  <text x="269" y="203" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">level 2: checksum, catches what level 1 missed</text>
+
+  <rect x="510" y="196" width="3" height="8" fill="#458588" opacity="0.3" rx="1"/>
+  <text x="519" y="203" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">level 3: PK diff, catches everything</text>
+</svg>

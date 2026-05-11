@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Recovery from corruption: triage by blast radius</text>
+
+  <!-- START node -->
+  <rect x="280" y="28" width="160" height="26" fill="#ebdbb2" stroke="#7c6f64" stroke-width="1.2" rx="13"/>
+  <text x="360" y="45" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Corruption detected</text>
+
+  <line x1="360" y1="54" x2="360" y2="64" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="357,63 360,69 363,63" fill="#7c6f64"/>
+
+  <!-- Triage 1: scope -->
+  <rect x="265" y="69" width="190" height="28" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="360" y="81" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Scope of corruption?</text>
+  <text x="360" y="92" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">one table vs. pipeline-wide</text>
+
+  <!-- Branch left: single table -->
+  <line x1="265" y1="83" x2="180" y2="83" stroke="#7c6f64" stroke-width="1"/>
+  <line x1="180" y1="83" x2="180" y2="103" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="177,102 180,108 183,102" fill="#7c6f64"/>
+  <text x="222" y="80" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">single table</text>
+
+  <!-- Branch right: multiple tables -->
+  <line x1="455" y1="83" x2="540" y2="83" stroke="#7c6f64" stroke-width="1"/>
+  <line x1="540" y1="83" x2="540" y2="103" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="537,102 540,108 543,102" fill="#7c6f64"/>
+  <text x="498" y="80" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">multiple / pipeline-wide</text>
+
+  <!-- Triage 2a: source recoverable -->
+  <rect x="95" y="108" width="170" height="28" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="180" y="120" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Source still has it?</text>
+  <text x="180" y="131" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">re-extract feasible</text>
+
+  <!-- Triage 2a YES down-left to re-extract -->
+  <line x1="135" y1="136" x2="135" y2="156" stroke="#79740e" stroke-width="1.2"/>
+  <polygon points="132,155 135,161 138,155" fill="#79740e"/>
+  <text x="118" y="148" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">YES</text>
+
+  <!-- Triage 2a NO down-right to backup -->
+  <line x1="225" y1="136" x2="225" y2="156" stroke="#d65d0e" stroke-width="1"/>
+  <polygon points="222,155 225,161 228,155" fill="#d65d0e"/>
+  <text x="242" y="148" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">NO</text>
+
+  <!-- Triage 2b: still spreading -->
+  <rect x="455" y="108" width="170" height="28" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="540" y="120" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Still spreading?</text>
+  <text x="540" y="131" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">active vs. contained</text>
+
+  <!-- Triage 2b YES down-left to halt (red) -->
+  <line x1="495" y1="136" x2="495" y2="156" stroke="#9d0006" stroke-width="1.4"/>
+  <polygon points="492,155 495,161 498,155" fill="#9d0006"/>
+  <text x="478" y="148" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">YES</text>
+
+  <!-- Triage 2b NO down-right to parallel re-extract (orange) -->
+  <line x1="585" y1="136" x2="585" y2="156" stroke="#d65d0e" stroke-width="1"/>
+  <polygon points="582,155 585,161 588,155" fill="#d65d0e"/>
+  <text x="602" y="148" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">NO</text>
+
+  <!-- Terminal 1: re-extract range (green) -->
+  <rect x="30" y="161" width="155" height="34" fill="#79740e" opacity="0.10" rx="4"/>
+  <rect x="30" y="161" width="155" height="34" fill="none" stroke="#79740e" stroke-width="1.4" rx="4"/>
+  <rect x="30" y="161" width="4" height="34" fill="#79740e" rx="1"/>
+  <text x="40" y="175" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">clean recovery</text>
+  <text x="40" y="187" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Re-extract affected range</text>
+
+  <!-- Terminal 2: restore from backup (orange) -->
+  <rect x="190" y="161" width="155" height="34" fill="#d65d0e" opacity="0.10" rx="4"/>
+  <rect x="190" y="161" width="155" height="34" fill="none" stroke="#d65d0e" stroke-width="1.4" rx="4"/>
+  <rect x="190" y="161" width="4" height="34" fill="#d65d0e" rx="1"/>
+  <text x="200" y="175" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">workable</text>
+  <text x="200" y="187" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Restore from backup</text>
+
+  <!-- Terminal 3: halt + isolate (red) -->
+  <rect x="405" y="161" width="155" height="34" fill="#9d0006" opacity="0.10" rx="4"/>
+  <rect x="405" y="161" width="155" height="34" fill="none" stroke="#9d0006" stroke-width="1.6" rx="4"/>
+  <rect x="405" y="161" width="4" height="34" fill="#9d0006" rx="1"/>
+  <text x="415" y="175" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">urgent / degraded</text>
+  <text x="415" y="187" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Halt loads, isolate, re-extract</text>
+
+  <!-- Terminal 4: parallel re-extract (orange) -->
+  <rect x="565" y="161" width="125" height="34" fill="#d65d0e" opacity="0.10" rx="4"/>
+  <rect x="565" y="161" width="125" height="34" fill="none" stroke="#d65d0e" stroke-width="1.4" rx="4"/>
+  <rect x="565" y="161" width="4" height="34" fill="#d65d0e" rx="1"/>
+  <text x="575" y="175" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">workable</text>
+  <text x="575" y="187" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Re-extract in parallel</text>
+
+  <!-- Blast radius band -->
+  <rect x="30" y="201" width="660" height="32" fill="#689d6a" opacity="0.08" rx="4"/>
+  <rect x="30" y="201" width="660" height="32" fill="none" stroke="#689d6a" stroke-width="1" rx="4"/>
+  <text x="40" y="214" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">BLAST RADIUS</text>
+  <text x="130" y="214" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">consumers affected? notify them.</text>
+  <text x="330" y="214" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">reports published? issue correction.</text>
+  <text x="540" y="214" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">time elapsed? shapes the fix.</text>
+  <text x="360" y="227" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic" font-weight="600">every minute the corrupt data sits, the blast radius grows</text>
+</svg>

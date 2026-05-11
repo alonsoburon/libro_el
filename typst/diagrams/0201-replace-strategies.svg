@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect x="0" y="0" width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Replace strategies at the destination: DROP vs TRUNCATE vs DELETE</text>
+
+  <!-- Column geometry: labels 20-170 (150w); col1 175-345 (170w); col2 350-520 (170w); col3 525-695 (170w) -->
+
+  <!-- Strategy headers -->
+  <rect x="175" y="32" width="170" height="26" fill="#9d0006" opacity="0.10" rx="3"/>
+  <rect x="175" y="32" width="170" height="26" fill="none" stroke="#9d0006" stroke-width="1" rx="3"/>
+  <text x="260" y="49" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">DROP + CREATE</text>
+
+  <!-- TRUNCATE highlighted as default -->
+  <rect x="350" y="32" width="170" height="26" fill="#79740e" opacity="0.14" rx="3"/>
+  <rect x="350" y="32" width="170" height="26" fill="none" stroke="#79740e" stroke-width="1.5" rx="3"/>
+  <text x="435" y="49" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">TRUNCATE + INSERT</text>
+
+  <rect x="525" y="32" width="170" height="26" fill="#d79921" opacity="0.10" rx="3"/>
+  <rect x="525" y="32" width="170" height="26" fill="none" stroke="#d79921" stroke-width="1" rx="3"/>
+  <text x="610" y="49" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">DELETE + INSERT</text>
+
+  <!-- "default" badge over TRUNCATE -->
+  <rect x="478" y="22" width="42" height="12" fill="#79740e" rx="2"/>
+  <text x="499" y="31" text-anchor="middle" fill="#ffffff" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">default</text>
+
+  <!-- Vertical dividers (subtle) -->
+  <line x1="170" y1="68" x2="170" y2="218" stroke="#d5c4a1" stroke-width="0.6"/>
+  <line x1="347.5" y1="68" x2="347.5" y2="218" stroke="#d5c4a1" stroke-width="0.6"/>
+  <line x1="522.5" y1="68" x2="522.5" y2="218" stroke="#d5c4a1" stroke-width="0.6"/>
+
+  <!-- ═══ Row 1: Mechanism (y=72-92) ═══ -->
+  <rect x="20" y="68" width="675" height="26" fill="#ebdbb2" opacity="0.25" rx="2"/>
+  <text x="28" y="85" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Mechanism</text>
+
+  <text x="260" y="85" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">recreate table from scratch</text>
+  <text x="435" y="85" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">empty rows, keep schema</text>
+  <text x="610" y="85" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">row-by-row delete</text>
+
+  <!-- ═══ Row 2: What it touches (y=98-160) ═══ -->
+  <text x="28" y="113" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">What it touches</text>
+
+  <!-- sub-labels -->
+  <text x="28" y="128" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">metadata (DDL)</text>
+  <text x="28" y="141" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">data rows</text>
+  <text x="28" y="154" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">indexes</text>
+  <text x="28" y="167" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">grants</text>
+
+  <!-- DROP column -->
+  <text x="186" y="128" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="200" y="128" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">replaced (DDL re-run)</text>
+  <text x="186" y="141" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="200" y="141" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">replaces all</text>
+  <text x="186" y="154" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="200" y="154" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">rebuilds from scratch</text>
+  <text x="186" y="167" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="200" y="167" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">LOST</text>
+
+  <!-- TRUNCATE column -->
+  <text x="361" y="128" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="375" y="128" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">untouched</text>
+  <text x="361" y="141" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2717;</text>
+  <text x="375" y="141" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">replaces all</text>
+  <text x="361" y="154" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="375" y="154" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">cleared, not rebuilt</text>
+  <text x="361" y="167" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="375" y="167" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">preserved</text>
+
+  <!-- DELETE column -->
+  <text x="536" y="128" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="550" y="128" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">untouched</text>
+  <text x="536" y="141" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">~</text>
+  <text x="550" y="141" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">scans + writes per row</text>
+  <text x="536" y="154" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">~</text>
+  <text x="550" y="154" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">maintained (slow)</text>
+  <text x="536" y="167" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="550" y="167" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">preserved</text>
+
+  <!-- separator before atomicity -->
+  <line x1="20" y1="176" x2="695" y2="176" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- ═══ Row 3: Atomicity (y=180-196) ═══ -->
+  <text x="28" y="192" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Atomicity</text>
+
+  <text x="186" y="192" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">~</text>
+  <text x="200" y="192" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">engine-dependent</text>
+
+  <text x="361" y="192" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="375" y="192" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">usually transactional</text>
+
+  <text x="536" y="192" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">&#x2713;</text>
+  <text x="550" y="192" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">always transactional</text>
+
+  <line x1="20" y1="201" x2="695" y2="201" stroke="#d5c4a1" stroke-width="0.5"/>
+
+  <!-- ═══ Row 4: Recommended for (y=205-221) ═══ -->
+  <text x="28" y="217" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9.5" font-weight="600">Recommended for</text>
+
+  <text x="260" y="217" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">last resort</text>
+  <text x="435" y="217" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">full replace default</text>
+  <text x="610" y="217" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">scoped / partial replace</text>
+
+  <!-- Legend -->
+  <text x="20" y="234" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">&#x2713;</text>
+  <text x="30" y="234" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">safe / preserved</text>
+  <text x="125" y="234" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">~</text>
+  <text x="135" y="234" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">partial / conditional</text>
+  <text x="240" y="234" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">&#x2717;</text>
+  <text x="250" y="234" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">lost / destructive</text>
+</svg>

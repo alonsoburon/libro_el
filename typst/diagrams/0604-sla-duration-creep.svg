@@ -30,8 +30,8 @@
 
   <!-- Buffer zone between SLA and comfortable -->
   <!-- "Comfortable" at ~30 min: y=96 -->
-  <rect x="80" y="62" width="610" height="34" fill="#d79921" opacity="0.04"/>
-  <text x="688" y="82" text-anchor="end" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">buffer zone</text>
+  <rect x="80" y="62" width="610" height="34" fill="#d79921" opacity="0.28"/>
+  <text x="688" y="82" text-anchor="end" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">buffer zone</text>
 
   <!-- Bars: 20 days, each bar 24px wide, gap 6px, stride 30px -->
   <!-- Start at x=90. 20 bars * 30 = 600px. Fits in 610px. -->

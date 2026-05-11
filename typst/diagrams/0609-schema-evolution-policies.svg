@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Schema evolution policies: pick the response per drift type</text>
+  <text x="360" y="32" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">evolve and freeze are conforming; discard_* cross into transformation territory</text>
+
+  <!-- =========================================== -->
+  <!-- Column headers                              -->
+  <!-- =========================================== -->
+  <!-- row label column from x=30 to x=150 (width 120) -->
+  <!-- four policy columns: 155, 290, 425, 560 each width 130 -->
+
+  <rect x="155" y="40" width="130" height="26" fill="#79740e" opacity="0.10" rx="3"/>
+  <rect x="155" y="40" width="130" height="26" fill="none" stroke="#79740e" stroke-width="1" rx="3"/>
+  <text x="220" y="55" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">evolve</text>
+  <text x="220" y="63" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">ALTER destination</text>
+
+  <rect x="290" y="40" width="130" height="26" fill="#d79921" opacity="0.14" rx="3"/>
+  <rect x="290" y="40" width="130" height="26" fill="none" stroke="#d79921" stroke-width="1" rx="3"/>
+  <text x="355" y="55" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">freeze</text>
+  <text x="355" y="63" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">block, alert</text>
+
+  <rect x="425" y="40" width="130" height="26" fill="#9d0006" opacity="0.10" rx="3"/>
+  <rect x="425" y="40" width="130" height="26" fill="none" stroke="#9d0006" stroke-width="1" rx="3"/>
+  <text x="490" y="55" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">discard_row</text>
+  <text x="490" y="63" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">drop the row</text>
+
+  <rect x="560" y="40" width="130" height="26" fill="#9d0006" opacity="0.10" rx="3"/>
+  <rect x="560" y="40" width="130" height="26" fill="none" stroke="#9d0006" stroke-width="1" rx="3"/>
+  <text x="625" y="55" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">discard_value</text>
+  <text x="625" y="63" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">null the field</text>
+
+  <!-- =========================================== -->
+  <!-- Row 1: New column appears                   -->
+  <!-- =========================================== -->
+  <rect x="30" y="72" width="120" height="40" fill="#ebdbb2" opacity="0.45" rx="3"/>
+  <text x="40" y="89" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">New column</text>
+  <text x="40" y="101" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">appears in source</text>
+
+  <!-- evolve: recommended (thicker green) -->
+  <rect x="155" y="72" width="130" height="40" fill="#79740e" opacity="0.14" rx="3"/>
+  <rect x="155" y="72" width="130" height="40" fill="none" stroke="#79740e" stroke-width="2" rx="3"/>
+  <text x="165" y="89" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700">✓</text>
+  <text x="180" y="88" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">recommended</text>
+  <text x="165" y="103" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">ADD COLUMN, backfill NULL</text>
+
+  <!-- freeze: situational -->
+  <rect x="290" y="72" width="130" height="40" fill="#d79921" opacity="0.08" rx="3"/>
+  <rect x="290" y="72" width="130" height="40" fill="none" stroke="#d79921" stroke-width="1" rx="3"/>
+  <text x="300" y="89" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">⚠</text>
+  <text x="315" y="88" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">situational</text>
+  <text x="300" y="103" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">contract-bound tables only</text>
+
+  <!-- discard_row: anti-pattern -->
+  <rect x="425" y="72" width="130" height="40" fill="#9d0006" opacity="0.07" rx="3"/>
+  <rect x="425" y="72" width="130" height="40" fill="none" stroke="#9d0006" stroke-width="1.4" rx="3"/>
+  <text x="435" y="89" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="450" y="88" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">anti-pattern</text>
+  <text x="435" y="103" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">drops every new-shape row</text>
+
+  <!-- discard_value: anti-pattern -->
+  <rect x="560" y="72" width="130" height="40" fill="#9d0006" opacity="0.07" rx="3"/>
+  <rect x="560" y="72" width="130" height="40" fill="none" stroke="#9d0006" stroke-width="1.4" rx="3"/>
+  <text x="570" y="89" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="585" y="88" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">anti-pattern</text>
+  <text x="570" y="103" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">silently loses the new field</text>
+
+  <!-- =========================================== -->
+  <!-- Row 2: Type change                          -->
+  <!-- =========================================== -->
+  <rect x="30" y="115" width="120" height="40" fill="#ebdbb2" opacity="0.45" rx="3"/>
+  <text x="40" y="132" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">Type change</text>
+  <text x="40" y="144" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">INT -&gt; BIGINT, etc.</text>
+
+  <!-- evolve: recommended for widening -->
+  <rect x="155" y="115" width="130" height="40" fill="#79740e" opacity="0.14" rx="3"/>
+  <rect x="155" y="115" width="130" height="40" fill="none" stroke="#79740e" stroke-width="2" rx="3"/>
+  <text x="165" y="132" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700">✓</text>
+  <text x="180" y="131" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">if widening</text>
+  <text x="165" y="146" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">safe for INT -&gt; BIGINT</text>
+
+  <!-- freeze: recommended conservative -->
+  <rect x="290" y="115" width="130" height="40" fill="#d79921" opacity="0.16" rx="3"/>
+  <rect x="290" y="115" width="130" height="40" fill="none" stroke="#d79921" stroke-width="2" rx="3"/>
+  <text x="300" y="132" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700">✓</text>
+  <text x="315" y="131" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">conservative</text>
+  <text x="300" y="146" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">human reviews narrowings</text>
+
+  <!-- discard_row: anti-pattern -->
+  <rect x="425" y="115" width="130" height="40" fill="#9d0006" opacity="0.07" rx="3"/>
+  <rect x="425" y="115" width="130" height="40" fill="none" stroke="#9d0006" stroke-width="1.4" rx="3"/>
+  <text x="435" y="132" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="450" y="131" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">anti-pattern</text>
+  <text x="435" y="146" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">drops rows that don't cast</text>
+
+  <!-- discard_value: anti-pattern -->
+  <rect x="560" y="115" width="130" height="40" fill="#9d0006" opacity="0.07" rx="3"/>
+  <rect x="560" y="115" width="130" height="40" fill="none" stroke="#9d0006" stroke-width="1.4" rx="3"/>
+  <text x="570" y="132" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="585" y="131" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">anti-pattern</text>
+  <text x="570" y="146" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">nulls every failed cast</text>
+
+  <!-- =========================================== -->
+  <!-- Row 3: Column removed                       -->
+  <!-- =========================================== -->
+  <rect x="30" y="158" width="120" height="40" fill="#ebdbb2" opacity="0.45" rx="3"/>
+  <text x="40" y="175" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">Column removed</text>
+  <text x="40" y="187" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8">from source</text>
+
+  <!-- evolve: situational -->
+  <rect x="155" y="158" width="130" height="40" fill="#d79921" opacity="0.08" rx="3"/>
+  <rect x="155" y="158" width="130" height="40" fill="none" stroke="#d79921" stroke-width="1" rx="3"/>
+  <text x="165" y="175" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">⚠</text>
+  <text x="180" y="174" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">situational</text>
+  <text x="165" y="189" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">may DROP downstream views</text>
+
+  <!-- freeze: recommended -->
+  <rect x="290" y="158" width="130" height="40" fill="#d79921" opacity="0.16" rx="3"/>
+  <rect x="290" y="158" width="130" height="40" fill="none" stroke="#d79921" stroke-width="2" rx="3"/>
+  <text x="300" y="175" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700">✓</text>
+  <text x="315" y="174" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">recommended</text>
+  <text x="300" y="189" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">alert humans first</text>
+
+  <!-- discard_row: not applicable / anti -->
+  <rect x="425" y="158" width="130" height="40" fill="#9d0006" opacity="0.07" rx="3"/>
+  <rect x="425" y="158" width="130" height="40" fill="none" stroke="#9d0006" stroke-width="1.4" rx="3"/>
+  <text x="435" y="175" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="450" y="174" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">anti-pattern</text>
+  <text x="435" y="189" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">would drop every row</text>
+
+  <!-- discard_value: degenerate -->
+  <rect x="560" y="158" width="130" height="40" fill="#9d0006" opacity="0.07" rx="3"/>
+  <rect x="560" y="158" width="130" height="40" fill="none" stroke="#9d0006" stroke-width="1.4" rx="3"/>
+  <text x="570" y="175" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="700">✗</text>
+  <text x="585" y="174" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="700">anti-pattern</text>
+  <text x="570" y="189" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">nulls a whole column, silently</text>
+
+  <!-- =========================================== -->
+  <!-- Bottom caption                              -->
+  <!-- =========================================== -->
+  <rect x="30" y="206" width="660" height="26" fill="#689d6a" opacity="0.08" rx="4"/>
+  <rect x="30" y="206" width="660" height="26" fill="none" stroke="#689d6a" stroke-width="1" rx="4"/>
+  <text x="360" y="223" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Conservative default: evolve on new columns, freeze on type changes -- never silently discard.</text>
+</svg>

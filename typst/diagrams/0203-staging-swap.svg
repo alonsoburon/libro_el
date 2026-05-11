@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect x="0" y="0" width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Staging swap: atomic full-table replace, zero downtime</text>
+
+  <!-- Consumers row spanning all three panels -->
+  <rect x="20" y="28" width="680" height="18" fill="#458588" opacity="0.06" stroke="#458588" stroke-width="0.5" rx="3"/>
+  <text x="360" y="40" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">consumers -> read from orders (always)</text>
+
+  <!-- Panel dividers -->
+  <line x1="246" y1="52" x2="246" y2="178" stroke="#d5c4a1" stroke-width="0.5" stroke-dasharray="6,4"/>
+  <line x1="474" y1="52" x2="474" y2="178" stroke="#d5c4a1" stroke-width="0.5" stroke-dasharray="6,4"/>
+
+  <!-- ============================================================ -->
+  <!-- STEP 1: LOAD                                                  -->
+  <!-- ============================================================ -->
+  <text x="133" y="62" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">1. Load</text>
+
+  <!-- consumer arrow into production orders -->
+  <line x1="80" y1="48" x2="80" y2="72" stroke="#458588" stroke-width="1"/>
+  <polygon points="77,69 80,76 83,69" fill="#458588"/>
+
+  <!-- Production orders (stable, being read) -->
+  <rect x="30" y="76" width="100" height="56" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="30" y="76" width="100" height="14" fill="#ebdbb2" rx="4"/>
+  <rect x="30" y="86" width="100" height="4" fill="#ebdbb2"/>
+  <text x="80" y="86" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">orders</text>
+  <rect x="36" y="94" width="88" height="32" fill="#79740e" opacity="0.1" rx="2"/>
+  <text x="80" y="108" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">old rows</text>
+  <text x="80" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">(serving)</text>
+
+  <!-- extract arrow into staging -->
+  <path d="M 145 104 Q 165 104 165 80" fill="none" stroke="#928374" stroke-width="1"/>
+  <text x="170" y="78" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">extract</text>
+
+  <!-- Staging being populated -->
+  <rect x="148" y="86" width="88" height="46" fill="#f9f5d7" stroke="#458588" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+  <rect x="148" y="86" width="88" height="14" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="148" y="96" width="88" height="4" fill="#458588" opacity="0.06"/>
+  <text x="192" y="96" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_stg_orders</text>
+  <rect x="154" y="104" width="76" height="22" fill="#458588" opacity="0.1" rx="2"/>
+  <text x="192" y="118" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">filling + validate</text>
+
+  <text x="133" y="150" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">extract + load into staging,</text>
+  <text x="133" y="161" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">validate before promoting</text>
+
+  <!-- ============================================================ -->
+  <!-- STEP 2: SWAP                                                  -->
+  <!-- ============================================================ -->
+  <text x="360" y="62" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">2. Swap (atomic)</text>
+
+  <!-- consumer arrow into orders during swap -->
+  <line x1="310" y1="48" x2="310" y2="72" stroke="#458588" stroke-width="1"/>
+  <polygon points="307,69 310,76 313,69" fill="#458588"/>
+
+  <!-- Left table: orders -> becomes _old -->
+  <rect x="260" y="76" width="100" height="56" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="260" y="76" width="100" height="14" fill="#ebdbb2" rx="4"/>
+  <rect x="260" y="86" width="100" height="4" fill="#ebdbb2"/>
+  <text x="310" y="86" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">orders</text>
+  <rect x="266" y="94" width="88" height="32" fill="#79740e" opacity="0.1" rx="2"/>
+  <text x="310" y="113" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">old rows</text>
+
+  <!-- Right table: _stg_orders -> becomes orders -->
+  <rect x="378" y="76" width="100" height="56" fill="#f9f5d7" stroke="#458588" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+  <rect x="378" y="76" width="100" height="14" fill="#458588" opacity="0.06" rx="4"/>
+  <rect x="378" y="86" width="100" height="4" fill="#458588" opacity="0.06"/>
+  <text x="428" y="86" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">_stg_orders</text>
+  <rect x="384" y="94" width="88" height="32" fill="#458588" opacity="0.1" rx="2"/>
+  <text x="428" y="113" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">new rows</text>
+
+  <!-- Crossing rename arrows -->
+  <path d="M 360 102 C 370 90, 368 90, 378 102" fill="none" stroke="#d65d0e" stroke-width="1.3"/>
+  <polygon points="375,99 380,103 374,104" fill="#d65d0e"/>
+  <path d="M 378 118 C 368 130, 370 130, 360 118" fill="none" stroke="#d65d0e" stroke-width="1.3"/>
+  <polygon points="363,121 358,117 364,116" fill="#d65d0e"/>
+
+  <!-- Swap label badge -->
+  <rect x="282" y="138" width="156" height="14" fill="#d65d0e" opacity="0.1" stroke="#d65d0e" stroke-width="0.6" rx="3"/>
+  <text x="360" y="148" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">RENAME / SWAP WITH / EXCHANGE</text>
+
+  <text x="360" y="163" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">single atomic txn, consumers never see a gap</text>
+
+  <!-- ============================================================ -->
+  <!-- STEP 3: DROP                                                  -->
+  <!-- ============================================================ -->
+  <text x="588" y="62" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">3. Drop</text>
+
+  <!-- consumer arrow into new orders -->
+  <line x1="540" y1="48" x2="540" y2="72" stroke="#458588" stroke-width="1"/>
+  <polygon points="537,69 540,76 543,69" fill="#458588"/>
+
+  <!-- New production orders (was staging) -->
+  <rect x="490" y="76" width="100" height="56" fill="#f9f5d7" stroke="#79740e" stroke-width="1.5" rx="4"/>
+  <rect x="490" y="76" width="100" height="14" fill="#ebdbb2" rx="4"/>
+  <rect x="490" y="86" width="100" height="4" fill="#ebdbb2"/>
+  <text x="540" y="86" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">orders</text>
+  <rect x="496" y="94" width="88" height="32" fill="#79740e" opacity="0.14" rx="2"/>
+  <text x="540" y="108" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">new rows</text>
+  <text x="540" y="120" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">(serving)</text>
+
+  <!-- Old table being dropped -->
+  <rect x="608" y="86" width="88" height="46" fill="#f9f5d7" stroke="#9d0006" stroke-width="1" stroke-dasharray="3,2" opacity="0.55" rx="4"/>
+  <rect x="608" y="86" width="88" height="14" fill="#9d0006" opacity="0.08" rx="4"/>
+  <rect x="608" y="96" width="88" height="4" fill="#9d0006" opacity="0.08"/>
+  <text x="652" y="96" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">_old_orders</text>
+  <rect x="614" y="104" width="76" height="22" fill="#9d0006" opacity="0.08" rx="2"/>
+  <text x="652" y="118" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">DROP</text>
+
+  <!-- X mark across old -->
+  <line x1="614" y1="92" x2="690" y2="128" stroke="#9d0006" stroke-width="0.8" opacity="0.45"/>
+  <line x1="690" y1="92" x2="614" y2="128" stroke="#9d0006" stroke-width="0.8" opacity="0.45"/>
+
+  <text x="588" y="150" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">drop old staging,</text>
+  <text x="588" y="161" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">production now serves new data</text>
+
+  <!-- ============================================================ -->
+  <!-- Per-engine syntax strip                                       -->
+  <!-- ============================================================ -->
+  <rect x="20" y="184" width="166" height="46" fill="#458588" opacity="0.05" stroke="#458588" stroke-width="0.6" rx="3"/>
+  <text x="103" y="196" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">PostgreSQL</text>
+  <text x="103" y="208" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">BEGIN; DROP TABLE orders;</text>
+  <text x="103" y="217" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">ALTER TABLE _stg_orders</text>
+  <text x="103" y="226" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">RENAME TO orders; COMMIT;</text>
+
+  <rect x="194" y="184" width="166" height="46" fill="#d79921" opacity="0.07" stroke="#d79921" stroke-width="0.6" rx="3"/>
+  <text x="277" y="196" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">Snowflake</text>
+  <text x="277" y="214" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">ALTER TABLE _stg_orders</text>
+  <text x="277" y="223" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">SWAP WITH orders;</text>
+
+  <rect x="368" y="184" width="166" height="46" fill="#d65d0e" opacity="0.06" stroke="#d65d0e" stroke-width="0.6" rx="3"/>
+  <text x="451" y="196" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">ClickHouse</text>
+  <text x="451" y="214" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">EXCHANGE TABLES orders</text>
+  <text x="451" y="223" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">AND _stg_orders;</text>
+
+  <rect x="542" y="184" width="158" height="46" fill="#79740e" opacity="0.06" stroke="#79740e" stroke-width="0.6" rx="3"/>
+  <text x="621" y="196" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">BigQuery</text>
+  <text x="621" y="214" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">copy job, WRITE_TRUNCATE</text>
+  <text x="621" y="223" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.8">(atomic table replace)</text>
+</svg>

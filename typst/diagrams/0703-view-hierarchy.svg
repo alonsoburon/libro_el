@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220">
+  <rect x="0" y="0" width="720" height="220" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">View hierarchy: from raw log to consumer surface</text>
+
+  <!-- Column headers -->
+  <text x="170" y="36" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">LAYER</text>
+  <text x="445" y="36" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">WHAT THIS LAYER ADDS</text>
+
+  <!-- ============================================== -->
+  <!-- Layer 4 (top): Consumer-facing view (green) -->
+  <!-- ============================================== -->
+  <rect x="125" y="44" width="470" height="34" fill="#79740e" opacity="0.10" rx="4"/>
+  <rect x="125" y="44" width="470" height="34" fill="none" stroke="#79740e" stroke-width="1.2" rx="4"/>
+  <rect x="126" y="45" width="5" height="32" fill="#79740e" opacity="0.6" rx="1"/>
+
+  <text x="142" y="58" fill="#79740e" font-family="'Segoe UI', monospace" font-size="9.5" font-weight="700">vw_sales_dashboard</text>
+  <text x="142" y="70" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">VIEW: scoped, renamed, ready</text>
+
+  <text x="445" y="58" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">filters to last 90 days, renames to business names</text>
+  <text x="445" y="70" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">contract surface for BI tools and analysts</text>
+
+  <!-- ============================================== -->
+  <!-- Layer 3: Derived view (yellow) -->
+  <!-- ============================================== -->
+  <rect x="125" y="82" width="470" height="34" fill="#d79921" opacity="0.08" rx="4"/>
+  <rect x="125" y="82" width="470" height="34" fill="none" stroke="#d79921" stroke-width="1" rx="4"/>
+  <rect x="126" y="83" width="5" height="32" fill="#d79921" opacity="0.55" rx="1"/>
+
+  <text x="142" y="96" fill="#b57614" font-family="'Segoe UI', monospace" font-size="9.5" font-weight="700">orders_with_metrics</text>
+  <text x="142" y="108" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">VIEW: enriched with computed columns</text>
+
+  <text x="445" y="96" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">joins with customers, calculates running totals</text>
+  <text x="445" y="108" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">light transformation; consumers share the same logic</text>
+
+  <!-- ============================================== -->
+  <!-- Layer 2: Dedup view (blue) -->
+  <!-- ============================================== -->
+  <rect x="125" y="120" width="470" height="34" fill="#458588" opacity="0.08" rx="4"/>
+  <rect x="125" y="120" width="470" height="34" fill="none" stroke="#458588" stroke-width="1" rx="4"/>
+  <rect x="126" y="121" width="5" height="32" fill="#458588" opacity="0.55" rx="1"/>
+
+  <text x="142" y="134" fill="#458588" font-family="'Segoe UI', monospace" font-size="9.5" font-weight="700">orders</text>
+  <text x="142" y="146" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">VIEW: latest per key</text>
+
+  <text x="445" y="134" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', monospace" font-size="7.5" font-weight="600">QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id</text>
+  <text x="445" y="144" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', monospace" font-size="7.5" font-weight="600">ORDER BY _extracted_at DESC) = 1</text>
+
+  <!-- ============================================== -->
+  <!-- Layer 1 (bottom): Append log (grey) -->
+  <!-- ============================================== -->
+  <rect x="125" y="158" width="470" height="34" fill="#928374" opacity="0.10" rx="4"/>
+  <rect x="125" y="158" width="470" height="34" fill="none" stroke="#928374" stroke-width="1" rx="4"/>
+  <rect x="126" y="159" width="5" height="32" fill="#928374" opacity="0.6" rx="1"/>
+
+  <text x="142" y="172" fill="#7c6f64" font-family="'Segoe UI', monospace" font-size="9.5" font-weight="700">orders_log</text>
+  <text x="142" y="184" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">append-only, every extraction</text>
+
+  <text x="445" y="172" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="600">raw, includes duplicates and history</text>
+  <text x="445" y="184" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">what the loader writes; no transformation</text>
+
+  <!-- ============================================== -->
+  <!-- Left arrow: ECL writes here (points to bottom) -->
+  <!-- ============================================== -->
+  <text x="60" y="168" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">ECL writes</text>
+  <text x="60" y="178" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">here</text>
+  <text x="60" y="188" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">(loader)</text>
+  <line x1="100" y1="175" x2="120" y2="175" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="120,172 127,175 120,178" fill="#79740e"/>
+
+  <!-- ============================================== -->
+  <!-- Right arrow: Consumers query here (points to top) -->
+  <!-- ============================================== -->
+  <text x="660" y="55" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">Consumers</text>
+  <text x="660" y="65" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-weight="700">query here</text>
+  <text x="660" y="75" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">(BI / analysts)</text>
+  <line x1="620" y1="62" x2="600" y2="62" stroke="#79740e" stroke-width="1.5"/>
+  <polygon points="600,59 593,62 600,65" fill="#79740e"/>
+
+  <!-- ============================================== -->
+  <!-- Side note in middle right -->
+  <!-- ============================================== -->
+  <text x="660" y="125" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">each layer</text>
+  <text x="660" y="135" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">adds one thing;</text>
+  <text x="660" y="145" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">consumers only</text>
+  <text x="660" y="155" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">see the top</text>
+
+  <!-- ============================================== -->
+  <!-- Bottom caption -->
+  <!-- ============================================== -->
+  <text x="360" y="210" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">the contract is the top layer; everything below can change without breaking consumers</text>
+</svg>

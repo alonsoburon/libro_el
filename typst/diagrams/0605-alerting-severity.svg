@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
+  <rect x="0" y="0" width="720" height="240" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Alerting severity: blast radius vs time-to-fix determines channel</text>
+  <text x="360" y="32" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">single table flicker doesn't deserve a page; pipeline-wide outage doesn't deserve an email</text>
+
+  <!-- Y axis label -->
+  <text x="32" y="118" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600" transform="rotate(-90, 32, 118)">Blast radius</text>
+
+  <!-- Y row labels -->
+  <text x="120" y="68" text-anchor="end" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Pipeline-wide</text>
+  <text x="120" y="118" text-anchor="end" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Multiple tables</text>
+  <text x="120" y="168" text-anchor="end" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Single table</text>
+
+  <!-- X column headers -->
+  <text x="200" y="48" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Fix now</text>
+  <text x="340" y="48" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Fix today</text>
+  <text x="480" y="48" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Fix this week</text>
+
+  <!-- Row 1: Pipeline-wide -->
+  <!-- (1,1) PAGE -->
+  <rect x="130" y="54" width="140" height="50" fill="#9d0006" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="200" y="76" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">PAGE</text>
+  <text x="200" y="92" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">orchestrator down</text>
+
+  <!-- (1,2) PAGE -->
+  <rect x="270" y="54" width="140" height="50" fill="#9d0006" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="340" y="76" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">PAGE</text>
+  <text x="340" y="92" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">warehouse credentials expired</text>
+
+  <!-- (1,3) Slack -->
+  <rect x="410" y="54" width="140" height="50" fill="#d79921" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="480" y="76" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">Slack</text>
+  <text x="480" y="92" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">cost spike, no breakage</text>
+
+  <!-- Row 2: Multiple tables -->
+  <!-- (2,1) PAGE -->
+  <rect x="130" y="104" width="140" height="50" fill="#9d0006" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="200" y="126" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">PAGE</text>
+  <text x="200" y="142" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">source DB unreachable</text>
+
+  <!-- (2,2) Slack -->
+  <rect x="270" y="104" width="140" height="50" fill="#d79921" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="340" y="126" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">Slack</text>
+  <text x="340" y="142" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">several extractions slow</text>
+
+  <!-- (2,3) Slack -->
+  <rect x="410" y="104" width="140" height="50" fill="#d79921" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="480" y="126" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">Slack</text>
+  <text x="480" y="142" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">schema drift on three tables</text>
+
+  <!-- Row 3: Single table -->
+  <!-- (3,1) Slack -->
+  <rect x="130" y="154" width="140" height="50" fill="#d79921" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="200" y="176" text-anchor="middle" fill="#b57614" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">Slack</text>
+  <text x="200" y="192" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">finance table missed SLA</text>
+
+  <!-- (3,2) Email digest -->
+  <rect x="270" y="154" width="140" height="50" fill="#79740e" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="340" y="176" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">Email digest</text>
+  <text x="340" y="192" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">null rate above threshold</text>
+
+  <!-- (3,3) Email digest -->
+  <rect x="410" y="154" width="140" height="50" fill="#79740e" opacity="0.22" stroke="#d5c4a1" stroke-width="1" rx="3"/>
+  <text x="480" y="176" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">Email digest</text>
+  <text x="480" y="192" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">row count drift on lookup</text>
+
+  <!-- X axis label -->
+  <text x="340" y="218" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Time-to-fix urgency</text>
+
+  <!-- Right side: legend + note -->
+  <rect x="568" y="58" width="14" height="9" fill="#9d0006" opacity="0.22" stroke="#d5c4a1" stroke-width="0.5" rx="2"/>
+  <text x="588" y="66" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">PAGE</text>
+  <text x="588" y="76" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">wake someone up</text>
+
+  <rect x="568" y="92" width="14" height="9" fill="#d79921" opacity="0.22" stroke="#d5c4a1" stroke-width="0.5" rx="2"/>
+  <text x="588" y="100" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Slack</text>
+  <text x="588" y="110" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">team channel, business hours</text>
+
+  <rect x="568" y="126" width="14" height="9" fill="#79740e" opacity="0.22" stroke="#d5c4a1" stroke-width="0.5" rx="2"/>
+  <text x="588" y="134" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Email digest</text>
+  <text x="588" y="144" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">daily roll-up, review later</text>
+
+  <!-- Bottom note -->
+  <text x="360" y="232" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">single-channel alerting fatigues; differentiate by severity so the page still means something</text>
+</svg>

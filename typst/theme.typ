@@ -23,17 +23,8 @@
 #let ecl-danger(title, body) = ecl-callout(title, body, color: p.red-accent)
 #let ecl-info(title, body) = ecl-callout(title, body, color: p.blue-accent)
 
-// Part numbering state -- stepped by ecl-part-page, used by heading numbering
+// Part numbering state -- incremented by the level-1 show rule
 #let ecl-part = state("ecl-part", 0)
-
-// Part title page -- the heading creates the PDF outline entry,
-// and the show rule (level 1) renders it as a centered title page.
-#let ecl-part-page(part-num, num, title) = {
-  ecl-part.update(n => n + 1)
-  counter(heading).update(part-num)  // set level-1 counter to the Part number
-  pagebreak()
-  heading(level: 1, numbering: none, outlined: true, bookmarked: true)[Part #num: #title]
-}
 
 // Apply book-wide styling
 #let ecl-theme(body) = {
@@ -41,7 +32,7 @@
     paper: "a4",
     margin: (x: 2cm, y: 2.5cm),
     fill: p.bg,
-    // Running header: current pattern name (level 2 after offset)
+    // Running header: current pattern name (level 2 = chapter headings)
     header: context {
       let elems = query(heading.where(level: 2).before(here()))
       if elems.len() > 0 {
@@ -77,7 +68,8 @@
 
   // Level 1: Part headings -- rendered as centered title page
   show heading.where(level: 1): it => {
-    set page(header: none, footer: none)
+    ecl-part.update(n => n + 1)
+    colbreak()
     v(1fr)
     align(center)[
       #text(fill: p.fg-dim, size: 14pt, tracking: 2pt, upper(it.body))
@@ -86,7 +78,7 @@
     v(1fr)
   }
 
-  // Level 2: pattern titles (= in source, offset to level 2) -- rule below
+  // Level 2: pattern/chapter titles (== in source) -- rule below
   show heading.where(level: 2): it => {
     set text(fill: p.fg-bright, size: 22pt)
     it
