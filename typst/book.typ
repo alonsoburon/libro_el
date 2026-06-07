@@ -5954,7 +5954,7 @@ Table importance is the second axis. Sales and receivables tables failing during
 <what-to-alert-on>
 The rule: alert on things that need human attention before the next morning's monitoring review. At scale -- thousands of tables -- you can't afford to alert on every condition the pipeline doesn't handle automatically, because there are too many tables where a failure simply doesn't matter overnight. A warehouse dimension table that gets a new row every six months doesn't need to page anyone when it fails on a Tuesday; it'll still be there in the morning. The filter is urgency, not just "unhandled."
 
-If the pipeline already has a pattern that resolves the condition -- retry logic, automatic schema evolution, reconciliation with auto-recovery -- the alert is redundant. Avoid notifying if there's no urgency for its solution.
+If the pipeline already has a pattern that resolves the condition -- retry logic, automatic schema evolution, reconciliation with auto-recovery -- the alert is redundant. Log and monitor it, but don't notify if there's no urgency for its solution.
 
 ==== Always Alert
 <always-alert>
@@ -7854,7 +7854,7 @@ No naming scheme saves you from these -- they need explicit handling regardless 
 
 #strong[Spaces] require quoting on every engine without exception. Replace with underscores -- the one normalization everyone agrees on.
 
-#strong[Accented characters] like `línea_factura` or `straße` are valid UTF-8 and every modern engine supports them, but BI tools and older ODBC connectors can choke. Replace accents at load time (`línea` → `linea`, `straße` → `strasse`) -- the readability cost is negligible, and you avoid discovering the incompatibility at the worst possible moment.
+#strong[Accented characters] like `línea_factura` or `straße` are valid UTF-8 and every modern engine supports them, but BI tools and older ODBC connectors can choke. Replace accents at load time (`línea` → `linea`, `straße` → `strasse`), as the readability cost is negligible and you avoid your non-technical analyst blaming you for "breaking the data".
 
 #strong[Collisions after normalization] happen when a case-sensitive source has columns like `OrderID` and `orderid` that collapse to the same string after any normalization. Detect these at load time and fail loudly -- a silent overwrite is worse than a broken load. Resolve by suffixing (`orderid`, `orderid_1`) and document the original-to-normalized mapping in column descriptions or a schema contract (@data-contracts). Ugly, but it preserves every source column.
 
