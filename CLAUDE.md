@@ -23,7 +23,7 @@ Every content file has a `status` field in YAML frontmatter:
 - `first_iteration` -- Author has written or reviewed and edited the content at least once
 
 ### Core Thesis
-Pure EL is a practical myth. The moment data crosses between systems, conforming is unavoidable: type casting, metadata injection, null handling, charset encoding. **ECL (Extract, Conform, Load)** names this reality. The C is everything the data needs to survive the crossing and be usable on the other side: type conforming, metadata injection, key synthesis, null handling. If it changes business logic, it's not conforming, it belongs downstream. This book documents the patterns to do ECL well.
+Pure EL is a practical myth. The moment data crosses between systems, conforming is unavoidable: type casting, metadata injection, null handling, charset encoding. **ECL (Extract, Conform, Load)** names this reality. The C is everything the data needs to survive the crossing and be usable on the other side: type conforming, metadata injection, key synthesis, null handling. If it changes business logic, it belongs downstream, not in the C. This book documents the patterns to do ECL well.
 
 ### Author Opinions (apply these when writing content)
 - **Full refreshes are often the right answer.** A full replace resets state, eliminates accumulated drift, and lets you operate with less-than-perfect methodology knowing you have periodic clean checkpoints. When in doubt, default to full replace. The more tables you can fully replace, the simpler and more reliable the pipeline. Incremental complexity should be earned, not assumed.
@@ -36,7 +36,7 @@ Pure EL is a practical myth. The moment data crosses between systems, conforming
 The author runs ~6500 tables in production on Dagster. Orchestrators are a first-class concern in this book, not an afterthought. When patterns touch scheduling, dependency management, observability, or alerting, reference the orchestrator layer explicitly.
 
 #### Orchestrators
-Dagster is the primary reference for the author's context, but **book content must use generic orchestrator language** ("your orchestrator", "a downstream task", "a scheduled job"). Specific tool names (Dagster, Airflow, Prefect) are reserved for the software recommendations section in the Appendix (0805-0807).
+Dagster is the primary reference for the author's context, but **book content must use generic orchestrator language** ("your orchestrator", "a downstream task", "a scheduled job"). Specific tool names (Dagster, Airflow, Prefect) are reserved for the software recommendations section in the Appendix.
 
 **Exception -- late-chapter hints**: From Part VI onward, patterns may name specific tools when describing a concrete capability that differentiates them (e.g., "Dagster lets you attach custom metadata per table after each run"). Frame these as teasers that point the reader toward the Appendix, not as prescriptions. The pattern must still work generically; the name-drop highlights a feature worth looking for in whatever orchestrator/tool you choose.
 
@@ -78,17 +78,18 @@ Relevant tools to reference by concern:
 - **Opinionated.** Take stances. Say "don't do this" when something is bad. Use "we" naturally.
 - **Fast to scan.** Every pattern should be consultable in under 2 minutes. Use callouts, not walls of text.
 - **No filler.** If a sentence doesn't teach something, cut it.
-- **No unjustified generalizations.** Don't write "most tables" or "some systems" unless you can back it up. Use the domain model tables or name specific systems. This includes weasel attributions: never "experts agree", "studies show", "it's widely considered", "many engineers believe". Name the actual system, the actual behavior, or cut the claim.
-- **No "it's not A, it's B" constructions.** This is a dead giveaway of AI writing. Don't negate then correct. Just state what it is. The same applies to "not only X, but also Y" and "not just A, it's B" -- all negative parallelisms. State the thing directly.
+- **No unjustified generalizations.** Don't write "most tables" or "some systems" unless you can back it up. Use the domain model tables or name specific systems.
+- **No weasel attributions.** Never "experts agree", "studies show", "it's widely considered", "many engineers believe". Name the actual system, the actual behavior, or cut the claim.
+- **No negative parallelism.** "It's not A, it's B" is a dead giveaway of AI writing; so are "not only X, but also Y" and "not just A, it's B". Don't negate then correct -- state the thing directly.
 - **Repeat the precise term; don't vary it for elegance.** A `cursor` is always a "cursor", never sometimes a "pointer", "marker", or "high-water signal" for variety. Synonym-swapping (elegant variation) reads as AI and, worse, makes technical writing ambiguous -- the reader wonders if the new word means something new. Term consistency is a feature here, not repetition to avoid.
 - **No rule of three.** AI pads lists to exactly three for rhythm ("fast, reliable, and scalable"; "extract, validate, and load"). Use the number of items the content actually has -- two, or five, or one. If three is real, fine; don't manufacture it.
-- **Banned AI-vocabulary.** Don't use: delve, leverage (verb), robust, seamless, crucial, pivotal, underscore, showcase, boast(s), testament, tapestry, intricate, landscape, realm, navigate (metaphorical), foster, streamline, harness, unlock, empower, ever-evolving, game-changer. These are filler that signals generated text. Say the plain thing ("use", "important", "shows").
+- **Banned AI-vocabulary.** Don't use: delve, leverage (verb), robust, seamless, showcase, tapestry, intricate, landscape, realm, navigate (metaphorical), foster, streamline, harness, unlock, empower, garner, meticulous, vibrant, ever-evolving, game-changer. These are filler that signals generated text. Say the plain thing ("use", "shows"). (Words like "crucial", "pivotal", "testament", "boasts", "underscore" are covered by the Plain copulas / No significance inflation rules below.)
 - **Plain copulas.** Use "is" and "are". Don't inflate to "serves as", "stands as", "represents", "acts as", "functions as", "boasts", "features" when you just mean "is" or "has". "A cursor is the high-water mark", not "A cursor serves as the high-water mark".
 - **No significance inflation.** Don't tell the reader something matters with empty intensifiers -- "this marks a pivotal moment", "underscores the importance of", "plays a crucial role", "is a testament to". And don't tack on present-participle significance tails ("...reducing cost, further improving reliability and strengthening the pipeline"). If it matters, the content shows why; if it doesn't, cut the sentence.
-- **No staccato sequences.** Avoid chains of short declarative sentences ("X does this. Y does that. Z fails."). Combine related ideas into longer, flowing sentences using conjunctions, relative clauses, or dashes. One well-constructed sentence beats three choppy ones. The "A happened, B didn't" / "A changed; B didn't" construction is a specific variant of this -- merge the two halves into one sentence that explains the relationship.
+- **No staccato sequences.** Avoid chains of short declarative sentences ("X does this. Y does that. Z fails."). Combine related ideas into longer, flowing sentences using conjunctions, relative clauses, or dashes, since one well-constructed sentence beats three choppy ones. The "A happened, B didn't" / "A changed; B didn't" construction is a specific variant of this -- merge the two halves into one sentence that explains the relationship.
 - **No dangling summary sentences.** A single sentence sitting alone as its own paragraph after a section, list, or codeblock -- acting as a "punchline" or "takeaway" -- is an AI writing pattern. Integrate the conclusion into the preceding paragraph, or remove it if the content already speaks for itself.
 - **Punctuation palette.** Use: `/ ~ * - _ . : , ; ? ! | -> <- <->` and `--` (double hyphen). Never use `—` (em dash). The `--` is a deliberate choice: this is a SQL book, and `--` is a SQL comment. It does the same job as an em dash but belongs here.
-- **Progressive complexity.** Start each pattern with the simple version -- the default that works for the common case. Tease the harder problems as you go, naming the pattern where they're resolved but not explaining it yet. The most complex patterns (0310, 0311, 0309) earn their weight because earlier patterns have already shown why the simple approach breaks down. The reader should arrive at a complex pattern already understanding why it exists.
+- **Progressive complexity.** Start each pattern with the simple version -- the default that works for the common case. Tease the harder problems as you go, naming the pattern where they're resolved but not explaining it yet. The most complex patterns (0309, 0310) earn their weight because earlier patterns have already shown why the simple approach breaks down. The reader should arrive at a complex pattern already understanding why it exists.
 
 ### Writing Conventions
 
@@ -154,7 +155,7 @@ The book has two diagram surfaces:
 - `> [!tip]` --Practical advice
 - `> [!danger]` --Anti-patterns (things that will break)
 - `> [!info]` --Context or background
-- `> [!example]` --Collapsible examples
+- `> [!example]` --Collapsible examples (Obsidian vault only; no Typst equivalent)
 
 In the Typst book, callouts are functions: `ecl-tip`, `ecl-warning`, `ecl-danger`, `ecl-info`, and `ecl-story`. **`ecl-story`** (purple border, auto-prefixes "From production: ") is for real production war stories -- the author's actual incidents, not hypotheticals. Story titles must be flat, specific, postmortem-style labels (e.g. "A double timezone conversion on Cyber Monday"), never clever "The X that Y" / "When X" headline constructions, which read as AI-generated.
 
@@ -238,7 +239,7 @@ All chapters have had a full author review/edit pass (`first_iteration`). The ap
 - **Typst** for typesetting and page layout. Screen-first design (SQL codeblocks need width), with print as a secondary output.
 - **Hand-crafted SVGs** for charts and diagrams in `typst/diagrams/`. The legacy `_charts/` framework (JS-rendered) is being replaced by direct SVGs -- new diagrams go into `typst/diagrams/`.
 - **CetZ-plot** (Typst library) is available for simple inline data charts that should inherit book typography and colors.
-- Workflow: write prose in Obsidian → import into Typst source files → design reusable layout components → embed SVG charts → `typst compile` → PDF.
+- Workflow: write prose directly in `typst/book.typ` → design reusable layout components → embed SVG charts → `typst compile` → PDF. The Obsidian vault is legacy; do not add new content there.
 
 #### Build & Render Commands
 ```bash

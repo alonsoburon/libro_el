@@ -771,7 +771,7 @@ If this returns anything above zero, your incremental extraction is already inco
 
 #ecl-story(
   "A closed-month correction with no updated_at change",
-)[A client told us a large correction they'd made to an old, already-closed month wasn't showing up downstream. We pulled the rows they named and found their `updated_at` values unchanged from months earlier, even though the data behind them was clearly different. That single check transparently surfaced the real problem: their corrections weren't going through anything that touched `updated_at`, so the database never recorded that the rows had changed. The cursor was doing its job perfectly against a signal that simply wasn't being maintained. See @the-periodic-full-replace for how we ended up loading that table.]
+)[A client told us a large correction they'd made to an old, already-closed month wasn't showing up downstream. We pulled the rows they named and found their `updated_at` values unchanged from months earlier, even though the data behind them was clearly different. That single check surfaced the real problem: their corrections weren't going through anything that touched `updated_at`, so the database never recorded that the rows had changed and the cursor kept doing its job perfectly against a signal nobody was maintaining. See @the-periodic-full-replace for how we ended up loading that table.]
 
 #strong[The index isn't there.] `updated_at` exists but nobody put an index on it. Your incremental query runs a full table scan on every execution. For a table with 50M rows, that's a multi-second query just to find the 200 rows that changed. On a transactional system under concurrent load, that scan will get you a complaint (or a ban) from the DBA.
 
@@ -2504,7 +2504,7 @@ At the destination, document what's missing at the table level -- not just in th
 
 #ecl-story(
   "Why we avoid partial extraction",
-)[Across thousands of tables in production we've never been burned by a silently missing column, and the reason is dull on purpose: we avoid partial extraction wherever we possibly can, and on the rare table where it's unavoidable we make the exclusion impossible to miss downstream -- in the table description, in the docs, in the conversation with whoever consumes it. The trap in this pattern is real and we've watched it catch other teams; the only reliable defense we've found is treating "the destination is not a complete clone" as something you say out loud, every time, rather than a footnote in the pipeline code.]
+)[Across thousands of tables in production we've never been burned by a silently missing column, and the reason is dull on purpose: we avoid partial extraction wherever we possibly can, and on the rare table where it's unavoidable we make the exclusion impossible to miss downstream -- in the documentation and in the conversation with whoever consumes it, never as a footnote buried in the pipeline code. We've watched the trap catch other teams precisely because "the destination is not a complete clone" lived only in the extraction query.]
 
 === Schema Drift Risk
 <schema-drift-risk>
@@ -2628,7 +2628,7 @@ If a full table reload is too expensive, scope the full replace to a rolling win
 
 #ecl-story(
   "Switching that table to a daily full replace",
-)[The client from @updated_at-is-reliable -- the one whose closed-month corrections never moved `updated_at` -- had so much retroactive rework on that table that no cursor window was ever going to be safe. Any month could change at any time, and the source gave us nothing to detect it. We stopped trying to be incremental and reloaded the whole table with a full replace every day, governed only by a freshness window so it ran often enough for the business. It sounds heavy, but it was the simplest correct option: stateless, idempotent, immune to whatever the source did or didn't track. The table was small enough that "expensive" never materialized, and the entire class of missed-correction bugs disappeared.]
+)[The client from @updated_at-is-reliable -- the one whose closed-month corrections never moved `updated_at` -- had so much retroactive rework on that table that no cursor window was ever going to be safe. Any month could change at any time, and the source gave us nothing to detect it. We stopped trying to be incremental and reloaded the whole table with a full replace every day, governed only by a freshness window so it ran often enough for the business. It sounds heavy, but it was the simplest correct option, stateless and idempotent regardless of whatever the source did or didn't track. The table was small enough that "expensive" never materialized, and the entire class of missed-correction bugs disappeared.]
 
 // ---
 
@@ -5103,7 +5103,7 @@ This matters more than partition alignment. A row in the wrong partition is an i
 
 #ecl-story(
   "A double timezone conversion on Cyber Monday",
-)[A retail client converted UTC to local time inside their own database before we ever saw it, so the column already held local time with no marker saying so. We then landed that local value as if it were UTC and translated it back to local for display, applying an eight-hour offset that had already been applied. Every timestamp ended up shifted twice, and on Cyber Monday -- the one day where hour-by-hour sales matter most -- the curve was visibly wrong, with revenue attributed to the wrong hours by a wide margin. The lesson is to warn loudly about exactly which side does the conversion, because each layer assuming the other did nothing is how you get a double shift. The recovery was clean precisely because the error was consistent: when an entire column is wrong by the same offset, you can build a corrected copy, verify it against the source's own reports, and swap it in (@table-swap) rather than patching rows in place.]
+)[A retail client converted UTC to local time inside their own database before we ever saw it, so the column already held local time with no marker saying so. We then landed that local value as if it were UTC and translated it back to local for display, applying an eight-hour offset that had already been applied, so every timestamp ended up shifted twice. On Cyber Monday -- the one day where hour-by-hour sales matter most -- the curve was visibly wrong, with revenue attributed to the wrong hours by a wide margin, because each layer had assumed the other did no conversion. The recovery was clean precisely because the error was consistent: when an entire column is wrong by the same offset, you can build a corrected copy, verify it against the source's own reports, and swap it in (@table-swap) rather than patching rows in place.]
 
 // ---
 
