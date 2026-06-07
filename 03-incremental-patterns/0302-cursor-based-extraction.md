@@ -4,7 +4,7 @@ aliases: []
 tags:
   - pattern/incremental
   - chapter/part-3
-status: draft
+status: first_iteration
 created: 2026-03-06
 updated: 2026-03-13
 ---

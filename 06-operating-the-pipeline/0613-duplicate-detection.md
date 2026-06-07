@@ -4,7 +4,7 @@ aliases: []
 tags:
   - pattern/recovery
   - chapter/part-6
-status: draft
+status: first_iteration
 created: 2026-03-06
 updated: 2026-03-29
 ---

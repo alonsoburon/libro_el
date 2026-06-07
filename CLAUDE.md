@@ -211,17 +211,21 @@ Decisions made during writing that apply across all chapters. Check these before
 
 ### Book Status
 
+**Canonical source is `typst/book.typ`** -- a single unified Typst file (~100k words, 281 pp A4). The `00-`..`08-` markdown vault is the legacy drafting source (last touched 2026-04-04) and is no longer the source of truth; new content is written in Typst directly. Per-file `status:` frontmatter in the vault is stale -- use this table.
+
+All chapters have had a full author review/edit pass (`first_iteration`). The appendix was restructured in Typst away from the old 0801-0807 numbering into a SQL Dialect Reference + Decision Flowchart.
+
 | Chapter | Patterns | Status |
 |---|---|---|
-| 00 Front Matter | 0001-0002 | draft |
-| 01 Foundations | 0101-0109 | draft |
-| 02 Full Replace | 0201-0209 | draft |
-| 03 Incremental | 0301-0310 | draft |
-| 04 Load Strategies | 0401-0406 | draft |
-| 05 Conforming | 0501-0507 | draft |
-| 06 Operating | 0601-0615 | draft |
-| 07 Serving | 0701-0707 | draft |
-| 08 Appendix | 0801-0804 | draft (0805-0807 not yet created) |
+| 00 Front Matter | 0001-0002 | first_iteration |
+| 01 Foundations | 0101-0109 | first_iteration |
+| 02 Full Replace | 0201-0209 | first_iteration |
+| 03 Incremental | 0301-0310 | first_iteration |
+| 04 Load Strategies | 0401-0406 | first_iteration |
+| 05 Conforming | 0501-0507 | first_iteration |
+| 06 Operating | 0601-0615 | first_iteration |
+| 07 Serving | 0701-0707 | first_iteration |
+| 08 Appendix | SQL Dialect Reference + Decision Flowchart | first_iteration |
 
 ### Publishing Toolchain
 - **Typst** for typesetting and page layout. Screen-first design (SQL codeblocks need width), with print as a secondary output.
