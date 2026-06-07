@@ -808,7 +808,7 @@ If it returns rows, go back and ask which #emph[combination] of columns is actua
   "Nullable columns in merge keys",
 )[A merge key column that allows NULLs is a silent bug. In SQL, `NULL != NULL` -- two rows where the key column is NULL won't match on a JOIN or MERGE. Your upsert might skip them and insert duplicates instead of updating. Check nullability on every column you plan to use as a merge key before you build on it. See @synthetic-keys.]
 
-#strong[No PK at all.] Some tables were created without a primary key: reporting tables, view-like tables, tables built by BI teams -- or, god help you, by someone in Finance with direct database access. You discover this at extraction time when your upsert pattern has no merge key. Or worse: you don't discover it and insert duplicates on every run.
+#strong[No PK at all.] Some tables were created without a primary key: reporting tables, view-like tables, tables built by BI teams -- or, god help you, by someone in Finance with direct database access. You discover this at extraction time when the key you thought was there has repeated values, or worse, when you find actual duplicates in your destination database.
 
 Run this before you commit to an extraction strategy. If the duplicate check returns rows on a column that was supposed to be unique, your merge key is broken.
 
@@ -1065,7 +1065,7 @@ See @cursor-based-timestamp-extraction for lookback window patterns, and @reliab
   #strong[One-liner:] Same pattern, different trade-offs. Where the data goes changes how you implement everything.
 ]
 
-A corridor is the combination of source type and destination type. The extraction pattern looks the same -- query the source, conform, load -- but the implementation decisions change completely depending on which corridor you're in. Get this wrong early and you'll build a pipeline with the wrong mental model from the start, then spend weeks wondering why your load strategy is bleeding money.
+A corridor is the combination of source type and destination type. The extraction pattern looks the same -- query the source, conform, load -- but the implementation decisions change completely depending on which corridor you're in. Get this wrong early and you'll have to redo a lot of work on the pipeline to make it useful, or worse, bleed a ton of money on a system that's mission critical and hard to alter.
 
 === The Two Corridors
 <the-two-corridors>
@@ -1372,7 +1372,7 @@ The goal is the top-left quadrant: stateless and idempotent. Full replace lives 
   #strong[One-liner:] When incremental isn't worth it -- or isn't possible -- extract everything and replace the destination completely.
 ]
 
-Full scan is the simplest pipeline that exists. Extract every row, replace the destination, done. No cursor state to maintain, no missed deletes, no drift accumulation. It resets the world on every run. Most pipelines reach for incremental when the table doesn't need it. This chapter is about when full scan is the right answer (which hopefully is all times) -- and how to do it without killing your source database or leaving a window of empty data in production.
+Full scan is the simplest pipeline that exists, you extract every row and replace the destination table. Getting to avoid cursor states, hard-deletions and drift is its greatest superpower. Most pipelines reach for incremental when the table doesn't need it. This chapter is about when full scan is the right answer (which hopefully is all times) -- and how to do it without killing your source database or leaving a window of empty data in production.
 
 === When Full Scan Wins
 <when-full-scan-wins>
@@ -1500,7 +1500,7 @@ See @data-contracts for formalizing these checks into reusable contracts.
 
 === What Full Scan Doesn't Solve
 <what-full-scan-doesnt-solve>
-#strong[Tables too large to scan entirely.] When the full scan takes longer than your schedule window, or when the source can't handle the load at any hour, full scan isn't viable. Options: scope the scan to the current + previous period (@scoped-full-replace), or switch to a rolling window (@rolling-window-replace).
+#strong[Tables too large to scan entirely.] When the full scan takes longer than your schedule window, or when the source can't handle the load at any hour, full scan isn't viable. Your options are to scope the scan to the current + previous period (@scoped-full-replace) or to switch to a rolling window (@rolling-window-replace).
 
 #strong[Freshness tighter than scan frequency.] If the business needs data every 15 minutes and a full scan takes 2 hours, you need incremental. Part III covers cursor-based extraction, merge patterns, and append strategies for tables that need sub-hourly freshness.
 
@@ -3416,7 +3416,7 @@ WHERE updated_at >= CURRENT_DATE - INTERVAL '9 days';
 -- 7 days of intended window + 2 days of overlap
 ```
 
-The overlap is a correctness parameter, not a performance parameter. Size it for the worst-case late arrival, then evaluate the cost. If the cost is too high, the answer is to shorten the run frequency (run less often, so the overlap is a smaller fraction of total work) or accept the blind spot and let the periodic full replace catch it.
+The overlap is a parameter to maximize correctness while sacrificing performance, try to size it for the worst-case late arrival, then evaluate cost. If the cost is too high, you have to either run it less often or accept a blind spot which can then be patched with tiered freshness.
 
 The @stateless-window-extraction pattern has overlap built in by design -- a 7-day window already covers 7 days of late arrivals, with no overlap parameter to configure and no cursor to worry about. This is one of the strongest arguments for defaulting to stateless windows: the window size itself is the overlap, and the late-arriving data problem largely disappears. The only case it doesn't cover is rows that land with timestamps older than the window, which requires either a wider window or the periodic full replace. The @cursor-based-timestamp-extraction pattern needs the overlap added explicitly to the boundary condition.
 
@@ -4030,7 +4030,7 @@ INSERT INTO orders
 SELECT * FROM _stg_orders;
 ```
 
-Whether delete-insert beats MERGE depends on the engine. The difference is not subtle:
+Whether delete-insert beats MERGE depends on the engine:
 
 #figure(
   align(center)[#table(
@@ -5954,7 +5954,7 @@ Table importance is the second axis. Sales and receivables tables failing during
 <what-to-alert-on>
 The rule: alert on things that need human attention before the next morning's monitoring review. At scale -- thousands of tables -- you can't afford to alert on every condition the pipeline doesn't handle automatically, because there are too many tables where a failure simply doesn't matter overnight. A warehouse dimension table that gets a new row every six months doesn't need to page anyone when it fails on a Tuesday; it'll still be there in the morning. The filter is urgency, not just "unhandled."
 
-If the pipeline already has a pattern that resolves the condition -- retry logic, automatic schema evolution, reconciliation with auto-recovery -- the alert is redundant. Monitor it, log it, but don't page on it. And if the pipeline #emph[doesn't] handle it but the table can wait, that's a dashboard item, not a notification.
+If the pipeline already has a pattern that resolves the condition -- retry logic, automatic schema evolution, reconciliation with auto-recovery -- the alert is redundant. Avoid notifying if there's no urgency for its solution.
 
 ==== Always Alert
 <always-alert>
@@ -6973,7 +6973,7 @@ Something broke and bad data has been landing for a while. A schema migration th
 
 The gap between when corruption starts and when it's detected is the blast radius. A bug introduced three months ago that nobody caught until today means three months of data in the destination is suspect, every downstream model that consumed it is suspect, and every report built on those models has been wrong for three months. The recovery isn't just reloading the data -- it's scoping the damage, fixing the root cause, rebuilding what's affected, and communicating what happened so consumers can reassess decisions they made on bad data.
 
-The worst corruptions are the ones that look plausible. A date format that flipped from D-M-Y to M-D-Y after a source ERP version upgrade produces dates that parse successfully -- January through December, day 1 through 12, nothing fails, nothing alerts. Every date-based partition, every month-end report, every time-series chart is silently wrong. You discover it when someone notices March 5th orders showing up in May, and by then the entire destination is corrupted across every table that has a date column.
+The worst corruptions are the ones that look plausible. A date format that flipped from D-M-Y to M-D-Y after a source ERP version upgrade produces dates that parse successfully -- January through December, day 1 through 12 with no alerts or failures, and everything becomes silently wrong. You'll discover it when someone notices March orders arriving in May, and by then the entire destination may be corrupt and you'll get more than an earful about it.
 
 === Triage: Assess the Blast Radius
 <triage-assess-the-blast-radius>
@@ -7691,7 +7691,7 @@ For tables where point-in-time matters but no event log exists:
 
 #strong[Append-and-materialize with history retention (@append-and-materialize).] Skip compaction (or compact less frequently) and the append log becomes an explicit version history. Each extraction appends the current state of changed rows, and prior versions accumulate. Storage grows with extraction frequency, but the history is queryable -- point-in-time state is the latest extracted version before the target date.
 
-#strong[Append-and-materialize log (@append-and-materialize).] The extraction log provides event-like history as a side effect of the load strategy -- cheaper than full snapshots because each extraction appends only the changed rows, not the entire table. The tradeoff: the history exists only at extraction granularity, and compacting the log destroys it. Once you compact to latest-only, the prior versions are gone. If consumers depend on point-in-time queries against the log, the compaction retention window must be longer than their lookback requirement -- and they need to know that compaction is happening so they don't build a process that assumes the history is permanent.
+#strong[Append-and-materialize log (@append-and-materialize).] The extraction log provides event-like histories as a side effect, while being a lot cheaper than full snapshots since you're only appending changed rows. But remember, it's not a dedicated backup and will drop rows when compacting the log. Once you compact to latest-only, the prior versions are gone. If consumers depend on point-in-time queries against the log, the compaction retention window must be longer than their lookback requirement -- and they need to know that compaction is happening so they don't build a process that assumes the history is permanent.
 
 #strong[SCD Type 2 (Slowly Changing Dimension).] When point-in-time queries are a first-class requirement -- not an occasional audit but something dashboards and reports depend on daily -- an SCD2 structure makes the history explicit in the schema itself. Each row gets `valid_from` and `valid_to` columns, and a query for "what did this customer look like on March 5?" becomes a range filter instead of a window function over an extraction log:
 
