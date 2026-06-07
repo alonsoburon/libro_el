@@ -65,7 +65,11 @@
 // TABLE OF CONTENTS
 // ============================================================
 #page(header: none, footer: none)[
-  #outline(indent: auto, depth: 2)
+  #show outline.entry.where(level: 1): it => {
+    v(12pt, weak: true)
+    strong(it)
+  }
+  #outline(indent: 2em, depth: 2)
 ]
 
 // ============================================================
