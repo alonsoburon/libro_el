@@ -889,7 +889,7 @@ See @timezone-conforming for the full timezone conforming playbook.
 
 === "The data is clean"
 <the-data-is-clean>
-The most optimistic lie. Data is clean in demos. In production, it's a negotiation.
+The most optimistic lie. Data is only clean in demos, for everything else, you have to negotiate.
 
 #strong[Orphaned foreign keys.] `order_lines` rows pointing to an `order_id` that no longer exists. This happens after hard deletes (orders deleted, lines left behind), after migrations (data moved between systems with FK constraints disabled), or after application bugs. Your pipeline loads `order_lines` and the JOIN to `orders` returns NULL. Downstream reports show revenue lines with no associated order.
 
@@ -1559,7 +1559,7 @@ except Exception as e:
     raise  # propagate -- do not proceed to partition operations
 ```
 
-If the extraction raised an error, the job fails. Staging is never loaded. No partition is replaced. The data in production stays exactly as it was.
+If the extraction raised an error, the job fails and every other process for that job stops. Failing fast is a very good practice to avoid overwriting production partitions with NULLs.
 
 #ecl-warning(
   "Silent failures return empty results",
@@ -1837,7 +1837,7 @@ Most orchestrators let you wire these as post-load checks that gate the swap ste
 
 === Rollback
 <rollback>
-There is no rollback step. If validation fails, you abort before the swap. Production never changed. On the next run, staging is recreated from scratch -- it's a throwaway table, not a state you carry forward.
+There is no rollback step. If validation fails, you abort before the swap, failing fast. On the next run, staging is recreated from scratch -- it's a throwaway table, not a state you carry forward.
 
 If the swap itself fails mid-operation (rare, but possible on non-atomic engines like BigQuery's DDL rename), check which table exists and which doesn't before deciding how to recover. On atomic engines (Snowflake SWAP, ClickHouse EXCHANGE, PostgreSQL transaction), a failure means the swap didn't happen -- production is still the original.
 
@@ -2314,7 +2314,7 @@ This is a last resort, not a first choice. Reach for it when there is genuinely 
 <the-mechanics-5>
 #figure(image("diagrams/0208-hash-detection.svg", width: 95%))
 
-#strong[Hash every source row.] Concatenate all data columns and compute a hash. The hash is a fingerprint of the row's current state.
+#strong[Hash every source row.] Concatenate all data columns and compute a hash, fingerprinting the row's current state.
 
 ```sql
 -- source: transactional
@@ -6332,7 +6332,7 @@ The tier boundaries shift with business cycles. Month-end might widen the hot wi
     table.hline(),
     [Hot data gets to consumers faster without over-refreshing cold data],
     [Three schedules to configure and monitor instead of one],
-    [Cold-tier full replace acts as a purity checkpoint, resetting drift],
+    [Cold-tier full replace as the purity checkpoint, resetting drift],
     [Lag window tuning is empirical -- too short misses rows, too long wastes reads],
     [Tier boundaries shift with business cycles (month-end, seasonal)],
     [Adjusting cadence and window size requires orchestrator flexibility],
