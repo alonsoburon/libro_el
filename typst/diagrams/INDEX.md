@@ -1,6 +1,6 @@
 # Diagram Index -- for editorial / design handoff
 
-64 figures are embedded in `book.typ`, listed below in reading order. Every SVG lives in `typst/diagrams/`. This folder contains ONLY diagrams the book uses (orphans removed).
+64 figures are embedded in `book.typ`, grouped below by Part in reading order. Every SVG lives in `typst/diagrams/`, which now holds only diagrams the book uses.
 
 ## Style spec (match these for any new or revised diagram)
 
@@ -12,71 +12,111 @@
 - **Recurring idioms** (reuse the closest): nested tiers (`0608`, `0614`); decision-tree with colored terminals (`0610`, `0615`); side-by-side correct/wrong (`0506`, `0704`); multi-table flow with curved arrows (`0207-activity-driven`, `0613`).
 - The cover (`cover-art.svg`) is a DRAFT placeholder -- design from scratch.
 
-## Figures in reading order
+## Front matter
 
-| # | Diagram | Part | Section |
-|---|---|---|---|
-| 1 | `diagrams/cover-art.svg` |  |  |
-| 2 | `diagrams/domain-model-er.svg` |  | Domain Model -> Schema |
-| 3 | `diagrams/ecl-conforming-vs-transforming.svg` | Foundations & Source Archetypes | What Is Conforming -> The Line Between Conforming and Transforming |
-| 4 | `diagrams/0104-lies-sources-tell.svg` | Foundations & Source Archetypes | The Lies Sources Tell |
-| 5 | `diagrams/schema-drift-detection.svg` | Foundations & Source Archetypes | The Lies Sources Tell -> "The schema is stable" |
-| 6 | `diagrams/0105-hard-vs-soft-rules.svg` | Foundations & Source Archetypes | Hard Rules, Soft Rules |
-| 7 | `diagrams/ecl-corridors.svg` | Foundations & Source Archetypes | Corridors -> The Two Corridors |
-| 8 | `diagrams/0108-purity-freshness.svg` | Foundations & Source Archetypes | Purity vs.~Freshness -> Classifying a Table |
-| 9 | `diagrams/0109-stateless-idempotent.svg` | Foundations & Source Archetypes | Idempotency -> Statelessness and Idempotency |
-| 10 | `diagrams/0201-replace-strategies.svg` | Full Replace Patterns | Full Scan Strategies -> At the Destination: Replace Strategies |
-| 11 | `diagrams/0202-partition-swap.svg` | Full Replace Patterns | Partition Swap |
-| 12 | `diagrams/0203-staging-swap.svg` | Full Replace Patterns | Staging Swap |
-| 13 | `diagrams/0205-scoped-replace.svg` | Full Replace Patterns | Scoped Full Replace -> The Mechanics |
-| 14 | `diagrams/0206-rolling-window.svg` | Full Replace Patterns | Rolling Window Replace -> The Mechanics |
-| 15 | `diagrams/0207-sparse-table.svg` | Full Replace Patterns | Sparse Table Extraction -> Zeros vs. Missing |
-| 16 | `diagrams/0207-activity-driven.svg` | Full Replace Patterns | Activity-Driven Extraction -> The Mechanics |
-| 17 | `diagrams/0208-hash-detection.svg` | Full Replace Patterns | Hash-Based Change Detection -> The Mechanics |
-| 18 | `diagrams/0209-partial-columns.svg` | Full Replace Patterns | Partial Column Loading -> Why Exclude Columns? |
-| 19 | `diagrams/0301-cursor-blind-spots.svg` | Incremental Extraction Patterns | Timestamp Extraction Foundations -> The Discipline Gap |
-| 20 | `diagrams/0302-cursor-mechanics.svg` | Incremental Extraction Patterns | Cursor-Based Timestamp Extraction |
-| 21 | `diagrams/0303-stateless-window.svg` | Incremental Extraction Patterns | Stateless Window Extraction |
-| 22 | `diagrams/0304-cursor-from-header.svg` | Incremental Extraction Patterns | Cursor from Another Table |
-| 23 | `diagrams/0305-sequential-id-cursor.svg` | Incremental Extraction Patterns | Sequential ID Cursor |
-| 24 | `diagrams/0306-full-id-comparison.svg` | Incremental Extraction Patterns | Hard Delete Detection |
-| 25 | `diagrams/0307-open-closed-split.svg` | Incremental Extraction Patterns | Open/Closed Documents -> The Split |
-| 26 | `diagrams/0308-detail-without-timestamp.svg` | Incremental Extraction Patterns | Detail Without Timestamp |
-| 27 | `diagrams/0309-late-arriving-data.svg` | Incremental Extraction Patterns | Late-Arriving Data |
-| 28 | `diagrams/0310-create-vs-update.svg` | Incremental Extraction Patterns | Create vs Update Separation -> Cursor + NULL Extraction |
-| 29 | `diagrams/0401-full-replace-load.svg` | Load Strategies | Full Replace Load -> Scope Alignment |
-| 30 | `diagrams/0402-append-only-load.svg` | Load Strategies | Append-Only Load -> The Pattern |
-| 31 | `diagrams/0403-merge-mechanics.svg` | Load Strategies | Merge / Upsert -> MERGE Across Engines |
-| 32 | `diagrams/0403-merge-cost.svg` | Load Strategies | Merge / Upsert -> Cost Anatomy |
-| 33 | `diagrams/0404-log-anatomy.svg` | Load Strategies | Append and Materialize -> The Pattern |
-| 34 | `diagrams/0404-compaction.svg` | Load Strategies | Append and Materialize -> Compaction |
-| 35 | `diagrams/0405-hybrid-append-merge.svg` | Load Strategies | Hybrid Append-Merge |
-| 36 | `diagrams/0406-checkpoint-placement.svg` | Load Strategies | Reliable Loads -> Checkpoint Placement |
-| 37 | `diagrams/0406-partial-load-recovery.svg` | Load Strategies | Reliable Loads -> Partial Load Recovery |
-| 38 | `diagrams/0501-metadata-injection.svg` | The Conforming Playbook | Metadata Column Injection -> The Playbook |
-| 39 | `diagrams/0502-synthetic-key.svg` | The Conforming Playbook | Synthetic Keys -> Building the Key |
-| 40 | `diagrams/0503-type-casting.svg` | The Conforming Playbook | Type Casting and Normalization -> The Playbook |
-| 41 | `diagrams/0503-type-gap.svg` | The Conforming Playbook | Type Casting and Normalization -> By Corridor |
-| 42 | `diagrams/0504-null-handling.svg` | The Conforming Playbook | Null Handling -> The Playbook |
-| 43 | `diagrams/0505-timezone-conforming.svg` | The Conforming Playbook | Timezone Conforming -> The Playbook |
-| 44 | `diagrams/0506-charset-encoding.svg` | The Conforming Playbook | Charset and Encoding -> The Playbook |
-| 45 | `diagrams/0507-nested-json.svg` | The Conforming Playbook | Nested Data and JSON -> Land As-Is |
-| 46 | `diagrams/0601-four-layers-observability.svg` | Operating the Pipeline | Monitoring and Observability -> Four Layers of Pipeline Observability |
-| 47 | `diagrams/0602-health-table.svg` | Operating the Pipeline | The Health Table -> What You Can't Measure |
-| 48 | `diagrams/0604-sla-duration-creep.svg` | Operating the Pipeline | SLA Management -> What Erodes SLAs |
-| 49 | `diagrams/0605-alerting-severity.svg` | Operating the Pipeline | Alerting and Notifications -> Severity Calibration |
-| 50 | `diagrams/0606-scheduling-dependencies.svg` | Operating the Pipeline | Scheduling and Dependencies -> Frequency vs. Method |
-| 51 | `diagrams/0608-tiered-freshness.svg` | Operating the Pipeline | Tiered Freshness -> The Tiers |
-| 52 | `diagrams/0609-schema-evolution-policies.svg` | Operating the Pipeline | Data Contracts -> Schema Evolution Policies |
-| 53 | `diagrams/0610-extraction-gates.svg` | Operating the Pipeline | Extraction Status Gates -> Gate Mechanics |
-| 54 | `diagrams/0611-backfill-types.svg` | Operating the Pipeline | Backfill Strategies -> Reloading Without Downtime |
-| 55 | `diagrams/0612-partial-failure-recovery.svg` | Operating the Pipeline | Partial Failure Recovery |
-| 56 | `diagrams/0613-duplicate-sources.svg` | Operating the Pipeline | Duplicate Detection -> How Duplicates Arrive |
-| 57 | `diagrams/0614-reconciliation-levels.svg` | Operating the Pipeline | Reconciliation Patterns -> Reconciliation Levels |
-| 58 | `diagrams/0615-corruption-recovery.svg` | Operating the Pipeline | Recovery from Corruption -> Triage: Assess the Blast Radius |
-| 59 | `diagrams/0701-detail-fanout.svg` | Serving the Destination | Don't Pre-Aggregate -> What Consumers Actually Need |
-| 60 | `diagrams/0702-partition-pruning.svg` | Serving the Destination | Partitioning, Clustering, and Pruning |
-| 61 | `diagrams/0703-view-hierarchy.svg` | Serving the Destination | Pre-Built Views -> Consumer Query Mistakes |
-| 62 | `diagrams/0704-analyst-queries.svg` | Serving the Destination | Query Patterns for Analysts -> Current State from Append-Only Tables |
-| 63 | `diagrams/0706-point-in-time.svg` | Serving the Destination | Point-in-Time from Events -> Movements to Snapshots |
-| 64 | `diagrams/domain-model-er.svg` | Appendix | Domain Model Quick Reference -> Relationships |
+```
+ 1  cover-art.svg                       (front matter)
+ 2  domain-model-er.svg                 Domain Model / Schema
+```
+
+## Foundations & Source Archetypes
+
+```
+ 3  ecl-conforming-vs-transforming.svg  What Is Conforming / The Line Between Conforming and Transforming
+ 4  0104-lies-sources-tell.svg          The Lies Sources Tell
+ 5  schema-drift-detection.svg          The Lies Sources Tell / "The schema is stable"
+ 6  0105-hard-vs-soft-rules.svg         Hard Rules, Soft Rules
+ 7  ecl-corridors.svg                   Corridors / The Two Corridors
+ 8  0108-purity-freshness.svg           Purity vs. Freshness / Classifying a Table
+ 9  0109-stateless-idempotent.svg       Idempotency / Statelessness and Idempotency
+```
+
+## Full Replace Patterns
+
+```
+10  0201-replace-strategies.svg         Full Scan Strategies / At the Destination: Replace Strategies
+11  0202-partition-swap.svg             Partition Swap
+12  0203-staging-swap.svg               Staging Swap
+13  0205-scoped-replace.svg             Scoped Full Replace / The Mechanics
+14  0206-rolling-window.svg             Rolling Window Replace / The Mechanics
+15  0207-sparse-table.svg               Sparse Table Extraction / Zeros vs. Missing
+16  0207-activity-driven.svg            Activity-Driven Extraction / The Mechanics
+17  0208-hash-detection.svg             Hash-Based Change Detection / The Mechanics
+18  0209-partial-columns.svg            Partial Column Loading / Why Exclude Columns?
+```
+
+## Incremental Extraction Patterns
+
+```
+19  0301-cursor-blind-spots.svg         Timestamp Extraction Foundations / The Discipline Gap
+20  0302-cursor-mechanics.svg           Cursor-Based Timestamp Extraction
+21  0303-stateless-window.svg           Stateless Window Extraction
+22  0304-cursor-from-header.svg         Cursor from Another Table
+23  0305-sequential-id-cursor.svg       Sequential ID Cursor
+24  0306-full-id-comparison.svg         Hard Delete Detection
+25  0307-open-closed-split.svg          Open/Closed Documents / The Split
+26  0308-detail-without-timestamp.svg   Detail Without Timestamp
+27  0309-late-arriving-data.svg         Late-Arriving Data
+28  0310-create-vs-update.svg           Create vs Update Separation / Cursor + NULL Extraction
+```
+
+## Load Strategies
+
+```
+29  0401-full-replace-load.svg          Full Replace Load / Scope Alignment
+30  0402-append-only-load.svg           Append-Only Load / The Pattern
+31  0403-merge-mechanics.svg            Merge / Upsert / MERGE Across Engines
+32  0403-merge-cost.svg                 Merge / Upsert / Cost Anatomy
+33  0404-log-anatomy.svg                Append and Materialize / The Pattern
+34  0404-compaction.svg                 Append and Materialize / Compaction
+35  0405-hybrid-append-merge.svg        Hybrid Append-Merge
+36  0406-checkpoint-placement.svg       Reliable Loads / Checkpoint Placement
+37  0406-partial-load-recovery.svg      Reliable Loads / Partial Load Recovery
+```
+
+## The Conforming Playbook
+
+```
+38  0501-metadata-injection.svg         Metadata Column Injection / The Playbook
+39  0502-synthetic-key.svg              Synthetic Keys / Building the Key
+40  0503-type-casting.svg               Type Casting and Normalization / The Playbook
+41  0503-type-gap.svg                   Type Casting and Normalization / By Corridor
+42  0504-null-handling.svg              Null Handling / The Playbook
+43  0505-timezone-conforming.svg        Timezone Conforming / The Playbook
+44  0506-charset-encoding.svg           Charset and Encoding / The Playbook
+45  0507-nested-json.svg                Nested Data and JSON / Land As-Is
+```
+
+## Operating the Pipeline
+
+```
+46  0601-four-layers-observability.svg  Monitoring and Observability / Four Layers of Pipeline Observability
+47  0602-health-table.svg               The Health Table / What You Can't Measure
+48  0604-sla-duration-creep.svg         SLA Management / What Erodes SLAs
+49  0605-alerting-severity.svg          Alerting and Notifications / Severity Calibration
+50  0606-scheduling-dependencies.svg    Scheduling and Dependencies / Frequency vs. Method
+51  0608-tiered-freshness.svg           Tiered Freshness / The Tiers
+52  0609-schema-evolution-policies.svg  Data Contracts / Schema Evolution Policies
+53  0610-extraction-gates.svg           Extraction Status Gates / Gate Mechanics
+54  0611-backfill-types.svg             Backfill Strategies / Reloading Without Downtime
+55  0612-partial-failure-recovery.svg   Partial Failure Recovery
+56  0613-duplicate-sources.svg          Duplicate Detection / How Duplicates Arrive
+57  0614-reconciliation-levels.svg      Reconciliation Patterns / Reconciliation Levels
+58  0615-corruption-recovery.svg        Recovery from Corruption / Triage: Assess the Blast Radius
+```
+
+## Serving the Destination
+
+```
+59  0701-detail-fanout.svg              Don't Pre-Aggregate / What Consumers Actually Need
+60  0702-partition-pruning.svg          Partitioning, Clustering, and Pruning
+61  0703-view-hierarchy.svg             Pre-Built Views / Consumer Query Mistakes
+62  0704-analyst-queries.svg            Query Patterns for Analysts / Current State from Append-Only Tables
+63  0706-point-in-time.svg              Point-in-Time from Events / Movements to Snapshots
+```
+
+## Appendix
+
+```
+64  domain-model-er.svg                 Domain Model Quick Reference / Relationships
+```
