@@ -106,7 +106,7 @@ This book is about the space between source and destination -- the step that ELT
 
 One Tuesday morning I woke up to a wall of email alerts -- row count mismatches across dozens of pipelines. I spent the rest of the day fixing them by hand: re-running extractions, reconciling counts against source, patching cursors that had drifted overnight. By the time I was done, I sat back and realized two things. First, the system I had built was complex enough that in a couple of years I wouldn't be able to recreate it without having it written down somewhere. Second, when I went looking for references to categorize what I had built into an existing strategy, I couldn't find any. There were no strategy books for what I was doing.
 
-So I started writing down the patterns I used. Just for future reference, at first. But as I organized them, they split naturally into extraction patterns and loading patterns -- and then I found myself with a collection of small but critical transformations that didn't belong in either category. Type casts, null handling, timezone tagging, key synthesis. They weren't business logic. They weren't the T in ELT. But they were unavoidable, and nobody had a name for them. That was the moment ECL took shape: Extract, Conform, Load. The C names the work that every pipeline does but no framework acknowledges.
+So I started writing down the patterns I used. Just for future reference, at first. But as I organized them, they split naturally into extraction patterns and loading patterns -- and then I found myself with a collection of small but critical transformations that didn't belong in either category. Type casts, null handling, timezone tagging, key synthesis -- none of it was business logic or the T in ELT, but it was unavoidable, and nobody had a name for it. That was the moment ECL took shape: Extract, Conform, Load. The C names the work that every pipeline does but no framework acknowledges.
 
 In my job, the T belonged to the analysts downstream. My responsibility was to deliver the data exactly as it was in the source, but in a place where they could actually reach it. Conforming was the bridge -- everything the data needed to survive the crossing without changing what it meant.
 
@@ -128,7 +128,7 @@ This is not a tutorial or a tool guide. This book won't set up your orchestrator
 <domain-model>
 Every SQL example in this book uses the same fictional schema. Same tables, same columns, same quirks -- so you can focus on the pattern, not on decoding a new schema every chapter.
 
-The tables were chosen because each one represents a distinct extraction challenge. They're not arbitrary.
+The tables were chosen because each one represents a distinct extraction challenge.
 
 === Schema
 <schema>
@@ -1139,7 +1139,7 @@ This is the harder corridor. The full details of the destination are in @columna
 
 #strong[Type conforming happens at the crossing.] Naive timestamps, decimal precision, JSON columns -- all of these need explicit handling before data lands. The destination won't reject bad types gracefully; it'll silently coerce them or fail the job. See @type-casting-and-normalization.
 
-#strong[The cost of mistakes compounds.] A wrong partition strategy, a missing cluster key, an unnecessary full-table scan in your load logic -- these aren't one-time costs. Every downstream query pays for them forever.
+#strong[The cost of mistakes compounds.] A wrong partition strategy, a missing cluster key, an unnecessary full-table scan in your load logic -- these are costs every downstream query pays for the life of the pipeline.
 
 === Transactional → Transactional
 <transactional-transactional>
@@ -1183,7 +1183,7 @@ A full replace has properties that incremental extraction fundamentally can't ma
 
 #strong[It's stateless and idempotent.] Run it twice, same result. No cursor state persisting between runs, no checkpoint files to manage, no accumulated decisions from prior executions. If something goes wrong, rerun -- the destination will be correct.
 
-#strong[It catches everything.] Hard deletes, retroactive corrections, soft rule violations, schema drift, rows that were missed by a prior incremental -- a full replace picks up all of it because it doesn't rely on the source to signal changes. It reads the current state of every row.
+#strong[It catches everything.] Hard deletes, retroactive corrections, soft rule violations, schema drift, rows that were missed by a prior incremental -- a full replace picks up all of it by reading the current state of every row directly, without relying on the source to signal changes.
 
 #strong[It has no drift accumulation.] An incremental pipeline that misses a row today still has that wrong row tomorrow, and the day after. A full replace that runs tonight corrects everything that was wrong since the last full replace.
 
@@ -1199,7 +1199,7 @@ The cost is real and often underestimated:
 
 #strong[Hard deletes are invisible.] A deleted row leaves no trace for a cursor-based extraction to find. You need a separate delete detection mechanism -- a full ID comparison, a count reconciliation, a tombstone table -- which adds complexity and its own failure modes. @hard-delete-detection
 
-#strong[High frequency has a monetary cost.] 288 extractions per day (every 5 minutes) means 288 load jobs, 288 sets of DML operations on the destination, 288 opportunities for partial failures. On BigQuery, that's 288 jobs counting against your DML quota. On Snowflake, that's warehouse time burning through the day. The cost of freshness is real.
+#strong[High frequency has a monetary cost.] 288 extractions per day (every 5 minutes) means 288 load jobs, 288 sets of DML operations on the destination, 288 opportunities for partial failures. On BigQuery, that's 288 jobs counting against your DML quota. On Snowflake, that's warehouse time burning through the day.
 
 #strong[Drift accumulates silently.] A missed row today is still wrong tomorrow. An incremental that has been running for 6 months with a slightly unreliable cursor has 6 months of accumulated drift that nobody has quantified. The destination looks correct -- it has data -- but it doesn't match the source.
 
@@ -1280,7 +1280,7 @@ When the SLA genuinely requires sub-hourly continuous refresh: accept it, build 
 <what-it-means>
 An idempotent pipeline produces the same destination state whether it runs once, twice, or ten times with the same input. No extra rows, no missing rows, no side effects from the previous run bleeding into the next one. The destination after run N+1 is indistinguishable from the destination after run N -- assuming the source didn't change between them.
 
-This sounds obvious until you realize how many pipelines fail it. An append without dedup doubles the data on retry. A cursor that advances before the load confirms creates a permanent gap. A staging table that doesn't get cleaned up causes the next run to load stale data on top of fresh data. Every one of these is a pipeline that works perfectly on the first run and breaks on the second.
+This sounds obvious until you realize how many pipelines fail it. An append without dedup doubles the data on retry. A cursor that advances before the load confirms creates a permanent gap. A staging table that doesn't get cleaned up causes the next run to load stale data on top of fresh data -- in each case, the pipeline works fine on the first run and breaks on the second.
 
 // ---
 
@@ -2727,7 +2727,7 @@ FROM orders
 WHERE updated_at >= CURRENT_DATE - INTERVAL '7 days';
 ```
 
-No state to manage, no cursor to advance, no orchestrator metadata. Run it twice and get the same result. A failed run leaves nothing behind -- the next run picks up from the same window.
+No state to manage, no cursor to advance, no orchestrator metadata -- run it twice and get the same result, and a failed run leaves nothing behind because the next run picks up from the same window.
 
 A window measured in days absorbs any clock skew between source and extractor. No buffer needed.
 
@@ -3552,9 +3552,7 @@ A high count here means the problem is ongoing, not a historical artifact from b
 
 === Why Not COALESCE?
 <strategy-1-coalesce>
-The obvious first attempt is `COALESCE(updated_at, created_at) >= :last_run` -- fall back to `created_at` when `updated_at` is NULL. It works, but `COALESCE` wraps both columns in a function, which prevents the optimizer from using indexes on either one. PostgreSQL supports a functional index on the expression; MySQL and SQL Server don't. On large tables without the functional index, this degrades to a full scan. If both columns are NULL on any row, `COALESCE` returns NULL and that row vanishes from every extraction.
-
-Use the Dual Cursor approach below instead.
+The obvious first attempt is `COALESCE(updated_at, created_at) >= :last_run` -- fall back to `created_at` when `updated_at` is NULL. It works, but `COALESCE` wraps both columns in a function, which prevents the optimizer from using indexes on either one. PostgreSQL supports a functional index on the expression; MySQL and SQL Server don't. On large tables without the functional index, this degrades to a full scan. If both columns are NULL on any row, `COALESCE` returns NULL and that row vanishes from every extraction -- use the Dual Cursor approach below instead.
 
 // ---
 
@@ -3776,7 +3774,7 @@ Both are idempotent -- rerunning the same extraction and load produces the same 
 
 `events`, `inventory_movements`, and clickstream tables only grow. Rows are inserted once and never modified or deleted. A MERGE on every load -- matching on a key, checking for existence, deciding between INSERT and UPDATE -- is unnecessary work when the source *guarantees* that every extracted row is new.
 
-The append-only load skips all of that: extract the new rows, INSERT them into the destination, done. No key matching, no partition rewriting, no update logic. This also makes this load strategy the most naive and fragile.
+The append-only load skips all of that: extract the new rows, INSERT them into the destination, done. No key matching, no partition rewriting, no update logic -- which also makes it the most naive and fragile load strategy in the book.
 
 // ---
 
@@ -4180,7 +4178,7 @@ FROM orders_log
 QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1;
 ```
 
-Consumers query `orders` and see the current state. The view abstracts the log entirely.
+Consumers query `orders` and see the current state -- the view abstracts the log entirely.
 
 #figure(image("diagrams/0404-log-anatomy.svg", width: 90%))
 
@@ -4236,7 +4234,7 @@ The cost of reconciling source and destination shifts from load time to read tim
 
 The shift is favorable when extraction frequency matters more than read frequency. If you load 24 times per day but consumers query the current state 4 times per day, paying for 4 dedup scans is cheaper than paying for 24 MERGEs. It's unfavorable when many consumers query `orders` constantly -- the dedup scan runs on every query, and the cost could exceed what the MERGE would have been.
 
-It's usually the case that you want data freshness more frequently than consumption, since most business customers want "New data" whenever they ask for it, but aren't constantly consuming it. More "on demand" than "live".
+It's usually the case that you want data freshness more frequently than consumption, since most business customers want "New data" whenever they ask for it, but aren't constantly consuming it -- more on-demand than live.
 
 Compaction (below) is the lever that controls the read-side cost: compact the log regularly and the view's dedup scan stays fast, regardless of extraction frequency.
 
@@ -4401,7 +4399,7 @@ A load is idempotent if running it twice with the same batch leaves the destinat
 
 === Statelessness
 <statelessness>
-A pipeline that can run on a fresh machine with no local state is valuable -- especially when the orchestrator dies at 2am and you're debugging from a laptop. No local files, no SQLite checkpoint databases, no environment variables from a wrapper script. Just clone, set credentials, run.
+A pipeline that can run on a fresh machine with no local state is valuable -- especially when the orchestrator dies at 2am and you're debugging from a laptop: no local files, no SQLite checkpoint databases, no environment variables from a wrapper script; just clone, set credentials, run.
 
 Two things break statelessness:
 
@@ -4887,7 +4885,7 @@ The ECL layer #emph[can] cast to the destination's native boolean, but only with
 
 === Decimal Precision
 <decimal-precision>
-`NUMERIC(18,6)` in PostgreSQL is exact. `FLOAT64` in BigQuery is not. This section covers the mechanics and the pragmatics.
+`NUMERIC(18,6)` in PostgreSQL is exact; `FLOAT64` in BigQuery is not.
 
 #strong[Where it hurts:] financial data, unit prices, exchange rates. Multiplied by millions of rows, even tiny rounding errors accumulate into visible discrepancies in aggregate reports. An invoice total that's off by \$0.00001 per line becomes \$10 off on a million-line summary -- and accounting will find it.
 
@@ -4946,7 +4944,7 @@ The temptation to "clean up" NULLs at extraction is strong, especially when you 
 
 === The Rule: Don't Mix, Don't Match
 <the-rule-dont-mix-dont-match>
-The worst outcome isn't NULLs in the destination -- it's inconsistent representations of "nothing" across tables, columns, or even rows within the same column.
+Inconsistent representations of "nothing" across tables, columns, or even rows within the same column are the worst outcome -- worse than NULLs in the destination.
 
 The source might use any combination of:
 
@@ -5918,7 +5916,7 @@ A single breach is an incident. Sustained breaches mean the SLA is wrong -- eith
 Pipelines fail silently. Zero rows extracted successfully, schema changed upstream, row counts drifting apart between source and destination -- all of these can happen while the orchestrator reports SUCCESS. The monitoring layer from @monitoring-and-observability and the health table from @the-health-table capture these signals; this pattern is about deciding which of them deserve to wake someone up.
 
 The calibration problem has two failure modes. 1. Too many alerts -- every run sends a notification, every minor discrepancy triggers a warning -- produces alert fatigue, and alert fatigue produces ignored alerts, and ignored alerts produce missed failures. 2. Too few alerts -- only page on total outages -- means silent data loss accumulates for days before anyone notices. \
-The goal is a narrow band between the two: alert on conditions that require human attention, monitor everything else on the dashboard. Your pipelines should be loud, so that you can rest comfortably when there is silence.
+The goal is a narrow band between the two: alert on conditions that require human attention, monitor everything else on the dashboard -- loud enough that silence is genuinely reassuring.
 
 === Severity Calibration
 <severity-calibration>
@@ -6286,7 +6284,7 @@ The hot tier's incremental extraction doesn't just grab rows since the last run 
 
 The right lag depends on how reliably the source system updates its cursors. For well-organized systems where every modification touches `updated_at`, 7 days covers the common cases. For messier systems where documents get modified without updating any cursor (common in ERPs where back-office edits bypass the application layer), 30 days is safer. The decision is empirical: start at 7, watch for rows that appear in the warm or cold tier's pass but were never picked up by hot, and widen the window if it happens regularly.
 
-The warm tier reads its entire scope (current quarter) on every daily run, so its overlap with the hot zone is inherent -- no separate lag parameter needed. The cold tier's full replace covers everything by definition. Each tier downstream acts as the safety net for the tier above it.
+The warm tier reads its entire scope (current quarter) on every daily run, so its overlap with the hot zone is inherent -- no separate lag parameter needed. The cold tier's full replace covers everything by definition. Each tier downstream is the safety net for the tier above it.
 
 #figure(image("diagrams/0608-tiered-freshness.svg", width: 95%))
 
@@ -6353,7 +6351,7 @@ The tier boundaries shift with business cycles. Month-end might widen the hot wi
 === Schema Drift
 Source schemas change without notice. A column gets renamed, a type changes from INT to VARCHAR, a new column appears when someone activates an ERP module, an old one disappears after a migration. The source team doesn't know your pipeline exists -- they won't tell you before they deploy a schema migration, and they shouldn't have to. The boundary between their system and yours is your responsibility to defend.
 
-Without a contract, drift propagates silently into the destination -- a dropped column becomes NULLs in downstream queries, a type change produces casting errors that surface three layers deep in a dashboard nobody connects back to the source, and a 90% row count drop looks like a quiet day until someone notices the month-end report is missing most of its data. By then the blast radius is wide and the root cause is buried. A data contract makes these boundaries explicit and checkable.
+Without a contract, drift propagates silently into the destination -- a dropped column becomes NULLs in downstream queries, a type change produces casting errors that surface three layers deep in a dashboard nobody connects back to the source, and a 90% row count drop looks like a quiet day until someone notices the month-end report is missing most of its data. By then the blast radius is wide and the root cause is buried -- a data contract makes these boundaries explicit and checkable before the damage spreads.
 
 === What a Data Contract Covers
 <what-a-data-contract-covers>
@@ -7737,7 +7735,7 @@ The cost is maintaining the SCD2 pipeline itself. Every extraction needs to be d
   kind: table,
 )
 
-Low-mutation tables store far less with events than with snapshots -- 10 changes per day adds 10 rows, while a daily snapshot adds the entire table. High-mutation tables may store more with events. The break-even depends on the mutation rate relative to the table size.
+Low-mutation tables store far less with events than with snapshots -- 10 changes per day adds 10 rows, while a daily snapshot adds the entire table. High-mutation tables may store more with events -- the break-even depends on the mutation rate relative to the table size.
 
 Tiered retention applies to all approaches: keep daily granularity for the recent window, compress older data to monthly, drop anything beyond the retention requirement.
 
@@ -7747,7 +7745,7 @@ Replay is only as accurate as the event log, and event logs have gaps. The domai
 
 I had a client whose `inventory` table and the reconstructed-from-movements inventory diverged by hundreds of units on certain SKUs. The client refused to believe my data was correct -- their expectation was that movements and inventory should always match. I had to pull both from the source, show the same discrepancy in the source system itself, and demonstrate that the gap came from bulk operations that bypassed the movement log. The pipeline was cloning faithfully; the source was inconsistent.
 
-The periodic full replace of the `inventory` table catches the drift -- it reflects the source's current state, including unlogged changes. The event-based reconstruction doesn't. When both exist in the destination, consumers should understand which one to trust: the `inventory` table for current state (it's what the source says right now), the movement log for historical reconstruction (it's what the source recorded happening). When they disagree, the source has unlogged changes -- that's a source data quality problem, not a pipeline problem.
+The periodic full replace of the `inventory` table catches the drift -- it reflects the source's current state, including unlogged changes, while the event-based reconstruction doesn't. When both exist in the destination, consumers should understand which one to trust: the `inventory` table for current state (it's what the source says right now), the movement log for historical reconstruction (it's what the source recorded happening). When they disagree, the source has unlogged changes -- that's a source data quality problem, not a pipeline problem.
 
 === Anti-Patterns
 <anti-patterns-5>
@@ -8573,7 +8571,7 @@ See @transactional-sources for the full terrain.
 
 #strong[Snowflake] - `PRIMARY KEY` and `UNIQUE` constraints are not enforced -- they're metadata hints only. Deduplication is your problem - `VARIANT` from Parquet loads as string, not queryable JSON, until you `PARSE_JSON` - Result cache: identical queries within 24h return cached results at no warehouse cost - Grants follow the table object, not the name -- after `SWAP WITH` or `CLONE`, re-grant or use `FUTURE GRANTS`
 
-#strong[ClickHouse] - `ALTER TABLE ... UPDATE` and `ALTER TABLE ... DELETE` are async -- they return immediately, actual work happens during the next merge - `ReplacingMergeTree` deduplicates on merge, not on insert. Duplicates coexist until the merge scheduler runs. `SELECT ... FINAL` forces read-time dedup at a performance cost - Small inserts cause a "too many parts" error. Batch inserts into blocks of at least tens of thousands of rows - `ENGINE` is required in every `CREATE TABLE`. `ORDER BY` is fixed at creation
+#strong[ClickHouse] - `ALTER TABLE ... UPDATE` and `ALTER TABLE ... DELETE` are async -- they return immediately, actual work happens during the next merge - `ReplacingMergeTree` deduplicates on merge rather than on insert, so duplicates coexist until the merge scheduler runs; `SELECT ... FINAL` forces read-time dedup at a performance cost - Small inserts cause a "too many parts" error. Batch inserts into blocks of at least tens of thousands of rows - `ENGINE` is required in every `CREATE TABLE`. `ORDER BY` is fixed at creation
 
 #strong[Redshift] - `COPY` from S3 is the only performant bulk load. Row-by-row `INSERT` is orders of magnitude slower - Automatic VACUUM DELETE runs in the background for most cases, but manual VACUUM may still be needed after heavy bulk deletes or to reclaim sort order - Sort keys and dist keys are changeable via `ALTER TABLE`, but the background rewrite can be slow on large tables -- plan them at creation - Hard limit of 1,600 columns per table
 
