@@ -38,12 +38,12 @@
   <!-- Log rows stacked -->
   <text x="350" y="58" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">run 1:  1001 pending, 1002 pending</text>
   <text x="350" y="70" fill="#d5c4a1" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">run 2:  1001 shipped, 1003 pending</text>
-  <text x="350" y="82" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">run 3:  1001 shipped, 1002 confirmed, 1003 pending</text>
+  <text x="350" y="82" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">run 3:  1001 shipped, 1002 confirmed, 1003 pndg</text>
 
   <!-- Consumer label -->
-  <text x="520" y="58" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">analysts query dedup VIEW</text>
-  <text x="520" y="70" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">history + replay available</text>
-  <text x="520" y="82" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">low frequency, high volume</text>
+  <text x="545" y="58" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">analysts query dedup VIEW</text>
+  <text x="545" y="70" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">history + replay available</text>
+  <text x="545" y="82" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">low frequency, high volume</text>
 
   <!-- ═══ Transactional destination (bottom right) ═══ -->
   <rect x="340" y="110" width="360" height="66" fill="#f9f5d7" stroke="#458588" stroke-width="1.5" rx="4"/>

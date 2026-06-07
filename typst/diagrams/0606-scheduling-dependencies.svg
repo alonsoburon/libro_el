@@ -109,6 +109,7 @@
 
   <!-- customers -> executive_kpi (faint) -->
   <path d="M 430 124 C 480 124, 490 164, 535 164" fill="none" stroke="#928374" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <polygon points="533,161 540,164 533,167" fill="#928374"/>
 
   <!-- Critical path label -->
   <text x="482" y="186" text-anchor="middle" fill="#cc241d" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">slowest upstream</text>

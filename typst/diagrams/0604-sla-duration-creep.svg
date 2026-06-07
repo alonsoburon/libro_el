@@ -99,5 +99,5 @@
   <rect x="470" y="178" width="14" height="8" fill="#9d0006" opacity="0.25" rx="2"/>
   <text x="490" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">breach</text>
 
-  <text x="575" y="185" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">The signal was in the health table for weeks.</text>
+  <text x="712" y="185" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">The signal was in the health table for weeks.</text>
 </svg>

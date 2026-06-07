@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="310" viewBox="0 0 720 310">
   <rect x="0" y="0" width="720" height="310" fill="#ffffff" rx="6"/>
-  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Open/closed split — mutable documents re-extracted fully, frozen ones by cursor only</text>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Open/closed split -- mutable documents re-extracted fully, frozen ones by cursor only</text>
 
   <!-- ═══ Source invoices table (x=20..250, y=44..262) ═══ -->
   <text x="135" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">Source: invoices</text>
@@ -147,7 +147,7 @@
   <text x="672" y="146" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">cursor</text>
 
   <!-- Batch annotation -->
-  <text x="564" y="174" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">4 rows out of 12,007 — open set + recent closes</text>
+  <text x="564" y="174" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">4 rows out of 12,007 -- open set + recent closes</text>
 
   <!-- ═══ Hard delete note ═══ -->
   <rect x="428" y="196" width="272" height="44" fill="#9d0006" opacity="0.04" rx="4"/>
@@ -157,10 +157,10 @@
 
   <!-- ═══ Legend ═══ -->
   <rect x="20" y="280" width="3" height="12" fill="#d65d0e" opacity="0.3" rx="1"/>
-  <text x="29" y="290" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">open (mutable) — full set every run</text>
+  <text x="29" y="290" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">open (mutable) -- full set every run</text>
 
   <rect x="240" y="280" width="3" height="12" fill="#79740e" opacity="0.3" rx="1"/>
-  <text x="249" y="290" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">closed (frozen) — cursor only</text>
+  <text x="249" y="290" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">closed (frozen) -- cursor only</text>
 
   <rect x="440" y="280" width="14" height="10" fill="#d5c4a1" opacity="0.4" rx="2"/>
   <text x="460" y="289" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">skipped (behind cursor, unchanged)</text>

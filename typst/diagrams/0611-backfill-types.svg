@@ -47,15 +47,15 @@
   <!-- 2025-Feb band (narrower) -->
   <rect x="540" y="114" width="20" height="22" fill="#d79921" opacity="0.18" rx="3"/>
   <rect x="540" y="114" width="20" height="22" fill="none" stroke="#d79921" stroke-width="1" rx="3"/>
-  <text x="550" y="128" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">2025-Feb</text>
-  <text x="410" y="147" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">use when known windows were bad</text>
+  <text x="550" y="128" text-anchor="middle" fill="#d79921" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">Feb</text>
+  <text x="410" y="143" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-style="italic">use when known windows were bad</text>
 
   <!-- Row 3: State reset + replay (orange, from mid-point to now) -->
   <text x="158" y="167" text-anchor="end" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">State reset + replay</text>
   <text x="158" y="177" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">reset cursor, replay forward</text>
   <!-- Reset marker -->
-  <line x1="420" y1="154" x2="420" y2="180" stroke="#d65d0e" stroke-width="1" stroke-dasharray="2,2"/>
-  <text x="420" y="151" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">state-reset point</text>
+  <line x1="420" y1="158" x2="420" y2="180" stroke="#d65d0e" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="420" y="155" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-weight="600">state-reset point</text>
   <rect x="420" y="158" width="240" height="22" fill="#d65d0e" opacity="0.12" rx="3"/>
   <rect x="420" y="158" width="240" height="22" fill="none" stroke="#d65d0e" stroke-width="1" rx="3"/>
   <rect x="421" y="159" width="3" height="20" fill="#d65d0e" opacity="0.45" rx="1"/>

@@ -121,5 +121,5 @@
   <rect x="330" y="232" width="3" height="8" fill="#79740e" opacity="0.3" rx="1"/>
   <text x="339" y="239" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">latest extraction (wins dedup)</text>
 
-  <text x="555" y="239" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">Compaction collapses log to view state periodically.</text>
+  <text x="700" y="239" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">Compaction collapses log to current state periodically.</text>
 </svg>

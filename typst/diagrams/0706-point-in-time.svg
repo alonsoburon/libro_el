@@ -44,9 +44,9 @@
 
   <!-- Event blocks above the line -->
   <!-- Jan 5: +100 (green) -->
-  <rect x="217" y="76" width="24" height="26" fill="#79740f" opacity="0.16" rx="3"/>
-  <rect x="217" y="76" width="24" height="26" fill="none" stroke="#79740f" stroke-width="0.8" rx="3"/>
-  <text x="229" y="93" text-anchor="middle" fill="#79740f" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">+100</text>
+  <rect x="217" y="76" width="24" height="26" fill="#79740e" opacity="0.16" rx="3"/>
+  <rect x="217" y="76" width="24" height="26" fill="none" stroke="#79740e" stroke-width="0.8" rx="3"/>
+  <text x="229" y="93" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">+100</text>
   <text x="229" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 5</text>
 
   <!-- Jan 10: -30 (orange) -->
@@ -56,9 +56,9 @@
   <text x="278" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 10</text>
 
   <!-- Jan 15: +50 (green) -->
-  <rect x="315" y="76" width="24" height="26" fill="#79740f" opacity="0.16" rx="3"/>
-  <rect x="315" y="76" width="24" height="26" fill="none" stroke="#79740f" stroke-width="0.8" rx="3"/>
-  <text x="327" y="93" text-anchor="middle" fill="#79740f" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">+50</text>
+  <rect x="315" y="76" width="24" height="26" fill="#79740e" opacity="0.16" rx="3"/>
+  <rect x="315" y="76" width="24" height="26" fill="none" stroke="#79740e" stroke-width="0.8" rx="3"/>
+  <text x="327" y="93" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">+50</text>
   <text x="327" y="71" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">Jan 15</text>
 
   <!-- Jan 20: -10 (orange) -->
@@ -99,7 +99,7 @@
   <text x="165" y="164" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">derived state</text>
 
   <!-- Bottom caption / legend -->
-  <rect x="40" y="200" width="10" height="8" fill="#79740f" opacity="0.16" rx="2" stroke="#79740f" stroke-width="0.6"/>
+  <rect x="40" y="200" width="10" height="8" fill="#79740e" opacity="0.16" rx="2" stroke="#79740e" stroke-width="0.6"/>
   <text x="55" y="207" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">stock-in</text>
 
   <rect x="105" y="200" width="10" height="8" fill="#d65d0e" opacity="0.16" rx="2" stroke="#d65d0e" stroke-width="0.6"/>

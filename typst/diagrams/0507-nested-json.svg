@@ -47,7 +47,7 @@
   <!-- ═══ Downstream view (right, optional) ═══ -->
   <line x1="480" y1="80" x2="495" y2="80" stroke="#928374" stroke-width="1" stroke-dasharray="3,2"/>
   <polygon points="495,77 502,80 495,83" fill="#928374"/>
-  <text x="498" y="72" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">downstream</text>
+  <text x="502" y="72" text-anchor="end" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="6.5">downstream</text>
 
   <rect x="505" y="46" width="200" height="100" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
   <rect x="505" y="46" width="200" height="16" fill="#d5c4a1" opacity="0.2" rx="4"/>

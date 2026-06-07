@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270">
   <rect x="0" y="0" width="720" height="270" fill="#ffffff" rx="6"/>
-  <text x="360" y="20" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Cursor mechanics — each run picks up where the last confirmed load left off</text>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Cursor mechanics -- each run picks up where the last confirmed load left off</text>
 
   <!-- Timeline axis -->
   <line x1="55" y1="48" x2="690" y2="48" stroke="#d5c4a1" stroke-width="1"/>
@@ -121,7 +121,7 @@
   <text x="80" y="222" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">extracted row</text>
 
   <rect x="195" y="214" width="14" height="10" fill="#d79921" opacity="0.25" rx="2"/>
-  <text x="215" y="222" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">overlap — same rows in both runs, upsert deduplicates</text>
+  <text x="215" y="222" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">overlap -- same rows in both runs, upsert deduplicates</text>
 
   <!-- Bottom annotation -->
   <text x="360" y="255" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-style="italic">Cursor only advances after the load is confirmed. Partial load + premature advance = permanent gap.</text>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="230" viewBox="0 0 720 230">
   <rect x="0" y="0" width="720" height="230" fill="#ffffff" rx="6"/>
-  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Sequential ID cursor — inserts only, updates are invisible</text>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Sequential ID cursor -- inserts only, updates are invisible</text>
 
   <!-- ID axis -->
   <line x1="40" y1="48" x2="700" y2="48" stroke="#d5c4a1" stroke-width="1"/>

@@ -252,11 +252,13 @@ These invariants are matched across every diagram in `typst/diagrams/` and must 
 - **Filename**: `XXYY-kebab-case-name.svg` where `XX` is the chapter and `YY` is the section within it (e.g. `0610-extraction-gates.svg` for §6.10).
 - **viewBox**: `0 0 720 H` where `H` is typically 200-240. Width is fixed; height adapts to content.
 - **Palette** (gruvbox light, no other colors):
-  - bg `#ffffff`, header `#ebdbb2`, lines `#d5c4a1`
-  - text `#3c3836`, muted `#7c6f64`, dim `#928374`
+  - bg `#ffffff`, bg-soft `#f9f5d7`, bg-cream `#fbf1c7`, header `#ebdbb2`, lines `#d5c4a1`
+  - text `#3c3836`, muted `#7c6f64`, dim `#928374`, dim-warm `#bdae93`
   - blue `#458588`, orange `#d65d0e`, green `#79740e`, red `#9d0006`, yellow `#d79921`
+  - Accents: green-bright `#689d6a` / red-bright `#cc241d` (the correct/wrong duo, e.g. in 0502-0505), amber `#b57614` (buffer/source-health labels in Part VI)
+  - Text-on-tint variants (darker, for small text over light fills): blue-deep `#076678`, orange-deep `#af3a03` (e.g. in 0613)
   - Fills usually at opacity 0.06-0.30
-- **Font**: `'Segoe UI', system-ui, sans-serif` throughout. Title centered at y=18, font-size 13, fill `#7c6f64`, letter-spacing 0.3.
+- **Font**: `'Segoe UI', system-ui, sans-serif` throughout. Title centered at y=18, font-size 13, fill `#7c6f64`, letter-spacing 0.3. Exception: `monospace` is allowed for SQL/code/identifier text inside diagrams (e.g. 0104, 0310, 0610).
 - **No em-dashes (`—`)** anywhere in the SVG. Use `--` in body text (matches the SQL-comment convention from the book's punctuation palette).
 - **XML comments must NOT contain `--`** -- XML rejects double-hyphen inside comments. Use `===` or plain text instead.
 - **Embedding**: `#figure(image("diagrams/XXYY-name.svg", width: 95%))`, placed inside a section's prose right after the paragraph that introduces the concept.

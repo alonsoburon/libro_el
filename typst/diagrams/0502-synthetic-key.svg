@@ -46,7 +46,7 @@
   <text x="645" y="98" text-anchor="middle" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">posted</text>
 
   <!-- "corrected" annotation -->
-  <text x="710" y="98" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">corrected</text>
+  <text x="712" y="98" text-anchor="end" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">corrected</text>
 
   <!-- "identical" annotation on identity columns -->
   <text x="270" y="112" text-anchor="middle" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="7" font-style="italic">identical both runs</text>

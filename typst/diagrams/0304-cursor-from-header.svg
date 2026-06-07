@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="260" viewBox="0 0 720 260">
   <rect x="0" y="0" width="720" height="260" fill="#ffffff" rx="6"/>
-  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Borrowing the header's cursor — order_lines has no updated_at of its own</text>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Borrowing the header's cursor -- order_lines has no updated_at of its own</text>
 
   <text x="155" y="36" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Source</text>
   <text x="565" y="36" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">Destination</text>
@@ -64,14 +64,14 @@
   <text x="92" y="187" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1</text>
   <text x="145" y="187" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Bolt</text>
   <text x="195" y="187" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">50</text>
-  <text x="255" y="187" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" opacity="0.2">—</text>
+  <text x="255" y="187" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" opacity="0.2">--</text>
   <line x1="22" y1="193" x2="288" y2="193" stroke="#d5c4a1" stroke-width="0.3"/>
   <!-- row 2: y=207 (20px) -->
   <text x="40" y="207" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">1001</text>
   <text x="92" y="207" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">2</text>
   <text x="145" y="207" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">Nut</text>
   <text x="195" y="207" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">100</text>
-  <text x="255" y="207" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" opacity="0.2">—</text>
+  <text x="255" y="207" text-anchor="middle" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" opacity="0.2">--</text>
 
   <!-- ═══ extraction arrow ═══ -->
   <text x="345" y="172" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5">SELECT ol.*</text>
@@ -128,11 +128,11 @@
   <text x="620" y="172" text-anchor="middle" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">10</text>
 
   <!-- dest annotation -->
-  <text x="550" y="224" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">all lines for changed orders — some didn't change, upsert deduplicates</text>
+  <text x="550" y="224" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8" font-style="italic">all lines for changed orders -- some didn't change, upsert deduplicates</text>
 
   <!-- ═══ legend ═══ -->
   <rect x="15" y="242" width="10" height="8" fill="#458588" opacity="0.12" rx="2"/>
-  <text x="30" y="249" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">header's cursor — only timestamp in the relationship</text>
+  <text x="30" y="249" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">header's cursor -- only timestamp in the relationship</text>
   <rect x="340" y="242" width="10" height="8" fill="#9d0006" opacity="0.04" rx="2" stroke="#9d0006" stroke-width="0.5" stroke-dasharray="2,2"/>
-  <text x="355" y="249" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">ghost column — doesn't exist on the detail table</text>
+  <text x="355" y="249" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">ghost column -- doesn't exist on the detail table</text>
 </svg>

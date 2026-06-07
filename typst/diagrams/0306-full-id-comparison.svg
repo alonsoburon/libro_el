@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="250" viewBox="0 0 720 250">
   <rect x="0" y="0" width="720" height="250" fill="#ffffff" rx="6"/>
-  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Full ID comparison — extract source IDs, land in staging, diff at destination</text>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Full ID comparison -- extract source IDs, land in staging, diff at destination</text>
 
   <!-- ═══ Step 1: Source ═══ -->
   <text x="90" y="38" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="600">1. Extract IDs from source</text>

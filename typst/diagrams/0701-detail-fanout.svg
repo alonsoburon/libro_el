@@ -1,2 +1,55 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg width="720" height="480" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="720" height="480" fill="#181825" rx="6"></rect><text x="360" y="24" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">One detail table, many downstream views</text><rect x="230" y="50" width="260" height="120" fill="#1e1e2e" stroke="#6c8ebf" stroke-width="2" rx="6"></rect><rect x="230" y="50" width="260" height="28" fill="#6c8ebf" rx="6"></rect><rect x="230" y="64" width="260" height="14" fill="#6c8ebf"></rect><text x="360" y="69" text-anchor="middle" fill="#1e1e2e" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="bold">order_lines</text><text x="360" y="96" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">order_id · line_id · product_id</text><text x="360" y="114" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">customer_id · warehouse_id · region</text><text x="360" y="132" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">quantity · unit_price · currency</text><text x="360" y="150" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">order_date · ship_date · status</text><line x1="360" y1="170" x2="112.5" y2="300" stroke="#5aab7b" stroke-width="1.5" stroke-opacity="0.6"></line><polygon points="112.5,300 108.5,292 116.5,292" fill="#5aab7b" fill-opacity="0.8"></polygon><rect x="42.5" y="300" width="140" height="80" fill="#1e1e2e" stroke="#5aab7b" stroke-width="1.5" rx="5"></rect><text x="112.5" y="318" text-anchor="middle" fill="#5aab7b" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">v_revenue</text><text x="112.5" y="332" text-anchor="middle" fill="#5aab7b" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">_by_product</text><text x="112.5" y="350" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">GROUP BY product, month</text><text x="112.5" y="363" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">SUM(qty × price)</text><text x="112.5" y="400" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-style="italic">Sales</text><line x1="360" y1="170" x2="277.5" y2="300" stroke="#d4a040" stroke-width="1.5" stroke-opacity="0.6"></line><polygon points="277.5,300 273.5,292 281.5,292" fill="#d4a040" fill-opacity="0.8"></polygon><rect x="207.5" y="300" width="140" height="80" fill="#1e1e2e" stroke="#d4a040" stroke-width="1.5" rx="5"></rect><text x="277.5" y="318" text-anchor="middle" fill="#d4a040" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">v_cost</text><text x="277.5" y="332" text-anchor="middle" fill="#d4a040" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">_by_center</text><text x="277.5" y="350" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">GROUP BY cost_ctr, qtr</text><text x="277.5" y="363" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">SUM(qty × price)</text><text x="277.5" y="400" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-style="italic">Finance</text><line x1="360" y1="170" x2="442.5" y2="300" stroke="#58b0a0" stroke-width="1.5" stroke-opacity="0.6"></line><polygon points="442.5,300 438.5,292 446.5,292" fill="#58b0a0" fill-opacity="0.8"></polygon><rect x="372.5" y="300" width="140" height="80" fill="#1e1e2e" stroke="#58b0a0" stroke-width="1.5" rx="5"></rect><text x="442.5" y="318" text-anchor="middle" fill="#58b0a0" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">v_shipments</text><text x="442.5" y="332" text-anchor="middle" fill="#58b0a0" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">_by_location</text><text x="442.5" y="350" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">GROUP BY warehouse, week</text><text x="442.5" y="363" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">SUM(quantity)</text><text x="442.5" y="400" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-style="italic">Warehouse</text><line x1="360" y1="170" x2="607.5" y2="300" stroke="#d46a6a" stroke-width="1.5" stroke-opacity="0.6"></line><polygon points="607.5,300 603.5,292 611.5,292" fill="#d46a6a" fill-opacity="0.8"></polygon><rect x="537.5" y="300" width="140" height="80" fill="#1e1e2e" stroke="#d46a6a" stroke-width="1.5" rx="5"></rect><text x="607.5" y="318" text-anchor="middle" fill="#d46a6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">v_returns</text><text x="607.5" y="332" text-anchor="middle" fill="#d46a6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="600">_by_reason</text><text x="607.5" y="350" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">GROUP BY return_type</text><text x="607.5" y="363" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">COUNT(*), SUM(qty)</text><text x="607.5" y="400" text-anchor="middle" fill="#a6adc8" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-style="italic">Support</text><line x1="30" y1="230" x2="690" y2="230" stroke="#585b70" stroke-width="1" stroke-dasharray="6,4"></line><text x="685" y="224" text-anchor="end" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">pipeline boundary — views live downstream</text><text x="685" y="110" text-anchor="end" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">← pipeline lands this</text><text x="360" y="460" text-anchor="middle" fill="#6c7086" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Views change when business logic changes. The pipeline doesn't.</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="230" viewBox="0 0 720 230">
+  <rect x="0" y="0" width="720" height="230" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">One landed detail table, three consumer views</text>
+
+  <!-- === Section labels above the boundary === -->
+  <text x="120" y="42" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">PIPELINE LANDS</text>
+  <text x="525" y="42" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">CONSUMERS QUERY (downstream)</text>
+
+  <!-- === Vertical pipeline boundary === -->
+  <line x1="280" y1="50" x2="280" y2="198" stroke="#d5c4a1" stroke-width="1" stroke-dasharray="5,4"/>
+
+  <!-- === Source detail table: order_lines (blue) === -->
+  <rect x="24" y="62" width="192" height="100" fill="#458588" fill-opacity="0.06" stroke="#458588" stroke-width="1.4" rx="5"/>
+  <rect x="24" y="62" width="192" height="18" fill="#458588" fill-opacity="0.18" rx="5"/>
+  <rect x="24" y="74" width="192" height="6" fill="#458588" fill-opacity="0.18"/>
+  <text x="120" y="75" text-anchor="middle" fill="#076678" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" font-weight="700">order_lines</text>
+  <text x="120" y="99" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">order_id . line_id . product_id</text>
+  <text x="120" y="115" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">warehouse_id . cost_center</text>
+  <text x="120" y="131" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">quantity . unit_price . currency</text>
+  <text x="120" y="147" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9">order_date . ship_date . status</text>
+  <text x="120" y="180" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-style="italic">raw detail, cloned as-is</text>
+
+  <!-- === Curved arrows fanning out from table right edge (x=216) to each view (x=466) === -->
+  <path d="M 216 95 C 310 95, 370 70, 462 70" fill="none" stroke="#79740e" stroke-width="1.3" stroke-opacity="0.7"/>
+  <polygon points="462,67 469,70 462,73" fill="#79740e" fill-opacity="0.9"/>
+
+  <path d="M 216 112 C 320 112, 360 112, 462 112" fill="none" stroke="#d65d0e" stroke-width="1.3" stroke-opacity="0.7"/>
+  <polygon points="462,109 469,112 462,115" fill="#d65d0e" fill-opacity="0.9"/>
+
+  <path d="M 216 129 C 310 129, 370 154, 462 154" fill="none" stroke="#458588" stroke-width="1.3" stroke-opacity="0.7"/>
+  <polygon points="462,151 469,154 462,157" fill="#458588" fill-opacity="0.9"/>
+
+  <!-- === View 1: Sales (green) === -->
+  <rect x="466" y="54" width="228" height="32" fill="#79740e" fill-opacity="0.06" stroke="#79740e" stroke-width="1.2" rx="4"/>
+  <rect x="466" y="54" width="6" height="32" fill="#79740e" fill-opacity="0.45" rx="2"/>
+  <text x="482" y="69" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">Sales . v_revenue_by_product</text>
+  <text x="482" y="81" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">SUM(quantity * unit_price) GROUP BY product</text>
+
+  <!-- === View 2: Finance (orange) === -->
+  <rect x="466" y="96" width="228" height="32" fill="#d65d0e" fill-opacity="0.06" stroke="#d65d0e" stroke-width="1.2" rx="4"/>
+  <rect x="466" y="96" width="6" height="32" fill="#d65d0e" fill-opacity="0.40" rx="2"/>
+  <text x="482" y="111" fill="#af3a03" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">Finance . v_revenue_by_cost_center</text>
+  <text x="482" y="123" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">SUM(quantity * unit_price) GROUP BY cost_center</text>
+
+  <!-- === View 3: Warehouse (blue) === -->
+  <rect x="466" y="138" width="228" height="32" fill="#458588" fill-opacity="0.06" stroke="#458588" stroke-width="1.2" rx="4"/>
+  <rect x="466" y="138" width="6" height="32" fill="#458588" fill-opacity="0.40" rx="2"/>
+  <text x="482" y="153" fill="#076678" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">Warehouse . v_units_by_location</text>
+  <text x="482" y="165" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">SUM(quantity) GROUP BY warehouse_id</text>
+
+  <!-- === Bottom caption === -->
+  <rect x="24" y="200" width="670" height="16" fill="#79740e" fill-opacity="0.05" rx="3"/>
+  <rect x="24" y="200" width="670" height="16" fill="none" stroke="#79740e" stroke-width="0.8" rx="3"/>
+  <text x="360" y="211" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">When the business logic changes, the view changes. The pipeline doesn't.</text>
+</svg>
