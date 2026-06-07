@@ -151,6 +151,8 @@ The book has two diagram surfaces:
 - `> [!info]` --Context or background
 - `> [!example]` --Collapsible examples
 
+In the Typst book, callouts are functions: `ecl-tip`, `ecl-warning`, `ecl-danger`, `ecl-info`, and `ecl-story`. **`ecl-story`** (purple border, auto-prefixes "From production: ") is for real production war stories -- the author's actual incidents, not hypotheticals. Story titles must be flat, specific, postmortem-style labels (e.g. "A double timezone conversion on Cyber Monday"), never clever "The X that Y" / "When X" headline constructions, which read as AI-generated.
+
 ### File Organization
 - Pattern files live in their chapter folder
 - Each pattern follows `_templates/pattern-template.md`

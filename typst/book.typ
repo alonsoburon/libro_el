@@ -769,6 +769,10 @@ If this returns anything above zero, your incremental extraction is already inco
 
 #strong[Set by the application, not the database.] Application code that does `UPDATE orders SET ..., updated_at = NOW() WHERE order_id = :order_id`. A direct SQL edit from a back-office script, a database migration, or a developer with `psql` open doesn't go through the application layer. Those rows don't get a new `updated_at`. Your pipeline never sees them change.
 
+#ecl-story(
+  "A closed-month correction with no updated_at change",
+)[A client told us a large correction they'd made to an old, already-closed month wasn't showing up downstream. We pulled the rows they named and found their `updated_at` values unchanged from months earlier, even though the data behind them was clearly different. That single check transparently surfaced the real problem: their corrections weren't going through anything that touched `updated_at`, so the database never recorded that the rows had changed. The cursor was doing its job perfectly against a signal that simply wasn't being maintained. See @the-periodic-full-replace for how we ended up loading that table.]
+
 #strong[The index isn't there.] `updated_at` exists but nobody put an index on it. Your incremental query runs a full table scan on every execution. For a table with 50M rows, that's a multi-second query just to find the 200 rows that changed. On a transactional system under concurrent load, that scan will get you a complaint (or a ban) from the DBA.
 
 #ecl-tip(
@@ -2498,6 +2502,10 @@ At the destination, document what's missing at the table level -- not just in th
 --  id_photo (BLOB). See pipeline docs for details."
 ```
 
+#ecl-story(
+  "Why we avoid partial extraction",
+)[Across thousands of tables in production we've never been burned by a silently missing column, and the reason is dull on purpose: we avoid partial extraction wherever we possibly can, and on the rare table where it's unavoidable we make the exclusion impossible to miss downstream -- in the table description, in the docs, in the conversation with whoever consumes it. The trap in this pattern is real and we've watched it catch other teams; the only reliable defense we've found is treating "the destination is not a complete clone" as something you say out loud, every time, rather than a footnote in the pipeline code.]
+
 === Schema Drift Risk
 <schema-drift-risk>
 Every time the source schema changes, a `SELECT *` pipeline adapts automatically. A named-column pipeline doesn't.
@@ -2617,6 +2625,10 @@ A periodic full replace resets all of it. How often do you see corrections that 
 )
 
 If a full table reload is too expensive, scope the full replace to a rolling window of recent partitions -- see @scoped-full-replace.
+
+#ecl-story(
+  "Switching that table to a daily full replace",
+)[The client from @updated_at-is-reliable -- the one whose closed-month corrections never moved `updated_at` -- had so much retroactive rework on that table that no cursor window was ever going to be safe. Any month could change at any time, and the source gave us nothing to detect it. We stopped trying to be incremental and reloaded the whole table with a full replace every day, governed only by a freshness window so it ran often enough for the business. It sounds heavy, but it was the simplest correct option: stateless, idempotent, immune to whatever the source did or didn't track. The table was small enough that "expensive" never materialized, and the entire class of missed-correction bugs disappeared.]
 
 // ---
 
@@ -3175,6 +3187,10 @@ SELECT * FROM invoices
 `UNION ALL`, not `OR`. An `OR` across different columns forces the planner to merge index scans (BitmapOr in PostgreSQL, Index Merge in MySQL) -- mechanisms that are fragile, statistics-sensitive, and frequently fall back to a full table scan. `UNION ALL` lets each branch use its own optimal index independently: the open branch seeks on `status`, the closed branch seeks on `updated_at` (or a composite `(status, updated_at)`). The branches are mutually exclusive by construction, so no duplicates.
 
 The open set covers all mutations and line changes -- everything the header cursor in @cursor-from-another-table couldn't see. The closed set is cheap because closed documents don't change.
+
+#ecl-story(
+  "Draft invoices counted as real sales",
+)[A client created draft invoices constantly, deleting and recreating them as documents got revised. We didn't notice from the pipeline -- we noticed because we were consistently reporting more sales than the source, since every transient draft landed as a real invoice and never got cleaned up when the source deleted it. The fix was exactly this split: re-scan every document still marked open (`DocType = 'O'`) in the #strong[destination];, take those primary keys back to the source to see which ones survived, and `UNION` that with the incremental window of recently changed documents. One pass then covered everything mutable plus everything new, and the drafts that had vanished at the source dropped out of the destination instead of accumulating as phantom revenue.]
 
 The #strong[destination] still has documents that were open last run but have since closed or been deleted at the source. The open-side extract no longer includes them. The closed-side cursor catches transitions (the document appears with `status = 'closed'` and a recent `updated_at`). Deletes need @hard-delete-detection.
 
@@ -5084,6 +5100,10 @@ This matters more than partition alignment. A row in the wrong partition is an i
 #ecl-tip(
   "Document the timezone assumption per table",
 )[Add a comment to the destination DDL or a row in a metadata table: "`orders.created_at` is naive, assumed `America/Santiago` based on source team confirmation (2026-03-14)." When the assumption is wrong -- and eventually it will be, because someone changes the server timezone or adds a branch in a different country -- at least you'll know what was assumed and when.]
+
+#ecl-story(
+  "A double timezone conversion on Cyber Monday",
+)[A retail client converted UTC to local time inside their own database before we ever saw it, so the column already held local time with no marker saying so. We then landed that local value as if it were UTC and translated it back to local for display, applying an eight-hour offset that had already been applied. Every timestamp ended up shifted twice, and on Cyber Monday -- the one day where hour-by-hour sales matter most -- the curve was visibly wrong, with revenue attributed to the wrong hours by a wide margin. The lesson is to warn loudly about exactly which side does the conversion, because each layer assuming the other did nothing is how you get a double shift. The recovery was clean precisely because the error was consistent: when an entire column is wrong by the same offset, you can build a corrected copy, verify it against the source's own reports, and swap it in (@table-swap) rather than patching rows in place.]
 
 // ---
 

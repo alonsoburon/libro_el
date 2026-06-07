@@ -22,6 +22,8 @@
 #let ecl-warning(title, body) = ecl-callout(title, body, color: p.yellow-accent)
 #let ecl-danger(title, body) = ecl-callout(title, body, color: p.red-accent)
 #let ecl-info(title, body) = ecl-callout(title, body, color: p.blue-accent)
+// War story: a real production incident. Purple border marks "this happened".
+#let ecl-story(title, body) = ecl-callout("From production: " + title, body, color: p.purple-accent)
 
 // Part numbering state -- incremented by the level-1 show rule
 #let ecl-part = state("ecl-part", 0)
