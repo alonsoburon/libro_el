@@ -1372,7 +1372,7 @@ The goal is the top-left quadrant: stateless and idempotent. Full replace lives 
   #strong[One-liner:] When incremental isn't worth it -- or isn't possible -- extract everything and replace the destination completely.
 ]
 
-Full scan is the simplest pipeline that exists. Extract every row, replace the destination, done. No cursor state to maintain, no missed deletes, no drift accumulation. It resets the world on every run. The engineering community has overcomplicated data pipelines by defaulting to incremental when most tables don't need it. This chapter is about when full scan is the right answer (Which hopefully is all times) -- and how to do it without killing your source database or leaving a window of empty data in production.
+Full scan is the simplest pipeline that exists. Extract every row, replace the destination, done. No cursor state to maintain, no missed deletes, no drift accumulation. It resets the world on every run. Most pipelines reach for incremental when the table doesn't need it. This chapter is about when full scan is the right answer (which hopefully is all times) -- and how to do it without killing your source database or leaving a window of empty data in production.
 
 === When Full Scan Wins
 <when-full-scan-wins>
@@ -1516,7 +1516,7 @@ See @data-contracts for formalizing these checks into reusable contracts.
 
 A full table replace is the cleanest option when the table fits the window. When it doesn't -- years of historical events, a `metrics_daily` table going back a decade -- partition swap is the next cleanest. You still extract everything in the target range in one pass, still load to staging, still validate before touching production. The only difference is the destination operation: instead of replacing the entire table, you replace only the partitions that changed.
 
-Rows outside the target range are never touched. The rest of the table stays exactly as it was.
+Rows outside the target range are never touched; the rest of the table stays exactly as it was.
 
 #figure(image("diagrams/0202-partition-swap.svg", width: 95%))
 
@@ -1582,7 +1582,7 @@ INSERT INTO events SELECT * FROM stg_events;
 COMMIT;
 ```
 
-Atomic: if the INSERT fails, the DELETE rolls back. Safe to retry.
+Atomic: if the INSERT fails, the DELETE rolls back, so it's safe to retry.
 
 The DELETE must cover the full target range, not `IN (SELECT DISTINCT partition_date FROM stg)`. If Saturday had 10 rows last run and the source corrected them to Friday, staging has no Saturday rows -- and a DELETE driven by staging would leave the old Saturday data in place. Delete by the declared range; insert whatever staging holds, including nothing for days with no activity.
 
@@ -1681,7 +1681,7 @@ The naive full replace is `TRUNCATE production; INSERT INTO production SELECT * 
 
 The second problem: if the load fails halfway through, you're left with a half-loaded production table and no clean way back. You can't replay the INSERT without truncating again, which means another empty window.
 
-Staging swap eliminates both problems. Consumers see complete data throughout. Rollback is dropping the staging table without touching production.
+Staging swap eliminates both problems: consumers see complete data throughout, and rollback is just dropping the staging table without touching production.
 
 #figure(image("diagrams/0203-staging-swap.svg", width: 95%))
 
@@ -2146,7 +2146,7 @@ WHERE on_hand <> 0
    OR on_order <> 0;
 ```
 
-Simple. The source still scans the full table -- the filter reduces the rows transferred, not the rows read. On a large sparse table this is still a significant win: network transfer, staging load size, and destination query cost all drop proportionally to sparsity.
+The filter is simple, but the source still scans the full table -- the filter reduces the rows transferred, not the rows read. On a large sparse table this is still a significant win: network transfer, staging load size, and destination query cost all drop proportionally to sparsity.
 
 === Zero vs.~Missing
 <zero-vs.-missing>
@@ -2302,7 +2302,7 @@ The monthly full scan is the safety net. It's expensive but infrequent. The dail
 ]
 
 === When Cursors Fail
-Every incremental pattern in this book assumes the source has a cursor -- an `updated_at`, a sequence, a changelog. When that signal doesn't exist or can't be trusted (see @the-lies-sources-tell), the standard incremental approach fails silently. You either miss changes or you load everything every run.
+Every incremental pattern in this book assumes the source has a cursor -- an `updated_at`, a sequence, a changelog. When that signal doesn't exist or can't be trusted (see @the-lies-sources-tell), the standard incremental approach fails silently: you either miss changes, or you fall back to loading everything every run.
 
 A full replace every run is correct but expensive when only a small fraction of rows actually change. A 10-million-row products table where 50 rows change per day doesn't need 10 million destination writes nightly. Hash-based change detection threads the needle: read the full source, but write only the rows that are actually different.
 
@@ -2444,7 +2444,7 @@ The danger is the silence around the exclusion.
 
 A consumer queries `destination.customers` looking for `national_id`. The column doesn't exist. They assume it's null in the source -- or worse, they assume the source doesn't have it. Neither is true. The column exists in the source with valid data; it just wasn't loaded.
 
-This is how a pipeline correctness problem becomes a business trust problem. The consumer makes a decision based on a gap they didn't know existed.
+A pipeline correctness problem becomes a business trust problem the moment the consumer makes a decision based on a gap they didn't know existed.
 
 A second trap: schema drift. When a source table adds a new column, `SELECT *` picks it up automatically on the next run. An explicit column list doesn't. The destination falls silently behind the source -- no error, no alert, just a growing gap between what's there and what's available.
 
