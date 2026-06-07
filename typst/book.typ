@@ -273,7 +273,7 @@ These are the operations that belong in the #strong[C];. Each one gets its own c
   "Analysts can use your metadata",
 )["When was this data pulled into our warehouse?" is a valid question, and `_extracted_at` answers exactly that. Be precise though: `_extracted_at` is when #emph[your pipeline] pulled the row, not when the row was last modified in the source. That's `updated_at` (if it exists). A row updated 3 days ago and extracted today has `_extracted_at = today`. Don't let anyone confuse the two.]
 
-#strong[Key synthesis.] The source table has no primary key. Or it has a composite key that's 5 columns wide. Or worse, it has an `id` that gets recycled when rows are deleted. You need something stable to MERGE on, and if the source doesn't give you one, you build it: hash the business key columns into a `_source_hash` or generate a surrogate. See @synthetic-keys.
+#strong[Key synthesis.] The source table has no primary key. Or it has a composite key that's 5 columns wide. Or worse, it has an `id` that gets recycled when rows are deleted. You need something stable to MERGE on, and if the source doesn't give you one, you build it: hash the business key columns into a `_source_hash` or synthesize one. See @synthetic-keys.
 
 #strong[Boolean and decimal precision.] SQL Server `BIT`, MySQL `TINYINT(1)`, SAP B1 `'Y'`/`'N'` (or `'S'`/`'N'` depending on install language), PostgreSQL `BOOLEAN` -- every source has its own way of representing booleans. Similarly, `NUMERIC(18,6)` in PostgreSQL is exact while `FLOAT64` in BigQuery is not, and the rounding errors accumulate across millions of rows. Both of these are type casting concerns covered in @type-casting-and-normalization.
 
@@ -1445,7 +1445,7 @@ See @source-system-etiquette for connection limits, timeout coordination, and DB
 
 === At the Destination: Replace Strategies
 <at-the-destination-replace-strategies>
-Full replace is not "DELETE everything, INSERT everything." That approach leaves a window where the table is empty, and it's more expensive than necessary on most engines.
+Full replace should be a staging swap or a partition-level replace. A bare "DELETE everything, INSERT everything" leaves a window where the table is empty, and it's more expensive than necessary on most engines.
 
 #figure(image("diagrams/0201-replace-strategies.svg", width: 95%))
 
@@ -3979,7 +3979,7 @@ Snowflake rewrites affected micro-partitions, which is more granular than BigQue
 
 === Key Selection
 <key-selection>
-The MERGE key determines how the destination identifies "the same row." Two options:
+The merge key determines how the destination identifies "the same row." Two options:
 
 #strong[Natural key] -- a column that uniquely identifies the entity at the source: `order_id`, `invoice_id`, `customer_id`. This is the default and the simplest choice when the source has a single-column primary key. Compound natural keys (`order_id + line_num`) work too but make the ON clause larger.
 
@@ -3987,7 +3987,7 @@ The MERGE key determines how the destination identifies "the same row." Two opti
 
 #ecl-danger(
   "Non-unique keys compound duplicates",
-)[If the MERGE key matches more than one row in the destination, the behavior is engine-dependent and *always bad*. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the MERGE key is unique in the destination, or duplicates will compound on every run -- see @duplicate-detection.]
+)[If the merge key matches more than one row in the destination, the behavior is engine-dependent and *always bad*. BigQuery raises an error when multiple destination rows match a single source row. PostgreSQL's `ON CONFLICT` requires the conflict target to be a unique index -- non-unique columns can't be used. Snowflake silently updates all matching rows, which means a single source row can overwrite multiple destination rows. Ensure the merge key is unique in the destination, or duplicates will compound on every run -- see @duplicate-detection.]
 
 #ecl-warning(
   "Unenforced PKs cause silent data loss",
@@ -4108,7 +4108,7 @@ I run `evolve` on both -- new columns and type changes. If a type widening break
 <staging-deduplication>
 The extraction batch can contain duplicates: the overlap buffer from @cursor-based-timestamp-extraction, the dual cursor overlap from @create-vs-update-separation, or simply a source that returns the same row twice within the extraction window.
 
-If the staging table contains two rows with the same MERGE key, the behavior is engine-dependent:
+If the staging table contains two rows with the same merge key, the behavior is engine-dependent:
 
 - #strong[BigQuery] raises a runtime error: "UPDATE/MERGE must match at most one source row for each target row"
 - #strong[Snowflake] processes both rows non-deterministically -- one wins, but which one is undefined
@@ -5091,7 +5091,7 @@ Both of these are reasons to prefer landing naive timestamps as naive rather tha
 
 === Downstream Boundary Effects
 <downstream-boundary-effects>
-The most visible consequence of timezone handling isn't in the pipeline -- it's in the business reports that consume the data.
+The most visible consequence of timezone handling shows up in the business reports that consume the data, well downstream of the pipeline itself.
 
 When someone downstream writes `SUM(amount) GROUP BY TRUNC(sale_date, MONTH)`, sales near the month boundary can land in the wrong bucket depending on how the timestamp is interpreted. A sale at `2026-03-31 23:30:00` in the source's local timezone is `2026-04-01 02:30:00 UTC`. If the analyst's report truncates a UTC timestamp, March's revenue is short and April's is inflated. Multiply this across every month boundary and the numbers never match the source system's own reports.
 
@@ -5250,7 +5250,7 @@ This deserves its own full treatment -- see @sql-dialect-reference for the compl
 <the-playbook-5>
 Prefer landing JSON columns as they are -- `STRING` or the destination's native JSON type (BigQuery `JSON`, Snowflake `VARIANT`, PostgreSQL `JSONB`). The source has a JSON column, the destination gets a JSON column. That's conforming.
 
-Flattening JSON into normalized tables (`order`, `order__details`, `order__details__items`) is closer to ETL than ECL. The C in ECL makes data survive the crossing -- it doesn't restructure it. If you have a strong reason to flatten (a consumer that absolutely cannot work with JSON and there's no downstream layer to do it), document the decision and know that you're stepping outside the conforming boundary. Most of the time, you don't need to.
+Flattening JSON into normalized tables (`order`, `order__details`, `order__details__items`) is closer to ETL than ECL. The C in ECL makes data survive the crossing without restructuring it. If you have a strong reason to flatten (a consumer that absolutely cannot work with JSON and there's no downstream layer to do it), document the decision and know that you're stepping outside the conforming boundary. Most of the time, you don't need to.
 
 Avoid the hybrid approach (land raw JSON + flatten to normalized tables) at the ECL layer. Two representations means double the storage, double the schema maintenance, and a synchronization problem when one updates and the other doesn't. One representation is enough -- pick the simpler one and let downstream build the other if they need it.
 
@@ -7705,7 +7705,7 @@ WHERE customer_id = 42
   AND (valid_to > '2026-03-05' OR valid_to IS NULL);
 ```
 
-Building the SCD2 table is a downstream transformation, not a conforming operation -- the pipeline lands the current state or the append log, and a scheduled job compares consecutive extractions to detect changes and maintain the `valid_from`/`valid_to` bookkeeping. The mechanics are well-documented elsewhere; what matters for this pattern is that SCD2 gives you point-in-time queries that are cheap to run (a range filter that benefits from partitioning and clustering -- @pre-built-views), explicit in their semantics (no ambiguity about what `_extracted_at` means versus when the change actually happened), and immune to compaction -- the history is the table, not a side effect of a retention window.
+Building the SCD2 table is a downstream transformation, not a conforming operation -- the pipeline lands the current state or the append log, and a scheduled job compares consecutive extractions to detect changes and maintain the `valid_from`/`valid_to` bookkeeping. The mechanics are well-documented elsewhere; what matters for this pattern is that SCD2 gives you point-in-time queries that are cheap to run (a range filter that benefits from partitioning and clustering -- @pre-built-views), explicit in their semantics (no ambiguity about what `_extracted_at` means versus when the change actually happened), and immune to compaction, since the history is the table itself rather than a side effect of a retention window.
 
 The cost is maintaining the SCD2 pipeline itself. Every extraction needs to be diffed against the previous state to detect what changed, close out old rows, and open new ones. For a `customers` table with 100K rows that changes slowly (hence the name), this is trivial. For an `orders` table with millions of rows and high mutation rates, the daily diff becomes expensive. SCD2 earns its place on tables where the change rate is low relative to the table size and the point-in-time queries are frequent -- dimension tables like `customers`, `products`, `warehouses`. For high-mutation fact tables, the append log or snapshot approaches are usually cheaper to maintain.
 
@@ -8784,7 +8784,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
 
 #strong[Stateless window] -- Extract a fixed trailing window on every run with no cursor state between runs. The default incremental approach for most tables. See @stateless-window-extraction.
 
-#strong[Synthetic key (`_source_key`)] -- A hash of immutable business columns, used as the MERGE key when the source has no stable primary key. See @synthetic-keys.
+#strong[Synthetic key (`_source_key`)] -- A hash of immutable business columns, used as the merge key when the source has no stable primary key. See @synthetic-keys.
 
 #strong[Tiered freshness] -- Splitting a pipeline into hot, warm, and cold tiers so tables are refreshed at the cadence that matches their consumption, not at a uniform schedule. See @tiered-freshness.
 
