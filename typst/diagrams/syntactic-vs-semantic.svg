@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="382" viewBox="0 0 720 382">
   <rect width="720" height="382" fill="#ffffff" rx="8"/>
-  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Conforming vs Transforming -- one or the other during the crossing</text>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Syntactic vs semantic transformation -- one or the other during the crossing</text>
 
   <g transform="scale(1.0588)">
-    <!-- Conforming column -->
+    <!-- Syntactic column -->
     <rect x="16" y="84" width="318" height="260" fill="#f9f5d7" rx="6"/>
     <circle cx="32" cy="104" r="5" fill="#689d6a"/>
-    <text x="44" y="108" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="600">Conforming</text>
-    <text x="30" y="124" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Belongs in ECL -- survive the crossing</text>
+    <text x="44" y="108" fill="#689d6a" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="600">Syntactic</text>
+    <text x="30" y="124" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Belongs in the pipeline -- survive the crossing</text>
 
     <rect x="30" y="138" width="290" height="24" fill="#ffffff" rx="4"/>
     <text x="40" y="154" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">Type casting (VARCHAR -&gt; TIMESTAMP)</text>
@@ -24,10 +24,10 @@
     <rect x="30" y="318" width="290" height="24" fill="#ffffff" rx="4"/>
     <text x="40" y="334" fill="#3c3836" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">Cursor-borrowing joins</text>
 
-    <!-- Transforming column -->
+    <!-- Semantic column -->
     <rect x="346" y="84" width="318" height="260" fill="#f9f5d7" rx="6"/>
     <circle cx="362" cy="104" r="5" fill="#d65d0e"/>
-    <text x="374" y="108" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="600">Transforming</text>
+    <text x="374" y="108" fill="#d65d0e" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="600">Semantic</text>
     <text x="360" y="124" fill="#af3a03" font-family="'Segoe UI', system-ui, sans-serif" font-size="10">Belongs downstream -- changes business meaning</text>
 
     <rect x="360" y="138" width="290" height="24" fill="#ffffff" rx="4"/>

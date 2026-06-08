@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project: ECL Patterns Book
+## Project: Battle-Tested Data Pipelines
 
-This is an Obsidian vault containing a technical book about ECL (Extract, Conform, Load) patterns. There is no build system, test suite, or application code -- the repo is structured prose, SQL examples, and diagrams.
+This is an Obsidian vault containing a technical book about batch data-pipeline patterns. There is no build system, test suite, or application code -- the repo is structured prose, SQL examples, and diagrams.
 
 ### Repository Structure
 
@@ -23,7 +23,7 @@ Every content file has a `status` field in YAML frontmatter:
 - `first_iteration` -- Author has written or reviewed and edited the content at least once
 
 ### Core Thesis
-Pure EL is a practical myth. The moment data crosses between systems, conforming is unavoidable: type casting, metadata injection, null handling, charset encoding. **ECL (Extract, Conform, Load)** names this reality. The C is everything the data needs to survive the crossing and be usable on the other side: type conforming, metadata injection, key synthesis, null handling. If it changes business logic, it belongs downstream, not in the C. This book documents the patterns to do ECL well.
+Pure EL is a practical myth. The moment data crosses between systems some transformation is unavoidable, but there are two kinds. **Syntactic transformation** changes how the data is represented without altering its meaning: type casting, metadata injection, key synthesis, null handling, charset encoding. It belongs at load time, inside the pipeline. **Semantic transformation** -- business logic, aggregation, historical modeling -- changes what the data means and belongs downstream in the serving layer (Part VII). This book is the handbook for the syntactic half, plus the extraction, load, and operating discipline around it. (The book used to call the syntactic half "conforming"/ECL; that term is retired -- use syntactic transformation.)
 
 ### Author Opinions (apply these when writing content)
 - **Full refreshes are often the right answer.** A full replace resets state, eliminates accumulated drift, and lets you operate with less-than-perfect methodology knowing you have periodic clean checkpoints. When in doubt, default to full replace. The more tables you can fully replace, the simpler and more reliable the pipeline. Incremental complexity should be earned, not assumed.
@@ -197,12 +197,12 @@ Decisions made during writing that apply across all chapters. Check these before
 
 #### Load strategy decisions
 - **Compaction is always collapse-to-latest.** `CREATE OR REPLACE TABLE ... QUALIFY ROW_NUMBER() ... = 1`. Never trim by date (`DELETE WHERE _extracted_at < X`) -- that destroys current-state rows for keys not recently extracted. Collapse-to-latest preserves one row per key regardless of age.
-- **Date-based retention trimming outside full scans is ETL, not ECL.** Deciding which historical rows to keep based on a business rule is a transformation. On a full-scan table where every source row re-lands every run, date trimming is safe because the next run repopulates. On anything else, it's data loss.
+- **Date-based retention trimming outside full scans is semantic, not syntactic.** Deciding which historical rows to keep based on a business rule is a semantic transformation. On a full-scan table where every source row re-lands every run, date trimming is safe because the next run repopulates. On anything else, it's data loss.
 - **Append-and-materialize is the single append+dedup pattern.** The old "snapshot append" (0202) was merged into 0303 (mutable window extraction) + 0404 (load strategy). There is no separate snapshot append pattern.
 - **Mutable window extraction is a variant of stateless window extraction (0303).** Scoped by business date instead of `updated_at`, for sources with no change tracking. Same mechanism, different filter column.
 
-#### Conforming boundary
-- **Identifier normalization is conforming.** snake_case, stripping special characters, accent removal -- all happen at load time, not downstream.
+#### Syntactic / semantic boundary
+- **Identifier normalization is syntactic.** snake_case, stripping special characters, accent removal -- all happen at load time, not downstream.
 - **Semantic renames cross the boundary.** `OACT` → `chart_of_accounts` is transformation. Land the source name; rename downstream (gold layer).
 - **Aggregation crosses the boundary.** `SUM(quantity)` at extraction is transformation. Land the detail; aggregate downstream.
 - **SCD Type 2 is downstream.** The pipeline lands current state or the append log. A scheduled job downstream builds the SCD2 table.
@@ -215,7 +215,7 @@ Decisions made during writing that apply across all chapters. Check these before
 #### Engine behavior (for SQL examples)
 - **Columnar engines don't have indexes.** Never reference "indexed columns" in the context of BigQuery, Snowflake, ClickHouse, or Redshift. Use partitioning and clustering language.
 - **QUALIFY is native on BigQuery, Snowflake, ClickHouse.** Use it in examples targeting those engines. Use the subquery wrapper for PostgreSQL, MySQL, SQL Server, Redshift.
-- **BigQuery TIMESTAMP is always UTC.** Naive timestamps from the source land as UTC. If the source stored local times, every value is wrong. Conform timezone info during load.
+- **BigQuery TIMESTAMP is always UTC.** Naive timestamps from the source land as UTC. If the source stored local times, every value is wrong. Handle timezone info during load.
 
 ### Book Status
 
@@ -230,7 +230,7 @@ All chapters have had a full author review/edit pass (`first_iteration`). The ap
 | 02 Full Replace | 0201-0209 | first_iteration |
 | 03 Incremental | 0301-0310 | first_iteration |
 | 04 Load Strategies | 0401-0406 | first_iteration |
-| 05 Conforming | 0501-0507 | first_iteration |
+| 05 Syntactic Transformation | 0501-0507 | first_iteration |
 | 06 Operating | 0601-0615 | first_iteration |
 | 07 Serving | 0701-0707 | first_iteration |
 | 08 Appendix | SQL Dialect Reference + Decision Flowchart | first_iteration |
@@ -284,7 +284,8 @@ When in doubt about a new diagram, find the closest existing idiom and adapt it 
 
 ### Key Terminology
 - **EL**: Extract-Load with zero transformation (theoretical ideal)
-- **ECL**: Extract, Conform, Load --the C handles type casting, metadata columns, null coalescing, key synthesis. Conforming ≠ transforming: if it changes business logic, it doesn't belong here.
+- **Syntactic transformation**: form-level work that lets data survive moving between systems without changing meaning -- type casting, metadata columns, null coalescing, key synthesis. The pipeline's job (this book).
+- **Semantic transformation**: business logic, aggregation, historical modeling -- changes what the data means; belongs downstream in the serving layer (Part VII).
 - **Source of cursor**: The field or mechanism used to detect new/changed rows
 - **Metadata columns**: Fields injected during extraction (`_extracted_at`, `_source_hash`, `_batch_id`)
 - **Open document**: A record that can still be modified (e.g., draft invoice)

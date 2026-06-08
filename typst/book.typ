@@ -22,7 +22,7 @@
   #v(1fr)
   #set text(size: 9pt, fill: p.fg-dim)
   *Battle-Tested Data Pipelines*\
-  The step ELT forgot -- patterns for extraction, conforming, and loading
+  The step ELT forgot -- patterns for extraction, syntactic transformation, and loading
 
   Copyright © 2026 Alonso Burón. All rights reserved.
 
@@ -86,7 +86,7 @@ This book is about the space between source and destination -- the step that ELT
     table.header([What we cover], [What we don't]),
     table.hline(),
     [Extracting data from transactional systems], [Building dashboards or reports],
-    [Conforming types, nulls, timezones, encodings], [Business logic / KPI definitions],
+    [Syntactic transformation: types, nulls, timezones, encodings], [Business logic / KPI definitions],
     [Loading into columnar or transactional destinations], [Silver/gold layer transformations],
     [Incremental strategies, full replace, and the huge gray middle],
     [Orchestrator-specific tutorials (Airflow, dbt, etc.)],
@@ -108,13 +108,11 @@ This book is about the space between source and destination -- the step that ELT
 == Why This Book
 <why-this-book>
 
-One Tuesday morning I woke up to a wall of email alerts. We had an explosion of row count mismatches across dozens of pipelines and I spent the rest of the day fixing them by hand. Re-running extractions and rescanning for deleted rows against source. By the time I was done, I sat back and realized two things. First, the system I had built was complex enough that in a couple of months I wouldn't be able to recreate it without having it written down somewhere. Second, when I went looking for references to categorize what I had built into an existing framework, none went deep enough. I realized there were no strategy books for what I was doing.
+One Tuesday morning I woke up to a wall of email alerts: a row-count mismatch explosion across dozens of pipelines, and I spent the rest of the day fixing them by hand -- re-running extractions and rescanning for deleted rows against source. By the time I was done, I sat back and realized two things. First, the system I had built was complex enough that in a couple of months I wouldn't be able to recreate it without having it written down somewhere. Second, when I went looking for references to categorize what I had built into an existing framework, none went deep enough. There were no strategy books for what I was doing.
 
-So I started writing down the patterns I used as little python scripts, just for future reference, at first. As I organized them, they split naturally into extraction patterns and loading patterns -- and then I found myself with a collection of small but critical scripts that didn't belong in either category. Type casting, naming conventions and timezone fixes that weren't really *business* logic or aggregation (What we'd call Transformation in ETL), but it also couldn't be simply ignored as a layer of the whole process (Like in ELT, where extraction and loading are contiguous). This gave me my first ideas into the whole ECL concept: Extract, Conform, Load. Conforming gives the work that every pipeline does but no framework acknowledges a name.
+So I started writing down the patterns I used as little Python scripts, just for future reference. As I organized them, they split naturally into extraction patterns and loading patterns -- and then I found myself with a collection of small but critical scripts that didn't belong in either category. Type casting, naming conventions, timezone fixes: not business logic or aggregation (what ETL calls a Transformation), but not something you can ignore either (the way ELT treats extraction and loading as contiguous). That leftover pile is the frame for this whole book: a pipeline does two kinds of transformation. Syntactic transformation changes how data is represented without altering its meaning -- casting types, injecting metadata, normalizing identifiers, handling timezones and nulls, synthesizing keys. Semantic transformation changes what the data means -- aggregations, business rules, historical modeling -- and belongs downstream in the serving layer (Part VII). In my world that semantic half was the analysts' job; mine was to land the data as close to source quality as possible, somewhere they could actually reach it.
 
-In my job, transformations and aggregations belonged to data analysts downstream. My responsibility was to deliver the data as close to source quality as possible, but in a place where the they could actually reach it. Conforming was the tiny little changes the data needed to survive crossing between databases without changing what it meant.
-
-You might have seen the term EtLT -- Extract, "tiny-t" Transform, Load, Transform. It acknowledges that some work happens before the big T, but its focus is still on making downstream transformation easier. This book takes the opposite angle. The C in ECL is about getting massive, often dirty data to the destination as faithfully and efficiently as possible, while keeping all the rough edges it contains. If it changes business meaning, it doesn't belong here. If it makes the data land correctly, it does.
+You might have seen the term EtLT -- Extract, "tiny-t" Transform, Load, Transform. It acknowledges that some work happens before the big T, but its focus is still on making downstream transformation easier. This book takes the opposite angle: faithful replication of massive, often dirty data to the destination as efficiently as possible, keeping all the rough edges intact. If a change alters business meaning, it belongs downstream. If it makes the data land correctly, it belongs here.
 
 === Who This Is For
 
@@ -124,7 +122,7 @@ It's for the first-time data engineer who's building their first pipeline and as
 
 It's for the senior who has been doing this for years and needs a framework to teach it to their team, or to finally name the patterns they've been applying by instinct.
 
-This is not a tutorial or a tool guide. This book won't set up your orchestrator from scratch. This is a pattern language -- the decisions, tradeoffs, and failure modes that repeat across every pipeline regardless of stack, and the ways to monitor them, surface them, and fix them.
+What you get is a pattern language: the decisions, tradeoffs, and failure modes that repeat across every pipeline regardless of stack, and how to monitor, surface, and fix them -- not a tutorial that sets up your orchestrator for you.
 
 // ---
 
@@ -146,7 +144,7 @@ The three standalone tables -- `events`, `sessions`, and `metrics_daily` -- have
   align(center)[#table(
     columns: (20%, 80%),
     align: (auto, auto),
-    table.header([Table], [ECL challenge]),
+    table.header([Table], [Pipeline challenge]),
     table.hline(),
     [`orders`],
     [Has `updated_at` but it's unreliable -- trigger only fires on UPDATE, not INSERT. The canonical example of a broken cursor.],
@@ -196,7 +194,7 @@ When a pattern depends on one of these holding -- or breaking -- it will say so 
 == The EL Myth
 <the-el-myth>
 #quote(block: true)[
-  #strong[One-liner:] Pure EL doesn't exist. The moment data crosses between systems, you're conforming whether you admit it or not.
+  #strong[One-liner:] Pure EL doesn't exist. The moment data crosses between systems, some syntactic transformation is unavoidable.
 ]
 
 === ETL, ELT, and the Pitch That Forgot Something
@@ -213,57 +211,57 @@ The ELT framework (Extract, #strong[Load];, Transform) came as a byproduct of th
 
 === The Reality
 <the-reality>
-Pure EL doesn't exist. The moment you move data between systems, something has to give. Types need casting, nulls need handling, timestamps need timezones. I call it #strong[conforming];, and it's unavoidable.
+Pure EL doesn't exist. The moment you move data between systems, something has to give. Types need casting, nulls need handling, timestamps need timezones. This is #strong[syntactic transformation];, and it's unavoidable.
 
-So, what this book covers is ECL: #strong[Extract, Conform, and Load];. The C covers type casting, null handling, timezone normalization, metadata injection, key synthesis. Everything the data needs to land correctly on the other side. If it changes what the data #emph[means];, it belongs downstream.
+So the pipeline covers two distinct jobs: extraction, syntactic transformation, and loading. The syntactic layer handles type casting, null handling, timezone normalization, metadata injection, key synthesis -- everything the data needs to land correctly on the other side. Anything that changes what the data #emph[means] belongs downstream, in the serving layer.
 
 === What About the T?
 <what-about-the-t>
-If the analysts want to transform afterwards -- aggregate, pivot, build dashboards -- that's their domain. But there's still a chapter in this book for helping them out. Because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. I cover how to protect them (and your invoice) in @query-patterns-for-analysts.
+When analysts aggregate, pivot, or build dashboards, they're doing semantic transformation -- reshaping the data to serve a business question. That belongs in the serving layer, and Part VII covers it. There's still a chapter in this book for helping them out, because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. I cover how to protect them (and your invoice) in @query-patterns-for-analysts.
 
 // ---
 
-== What Is Conforming
-<what-is-conforming>
+== What Is Syntactic Transformation
+<what-is-syntactic-transformation>
 #quote(block: true)[
-  #strong[One-liner:] Conforming is everything the data needs to survive the crossing. If it changes what the data means, it belongs somewhere else.
+  #strong[One-liner:] Syntactic transformation is everything the data needs to survive the crossing. If it changes what the data means, it belongs in the serving layer.
 ]
 
-=== The Line Between Conforming and Transforming
+=== The Line Between Syntactic and Semantic
 
 To know what should be done by you, you must answer the following question: does this operation change what the data #emph[means];, or does it just make it land correctly?
 
-- Casting a `DATETIME2` to `TIMESTAMP`? Conforming.
-- Replacing `NULL` with `''` because BigQuery handles them differently in `GROUP BY`? Conforming.
-- Converting `BIT` to `BOOLEAN`? Conforming.
+- Casting a `DATETIME2` to `TIMESTAMP`? Syntactic.
+- Replacing `NULL` with `''` because BigQuery handles them differently in `GROUP BY`? Syntactic.
+- Converting `BIT` to `BOOLEAN`? Syntactic.
 
 None of these change the business meaning of the data. They just make it survive the crossing. The counter examples do:
 
-- Calculating `revenue = qty * price`? That's transforming.
-- Filtering out inactive customers? Transforming.
-- Joining `orders` with `customers` to denormalize a name? Transforming.
+- Calculating `revenue = qty * price`? Semantic -- you're creating a derived fact.
+- Filtering out inactive customers? Semantic -- you're applying a business rule.
+- Joining `orders` with `customers` to denormalize a name? Semantic -- you're adding meaning that wasn't in the original row.
 
-You're adding business meaning that wasn't in the original row.
+These belong in the serving layer.
 
-But here's where it gets interesting. `order_lines` has no `updated_at`. If you want to extract incrementally, you #emph[need] to join with `orders` to borrow its timestamp as your cursor. That join doesn't add business meaning -- it adds extraction metadata. You're not enriching `order_lines` with order data; you're giving yourself a `_cursor_at` so you know what to pull. That's conforming.
+But here's where it gets interesting. `order_lines` has no `updated_at`. If you want to extract incrementally, you #emph[need] to join with `orders` to borrow its timestamp as your cursor. That join doesn't add business meaning -- it adds extraction metadata. You're not enriching `order_lines` with order data; you're giving yourself a `_cursor_at` so you know what to pull. That's syntactic.
 
 #ecl-tip(
   "The join test",
-)[If the join adds a column the business cares about, it's transforming. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's conforming.]
+)[If the join adds a column the business cares about, it's semantic transformation. If it adds a column only the pipeline cares about (`_cursor_at`, `_header_updated_at`), it's syntactic.]
 
 #figure(
-  image("diagrams/ecl-conforming-vs-transforming.svg", width: 90%),
+  image("diagrams/syntactic-vs-semantic.svg", width: 90%),
 )
 
-=== The Conforming Checklist
-<the-conforming-checklist>
-These are the operations that belong in the #strong[C];. Each one gets its own chapter in Part IV, but here's the overview so you know what you're signing up for.
+=== The Syntactic Checklist
+<the-syntactic-checklist>
+These are the syntactic operations that belong in the pipeline. Each one gets its own chapter in Part IV, but here's the overview so you know what you're signing up for.
 
 #strong[Type casting.] Every engine has its own type system, and they don't agree on anything. SQL Server's `DATETIME2` has nanosecond precision; BigQuery's `TIMESTAMP` has microseconds. PostgreSQL's `NUMERIC(18,6)` is exact; BigQuery's `FLOAT64` is not. You will lose precision if you don't map these explicitly. See @type-casting-and-normalization.
 
-#strong[Null handling.] `NULL`, empty string, `0`, `'N/A'` -- sources use all of them, and they're not the same thing. The ECL position: reflect the source as-is. If the source has NULL, land NULL. Don't COALESCE to a default value at extraction -- that's a business decision that belongs downstream. See @null-handling.
+#strong[Null handling.] `NULL`, empty string, `0`, `'N/A'` -- sources use all of them, and they're not the same thing. The rule here: reflect the source as-is. If the source has NULL, land NULL. Don't COALESCE to a default value at extraction -- that's a business decision that belongs downstream. See @null-handling.
 
-#strong[Timezone normalization.] Source says `2026-03-15 14:30:00` -- in what timezone? If the column is `DATETIME2` or `TIMESTAMP WITHOUT TIME ZONE`, you're looking at a naive timestamp. The ECL rule: TZ stays TZ, naive stays naive. Don't convert naive to UTC unless you're certain of the source timezone -- guessing wrong silently shifts every row. Know what you're landing and document the assumption. See @timezone-conforming.
+#strong[Timezone normalization.] Source says `2026-03-15 14:30:00` -- in what timezone? If the column is `DATETIME2` or `TIMESTAMP WITHOUT TIME ZONE`, you're looking at a naive timestamp. The rule: TZ stays TZ, naive stays naive. Don't convert naive to UTC unless you're certain of the source timezone -- guessing wrong silently shifts every row. Know what you're landing and document the assumption. See @timezone-handling.
 
 #strong[Charset and encoding.] Latin-1 source, UTF-8 destination. Most of the time you won't notice, until a customer name has an `ñ` or an `ü` and your load silently replaces it with `?` or fails entirely. This is especially common with older ERP systems and legacy OLTP sources (SAP, AS/400, Oracle SQL). See @charset-and-encoding.
 
@@ -281,7 +279,7 @@ These are the operations that belong in the #strong[C];. Each one gets its own c
 
 #strong[Boolean and decimal precision.] SQL Server `BIT`, MySQL `TINYINT(1)`, SAP B1 `'Y'`/`'N'` (or `'S'`/`'N'` depending on install language), PostgreSQL `BOOLEAN` -- every source has its own way of representing booleans. Similarly, `NUMERIC(18,6)` in PostgreSQL is exact while `FLOAT64` in BigQuery is not, and the rounding errors accumulate across millions of rows. Both of these are type casting concerns covered in @type-casting-and-normalization.
 
-#strong[Nested data / JSON.] The source has a `details` column that's a JSON blob. Land it as-is -- `STRING`, `JSONB`, `VARIANT`, whatever the destination's native JSON type is. Flattening JSON into normalized tables is restructuring the data, which is transformation, not conforming. If a consumer can't query JSON, build a flattening view downstream. See @nested-data-and-json.
+#strong[Nested data / JSON.] The source has a `details` column that's a JSON blob. Land it as-is -- `STRING`, `JSONB`, `VARIANT`, whatever the destination's native JSON type is. Flattening JSON into normalized tables is semantic transformation -- it restructures the data into a shape the source didn't have. If a consumer can't query JSON, build a flattening view downstream. See @nested-data-and-json.
 
 // ---
 
@@ -325,8 +323,8 @@ You'll run into a handful of these in the wild. They all speak SQL, but they all
   kind: table,
 )
 
-=== What They All Share (That Matters for ECL)
-<what-they-all-share-that-matters-for-ecl>
+=== What They All Share (That Matters for the Pipeline)
+<what-they-all-share-that-matters-for-the-pipeline>
 Despite the differences, the fundamentals are the same from an extraction perspective:
 
 They all support `SELECT ... WHERE ...` for pulling data incrementally. That's your primary tool. Every batch extraction pattern in this book starts with a query against the source.
@@ -349,7 +347,7 @@ Your pipeline needs to handle this gracefully or it #emph[will] break on a Frida
 
 #ecl-warning(
   "SELECT * is valid for extraction",
-)[Contrary to what every SQL best practices guide tells you, `SELECT \*` is a good default for ECL. You're cloning the table, not building a report. New column added? It lands automatically. Type changed? Your type dictionary handles it. But renames and deletes #strong[must] fail your pipeline. If `category` becomes `product_category`, your destination still has `category` receiving no new data, and that's unacceptable. Schema relaxing means: always allow additions, handle type changes, never silently accept renames or deletions. More on this in @the-lies-sources-tell.]
+)[Contrary to what every SQL best practices guide tells you, `SELECT \*` is a good default when you're cloning a table. You're cloning, not building a report. New column added? It lands automatically. Type changed? Your type dictionary handles it. But renames and deletes #strong[must] fail your pipeline. If `category` becomes `product_category`, your destination still has `category` receiving no new data, and that's unacceptable. Schema relaxing means: always allow additions, handle type changes, never silently accept renames or deletions. More on this in @the-lies-sources-tell.]
 
 And they all have data quality issues that the application layer "handles" but the database doesn't enforce. These are the soft rules -- the things a stakeholder tells you are "always" true, but the schema doesn't guarantee.
 
@@ -505,7 +503,7 @@ Every `ñ`, `ü`, `é` silently replaced with `?`. Or worse, the load fails enti
 <what-makes-a-destination-columnar>
 These engines store data by column. Every value in `event_date` is packed together, compressed alongside every other `event_date` in the table. Scanning one column across a billion rows is fast. Aggregation -- `SUM`, `COUNT`, `GROUP BY` -- is what they were built for. The consumers sitting on top of them are dashboards, reports, ML pipelines, analysts running ad-hoc queries.
 
-From an ECL perspective, three properties define the landing zone:
+Three properties define the landing zone:
 
 #strong[Append-cheap, mutate-expensive.] Inserting new rows is fast and the engines optimize for it. Updating or deleting existing rows is a different story. BigQuery rewrites an entire partition on UPDATE. ClickHouse runs mutations as async background jobs with no completion guarantee. Snowflake handles it better than most, but every MERGE still costs warehouse time. Your load strategy should minimize mutations. Append first, deduplicate or materialize downstream.
 
@@ -568,11 +566,11 @@ MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
 <foundations-clickhouse>
 Built for speed on append-only analytical workloads. The MergeTree engine family is the backbone -- data lands in parts, and background merges compact them over time.
 
-Fastest engine for raw insert throughput, and the only major columnar engine that gives you an explicit choice on *when* to pay the deduplication cost. `ReplacingMergeTree` (RMT) accepts duplicate keys on insert and collapses them by `ORDER BY` key during merges -- with an optional version column to control which row wins. For incremental ECL workloads this is a brilliant fit: every load is a pure `INSERT`, free of MERGE cost, and the dedup bill is either paid lazily by the background merge scheduler or shifted to read time. The trade-off is honest: until a merge runs, duplicates coexist in the parts, so reads that need single-version-per-key correctness have to ask for it -- either with `SELECT ... FINAL` (per-query, partition-selective and parallelized since 23.3) or with an `argMax`/window-function dedup view, the same pattern @append-and-materialize uses elsewhere. Avoid blanket `OPTIMIZE TABLE ... FINAL` -- ClickHouse's own docs warn against it on large tables (single-merge, CPU/IO-heavy); use partition-scoped `OPTIMIZE PARTITION ... FINAL` on a schedule if you need eager compaction.
+Fastest engine for raw insert throughput, and the only major columnar engine that gives you an explicit choice on *when* to pay the deduplication cost. `ReplacingMergeTree` (RMT) accepts duplicate keys on insert and collapses them by `ORDER BY` key during merges -- with an optional version column to control which row wins. For incremental extract-and-load workloads this is a brilliant fit: every load is a pure `INSERT`, free of MERGE cost, and the dedup bill is either paid lazily by the background merge scheduler or shifted to read time. The trade-off is honest: until a merge runs, duplicates coexist in the parts, so reads that need single-version-per-key correctness have to ask for it -- either with `SELECT ... FINAL` (per-query, partition-selective and parallelized since 23.3) or with an `argMax`/window-function dedup view, the same pattern @append-and-materialize uses elsewhere. Avoid blanket `OPTIMIZE TABLE ... FINAL` -- ClickHouse's own docs warn against it on large tables (single-merge, CPU/IO-heavy); use partition-scoped `OPTIMIZE PARTITION ... FINAL` on a schedule if you need eager compaction.
 
 Mutations (`ALTER TABLE ... UPDATE`, `ALTER TABLE ... DELETE`) are async. You fire the statement and it returns immediately. The actual work happens whenever the merge scheduler gets to it. Consumers querying between the mutation request and the merge see pre-mutation data. RMT sidesteps this entirely -- you don't issue updates or deletes, you insert the new version and let the engine collapse.
 
-For ECL, ClickHouse rewards leaning into the merge model. Append every batch into a `ReplacingMergeTree`, build materialized views for the latest state, and choose your dedup tactic per table -- scheduled `OPTIMIZE` on hot tables that get read often, `FINAL` on cold tables where read overhead is acceptable, or a mix. What's expensive on other engines (frequent incremental updates) becomes a sequence of cheap appends here. The pain only comes from fighting RMT with row-level `UPDATE`/`DELETE`, which the engine schedules async and offers no completion guarantee for.
+For this kind of workload, ClickHouse rewards leaning into the merge model. Append every batch into a `ReplacingMergeTree`, build materialized views for the latest state, and choose your dedup tactic per table -- scheduled `OPTIMIZE` on hot tables that get read often, `FINAL` on cold tables where read overhead is acceptable, or a mix. What's expensive on other engines (frequent incremental updates) becomes a sequence of cheap appends here. The pain only comes from fighting RMT with row-level `UPDATE`/`DELETE`, which the engine schedules async and offers no completion guarantee for.
 
 ```sql
 -- engine: clickhouse
@@ -598,11 +596,11 @@ Redshift runs automatic VACUUM DELETE in the background, so routine cleanup is h
 
 Sort keys and dist keys can be changed via `ALTER TABLE` without a full rebuild, but the operation rewrites data in the background and can take hours on large tables -- plan them carefully at creation rather than treating them as easily adjustable. Column additions are cheap. Type changes require recreating the table. A `VARCHAR(100)` that should have been `VARCHAR(500)` means a full table rebuild later. Plan your types carefully on initial load.
 
-=== Type Mapping: Where Conforming Happens
-<type-mapping-where-conforming-happens>
-When data crosses from a transactional source to a columnar destination, types don't translate cleanly. This is the core of the C in ECL -- and every engine has its own version of the problem.
+=== Type Mapping: Where Syntactic Transformation Happens
+<type-mapping-syntactic>
+When data crosses from a transactional source to a columnar destination, types don't translate cleanly. This is where most of the syntactic work lives, and every engine has its own version of the problem.
 
-#strong[Timestamps.] PostgreSQL's `TIMESTAMP WITHOUT TIME ZONE` landing in BigQuery becomes `TIMESTAMP`, which is always UTC. If the source stored local times without timezone info, BigQuery now treats them as UTC and every downstream consumer gets the wrong time. Snowflake distinguishes `TIMESTAMP_TZ` from `TIMESTAMP_NTZ`, so you have a choice -- but you have to make it explicitly. See @timezone-conforming.
+#strong[Timestamps.] PostgreSQL's `TIMESTAMP WITHOUT TIME ZONE` landing in BigQuery becomes `TIMESTAMP`, which is always UTC. If the source stored local times without timezone info, BigQuery now treats them as UTC and every downstream consumer gets the wrong time. Snowflake distinguishes `TIMESTAMP_TZ` from `TIMESTAMP_NTZ`, so you have a choice -- but you have to make it explicitly. See @timezone-handling.
 
 #figure(
   align(center)[#table(
@@ -623,7 +621,7 @@ When data crosses from a transactional source to a columnar destination, types d
 
 #ecl-warning(
   "BigQuery has no naive datetime",
-)[Every `TIMESTAMP` in BigQuery is timezone-aware. If your source has naive timestamps, BigQuery treats them as UTC. If they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. You must conform timezone info during load.]
+)[Every `TIMESTAMP` in BigQuery is timezone-aware. If your source has naive timestamps, BigQuery treats them as UTC. If they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. You must handle the timezone during load.]
 
 #strong[Decimals.] `NUMERIC(18,6)` in PostgreSQL has fixed precision. BigQuery's `NUMERIC` supports up to `NUMERIC(38,9)`. Snowflake offers `NUMBER(p,s)` with configurable precision, or `DECFLOAT` for unbound decimals -- but DECFLOAT only works with JSONL and CSV loads. Parquet doesn't support it. If your loader converts to `FLOAT64` anywhere in the pipeline, you lose precision. Financial data loaded as floating point is a bug waiting to surface. See @type-casting-and-normalization.
 
@@ -691,7 +689,7 @@ New columns will appear in the source. Your loader needs a schema policy: `evolv
 
 #ecl-warning(
   "Naming convention lock-in",
-)[Identifier normalization at load time is a conforming operation with permanent consequences. If your loader converts `OrderID` to `order_id` (snake\_case), that's the column name forever. Changing the convention later re-normalizes already-normalized identifiers, causing failures. Choose your naming convention on day one and never look back.]
+)[Identifier normalization at load time is a syntactic operation with permanent consequences. If your loader converts `OrderID` to `order_id` (snake\_case), that's the column name forever. Changing the convention later re-normalizes already-normalized identifiers, causing failures. Choose your naming convention on day one and never look back.]
 
 === What Will Bite You
 <what-will-bite-you-1>
@@ -883,13 +881,13 @@ WHERE table_name = 'orders'
   kind: table,
 )
 
-`timestamp without time zone` means the database is storing local time with no context. You need to know the application's intended timezone before you can conform correctly. There's no way to infer it from the data.
+`timestamp without time zone` means the database is storing local time with no context. You need to know the application's intended timezone before you can handle the timezone correctly. There's no way to infer it from the data.
 
 #ecl-danger(
   "BigQuery makes this unforgiving",
 )[BigQuery has no naive timestamp type. Every `TIMESTAMP` is UTC. Load a naive timestamp and BigQuery silently treats it as UTC. If it was stored in local time, every value is wrong -- and there's no way to fix it after the fact without knowing the original timezone and reloading.]
 
-See @timezone-conforming for the full timezone conforming playbook.
+See @timezone-handling for the full timezone-handling playbook.
 
 === "The data is clean"
 <the-data-is-clean>
@@ -924,8 +922,8 @@ LIMIT 10;
 Run these as pre-extraction quality checks. They won't always block your pipeline -- sometimes you load the dirty data and let downstream handle it -- but you need to know the contamination level before you decide.
 
 #ecl-warning(
-  "Conforming is not cleaning",
-)[Your job in ECL is to faithfully clone the source to the destination, not to fix the application's data quality problems. An orphaned foreign key in the source should land as an orphaned foreign key in the destination. If you silently drop those rows, downstream teams are missing data and they don't know it. Load it, flag it, let the business decide what to fix.]
+  "The pipeline clones, it doesn't clean",
+)[Your job is to faithfully clone the source to the destination, not to fix the application's data quality problems. An orphaned foreign key in the source should land as an orphaned foreign key in the destination. If you silently drop those rows, downstream teams are missing data and they don't know it. Load it, flag it, let the business decide what to fix.]
 
 This is where @hard-rules-soft-rules becomes critical. Constraints the database doesn't enforce are soft rules. Your pipeline must survive them being wrong -- but it should also surface when they are wrong, so someone can fix the root cause.
 
@@ -1069,7 +1067,7 @@ See @cursor-based-timestamp-extraction for lookback window patterns, and @reliab
   #strong[One-liner:] Same pattern, different trade-offs. Where the data goes changes how you implement everything.
 ]
 
-A corridor is the combination of source type and destination type. The extraction pattern looks the same -- query the source, conform, load -- but the implementation decisions change completely depending on which corridor you're in. Get this wrong early and you'll have to redo a lot of work on the pipeline to make it useful, or worse, bleed a ton of money on a system that's mission critical and hard to alter.
+A corridor is the combination of source type and destination type. The extraction pattern looks the same -- query the source, apply syntactic transforms, load -- but the implementation decisions change completely depending on which corridor you're in. Get this wrong early and you'll have to redo a lot of work on the pipeline to make it useful, or worse, bleed a ton of money on a system that's mission critical and hard to alter.
 
 === The Two Corridors
 <the-two-corridors>
@@ -1080,7 +1078,7 @@ A corridor is the combination of source type and destination type. The extractio
 This book doesn't cover Columnar → Columnar or Columnar → Transactional. The first is rare and usually handled by the analytical platform itself (BigQuery cross-region replication, Snowflake data sharing). The second is unusual enough to be its own project.
 
 #figure(
-  image("diagrams/ecl-corridors.svg", width: 90%),
+  image("diagrams/corridors.svg", width: 90%),
 )
 
 #ecl-info(
@@ -1095,13 +1093,13 @@ The corridor determines your constraints. Getting this wrong means building a pi
 
 #strong[Constraint enforcement at the destination.] A transactional destination can enforce `PRIMARY KEY`, `UNIQUE`, and `FOREIGN KEY`. If you try to load a duplicate, the database rejects it. You can rely on this as a safety net. A columnar destination won't. BigQuery and Snowflake accept PK/UNIQUE in DDL but don't enforce them. ClickHouse has no unique constraint outside of `ReplacingMergeTree`'s eventual deduplication. In T→C, deduplication is always your problem. In T→T, you can configure the destination to enforce it.
 
-#strong[Cost model.] Transactional destinations cost CPU and IO -- roughly proportional to the rows you touch. Columnar destinations cost bytes scanned (BigQuery) or compute time (Snowflake, Redshift). A badly written conform step in BigQuery that forces a full table scan on every run doesn't just waste time -- it charges you for it, repeatedly, for the lifetime of the pipeline.
+#strong[Cost model.] Transactional destinations cost CPU and IO -- roughly proportional to the rows you touch. Columnar destinations cost bytes scanned (BigQuery) or compute time (Snowflake, Redshift). A badly written syntactic step in BigQuery that forces a full table scan on every run doesn't just waste time -- it charges you for it, repeatedly, for the lifetime of the pipeline.
 
-#strong[Type system gap.] The wider the gap between source and destination type systems, the more conforming the C has to do. T→T with the same engine (PostgreSQL → PostgreSQL) has almost no type gap. T→C (PostgreSQL → BigQuery) means navigating timezone coercion, decimal precision, JSON handling, and format compatibility. See @columnar-destinations for the full type mapping.
+#strong[Type system gap.] The wider the gap between source and destination type systems, the more syntactic work the pipeline has to do. T→T with the same engine (PostgreSQL → PostgreSQL) has almost no type gap. T→C (PostgreSQL → BigQuery) means navigating timezone coercion, decimal precision, JSON handling, and format compatibility. See @columnar-destinations for the full type mapping.
 
 === Where to Process
 <where-to-process>
-Every conforming operation -- a CAST, a NULL coalesce, a hash key -- runs #emph[somewhere];. The question is where, and what it costs you.
+Every syntactic operation -- a CAST, a NULL coalesce, a hash key -- runs #emph[somewhere];. The question is where, and what it costs you.
 
 There are four execution points:
 
@@ -1110,7 +1108,7 @@ There are four execution points:
 ```sql
 -- source: transactional
 -- engine: postgresql
--- Conform at source: cast types, synthesize key, inject metadata in the extraction query
+-- Syntactic step at the source: cast types, synthesize key, inject metadata in the extraction query
 SELECT
     order_id::TEXT || '-' || line_num::TEXT AS _source_key,
     order_id,
@@ -1131,7 +1129,7 @@ Free if the source can handle it and you're running at 2am. Dangerous if you're 
 
 #ecl-warning(
   "Push work to whoever's idle",
-)[Source at 2am? Let it do the work. Production ERP at 10am? Extract raw, process downstream. "Cheapest" isn't just infrastructure cost -- it factors in system load and how much the source team will hate you. In T→C, prefer conforming at the source or orchestrator to avoid expensive destination compute. In T→T, the destination is often the cheapest place to process.]
+)[Source at 2am? Let it do the work. Production ERP at 10am? Extract raw, process downstream. "Cheapest" isn't just infrastructure cost -- it factors in system load and how much the source team will hate you. In T→C, prefer doing the syntactic work at the source or orchestrator to avoid expensive destination compute. In T→T, the destination is often the cheapest place to process.]
 
 === Transactional → Columnar
 <transactional-columnar>
@@ -1141,7 +1139,7 @@ This is the harder corridor. The full details of the destination are in @columna
 
 #strong[Partition alignment is your responsibility.] The destination has no FK constraints, no row-level locks, no automatic partition management. You decide how data is physically laid out. Load in partition-aligned batches or you're paying for your own mess on every downstream query.
 
-#strong[Type conforming happens at the crossing.] Naive timestamps, decimal precision, JSON columns -- all of these need explicit handling before data lands. The destination won't reject bad types gracefully; it'll silently coerce them or fail the job. See @type-casting-and-normalization.
+#strong[Type casting happens at the crossing.] Naive timestamps, decimal precision, JSON columns -- all of these need explicit handling before data lands. The destination won't reject bad types gracefully; it'll silently coerce them or fail the job. See @type-casting-and-normalization.
 
 #strong[The cost of mistakes compounds.] A wrong partition strategy, a missing cluster key, an unnecessary full-table scan in your load logic -- these are costs every downstream query pays for the life of the pipeline.
 
@@ -1166,7 +1164,7 @@ The narrower corridor. Same class of engine on both ends, but don't let that mak
 == Purity vs.~Freshness
 <purity-vs-freshness>
 #quote(block: true)[
-  #strong[One-liner:] The fundamental tradeoff in batch ECL: perfectly stable data requires full replaces at low frequency. Fresher data requires incremental complexity. The right answer depends on the table, the consumer, and the SLA.
+  #strong[One-liner:] The fundamental tradeoff in batch replication: perfectly stable data requires full replaces at low frequency. Fresher data requires incremental complexity. The right answer depends on the table, the consumer, and the SLA.
 ]
 
 Every pipeline decision -- how to extract, how often to run, how to load -- is a position on this tradeoff. Most pipelines take a position without realizing it, and then you inherit someone else's unexamined defaults six months later when something breaks.
@@ -1531,7 +1529,7 @@ Rows outside the target range are never touched; the rest of the table stays exa
 - Full table replace is too expensive -- years of history sit in partitions you have no reason to touch
 - `metrics_daily`, `events`, `sessions` -- any table where each partition is a self-contained, replaceable unit
 
-The partition boundary must be meaningful. If your `events` table has rows for `2026-03-07` scattered across multiple partitions because of a timezone mismatch, partition swap will produce incorrect results. See @timezone-conforming.
+The partition boundary must be meaningful. If your `events` table has rows for `2026-03-07` scattered across multiple partitions because of a timezone mismatch, partition swap will produce incorrect results. See @timezone-handling.
 
 === The Mechanics
 <the-mechanics>
@@ -1660,7 +1658,7 @@ For Snowflake and Redshift, the DELETE + INSERT is a single transaction -- it ei
 <partition-alignment-is-your-responsibility>
 The engine partitions by whatever value is in the partition key column. If that value is wrong -- because of a timezone mismatch, a bulk load that used server time instead of event time, a late-arriving batch processed with today's date -- the row lands in the wrong partition and partition swap will replace the wrong thing.
 
-Conform timezone before determining the partition key, not after. See @timezone-conforming.
+Handle timezone before determining the partition key, not after. See @timezone-handling.
 
 Late-arriving data adds another dimension: rows for prior dates arriving today belong in their original partition, not today's. Your extraction range must account for this. If yesterday's data is still arriving today, your target range should include yesterday -- and your overlap window should be wide enough to catch stragglers. See @late-arriving-data.
 
@@ -2438,7 +2436,7 @@ Three situations justify it:
 
 #strong[Columns your destination can't represent.] A PostgreSQL `geometry` type, a SQL Server `hierarchyid`, a custom SAP compound type. Sometimes there's no clean mapping to the destination's type system. Excluding the column is preferable to a failed extraction or a corrupted value landing silently.
 
-What doesn't justify it: filtering for "relevance." A wide table with 200 columns where analytics only uses 40 is not a reason to exclude 160. That's a transformation -- a decision about what matters -- and it belongs downstream, not at the extraction layer. Consumers don't understand the difference between "this column has nulls" and "this column was never loaded."
+What doesn't justify it: filtering for "relevance." A wide table with 200 columns where analytics only uses 40 is not a reason to exclude 160. That's a semantic transformation, a decision about what matters, and it belongs downstream, not at the extraction layer. Consumers don't understand the difference between "this column has nulls" and "this column was never loaded."
 
 #figure(image("diagrams/0209-partial-columns.svg", width: 95%))
 
@@ -2469,7 +2467,7 @@ A second trap: schema drift. When a source table adds a new column, `SELECT *` p
     [Sometimes -- type casting may be an option first, everything #emph[can] be a string],
     ["Irrelevant" columns],
     [Wide table, only 40 of 200 columns used],
-    [No -- this is a transformation, not conforming],
+    [No -- this is a semantic transformation and belongs downstream],
   )],
   kind: table,
 )
@@ -3602,7 +3600,7 @@ The upsert or dedup handles the redundancy from re-extracting NULLs every run. A
 
 #ecl-tip(
   "The real fix is upstream",
-)[If the source team adds an `AFTER INSERT` trigger that populates `updated_at` and backfills existing NULLs, the standard @cursor-based-timestamp-extraction cursor works and the strategies above become unnecessary. This is outside the ECL boundary -- it's a conversation with the source team, not a pipeline change -- but it's worth having.]
+)[If the source team adds an `AFTER INSERT` trigger that populates `updated_at` and backfills existing NULLs, the standard @cursor-based-timestamp-extraction cursor works and the strategies above become unnecessary. This is a source-side fix, not a pipeline change -- but it's worth pursuing.]
 
 // ---
 
@@ -3999,7 +3997,7 @@ The merge key determines how the destination identifies "the same row." Two opti
 
 === Full Row Replace vs.~Partial Update
 <full-row-replace-vs.-partial-update>
-The ECL philosophy is to clone the source exactly -- `DO UPDATE SET (all columns)` is the simplest approach and matches that goal. Every MERGE overwrites the entire row with the source's current state, which means the destination always reflects the source regardless of which columns changed.
+Cloning the source exactly is the goal -- `DO UPDATE SET (all columns)` is the simplest approach and matches that goal. Every MERGE overwrites the entire row with the source's current state, which means the destination always reflects the source regardless of which columns changed.
 
 ```sql
 -- destination: transactional (PostgreSQL)
@@ -4014,7 +4012,7 @@ DO UPDATE SET
   updated_at = EXCLUDED.updated_at;
 ```
 
-Partial updates -- `DO UPDATE SET status = EXCLUDED.status` while leaving other columns untouched -- earn their complexity only when partial column loading (@partial-column-loading) forces them. If you're extracting all columns, update all columns. Deciding which columns "matter" is a business decision that breaks the conforming boundary (@what-is-conforming).
+Partial updates -- `DO UPDATE SET status = EXCLUDED.status` while leaving other columns untouched -- earn their complexity only when partial column loading (@partial-column-loading) forces them. If you're extracting all columns, update all columns. Deciding which columns "matter" is a business decision that breaks the syntactic boundary (@what-is-syntactic-transformation).
 
 // ---
 
@@ -4080,7 +4078,7 @@ A new column appears in the source. What happens to the MERGE?
 Neither outcome is good. Schema evolution needs handling #strong[before] the MERGE executes:
 
 + #strong[Detect] -- compare the staging table's schema against the destination's schema before running the MERGE. New columns, dropped columns, and type changes are all detectable at this point.
-+ #strong[Decide] -- a schema policy determines the response. Two modes are compatible with ECL:
++ #strong[Decide] -- a schema policy determines the response. Two modes are compatible with faithful replication:
 
 #figure(
   align(center)[#table(
@@ -4094,7 +4092,7 @@ Neither outcome is good. Schema evolution needs handling #strong[before] the MER
   kind: table,
 )
 
-Some loaders offer `discard_row` and `discard_value` modes that drop data silently when the schema doesn't match. These are transformation decisions -- deciding what data to keep based on schema fit -- and they break the conforming boundary (@what-is-conforming). If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data.
+Some loaders offer `discard_row` and `discard_value` modes that drop data silently when the schema doesn't match. These are semantic transformation decisions, deciding what data to keep based on schema fit, and they break the syntactic boundary (@what-is-syntactic-transformation). If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data.
 
 3. #strong[Apply] -- if the policy is `evolve`, add the column to the destination (`ALTER TABLE ADD COLUMN`) before the MERGE runs. If it's `freeze`, the pipeline stops and alerts.
 
@@ -4489,7 +4487,7 @@ A pipeline that fails silently is worse than one that fails loudly. Your orchest
 
 // ---
 
-= Part V: The Conforming Playbook
+= Part V: The Syntactic Transformation Playbook
 == Metadata Column Injection
 <metadata-column-injection>
 #quote(block: true)[
@@ -4607,11 +4605,11 @@ FROM orders;
 <where-to-inject>
 Every metadata column runs #emph[somewhere] -- in the source query, in Python between extraction and load, or in a staging transform on the destination. The choice depends on what the source can handle and how much compute you're willing to add to the extraction.
 
-#strong[Source query.] Cheapest if the source can handle it. `CURRENT_TIMESTAMP` is free on every engine. `MD5()` is available on PostgreSQL, MySQL, SQL Server, and SAP HANA with slightly different syntax. The conforming happens in the same query that extracts the data -- no extra hop, no extra infrastructure.
+#strong[Source query.] Cheapest if the source can handle it. `CURRENT_TIMESTAMP` is free on every engine. `MD5()` is available on PostgreSQL, MySQL, SQL Server, and SAP HANA with slightly different syntax. The syntactic work happens in the same query that extracts the data -- no extra hop, no extra infrastructure.
 
 #strong[Orchestrator / middleware.] Python adds the columns after extraction, before load. More control (you can use a consistent hashing library across all sources regardless of engine), but you're adding an extra data hop and holding the full batch in memory or on disk while you process it.
 
-#strong[Staging.] Land the raw data without metadata, then add the columns in a staging transform on the destination. Works well when you want to keep the extraction query minimal and offload all conforming to the destination's compute. Common in BigQuery workflows where staging + transform is the standard pattern.
+#strong[Staging.] Land the raw data without metadata, then add the columns in a staging transform on the destination. Works well when you want to keep the extraction query minimal and offload all syntactic work to the destination's compute. Common in BigQuery workflows where staging + transform is the standard pattern.
 
 For `_extracted_at` and `_batch_id`, the source query is almost always the right place -- the cost is negligible. For `_source_hash`, the source query or Python are both reasonable depending on whether your source engine has a convenient hash function and whether the compute cost on the source is acceptable.
 
@@ -4709,7 +4707,7 @@ Document which columns participate in the key. Downstream consumers, reconciliat
 // ---
 
 === Hash Function Choice
-<conforming-hash-function>
+<syntactic-hash-function>
 #strong[MD5.] 128-bit output, fast on every engine. The standard choice for synthetic keys. This isn't cryptography -- you're not protecting against adversarial collisions, you're generating unique identifiers for MERGE matching. MD5's known cryptographic weaknesses are irrelevant here.
 
 #strong[SHA-256.] 256-bit output, slower. The only reason to use it over MD5 is if regulatory or audit requirements mandate a specific hash function. Some compliance frameworks specify SHA-256 for anything labeled "hash" regardless of context -- easier to comply than to argue.
@@ -4756,7 +4754,7 @@ That said, not all precision loss is negative. Very few tables need nanosecond p
 
 === The Mapping Table
 <the-mapping-table>
-The central reference for type conforming across engines. Every source-destination pair has a mapping, and the dangerous ones are the implicit casts that look harmless.
+The central reference for type casting across engines. Every source-destination pair has a mapping, and the dangerous ones are the implicit casts that look harmless.
 
 #figure(
   align(center)[#table(
@@ -4794,7 +4792,7 @@ The central reference for type conforming across engines. Every source-destinati
     [PostgreSQL],
     [`TIMESTAMP`],
     [BigQuery],
-    [BigQuery `TIMESTAMP` is always UTC. See @timezone-conforming],
+    [BigQuery `TIMESTAMP` is always UTC. See @timezone-handling],
   )],
   kind: table,
 )
@@ -4879,7 +4877,7 @@ The source stores boolean-like values in at least six different ways depending o
   kind: table,
 )
 
-The ECL layer #emph[can] cast to the destination's native boolean, but only with good justification. "The destination has a `BOOL` type" isn't sufficient reason to reinterpret a `'Y'`/`'N'` string column -- the source stored a string, and reflecting the source faithfully means landing a string. Cast to `BOOLEAN` when the source type is already a boolean (`BIT`, `BOOLEAN`) and the destination has a native equivalent. Leave string representations as strings.
+The pipeline #emph[can] cast to the destination's native boolean, but only with good justification. "The destination has a `BOOL` type" isn't sufficient reason to reinterpret a `'Y'`/`'N'` string column -- the source stored a string, and reflecting the source faithfully means landing a string. Cast to `BOOLEAN` when the source type is already a boolean (`BIT`, `BOOLEAN`) and the destination has a native equivalent. Leave string representations as strings.
 
 #ecl-warning(
   "Three-state logic",
@@ -4931,14 +4929,14 @@ A few combinations that produce surprising behavior:
 == Null Handling
 <null-handling>
 #quote(block: true)[
-  #strong[One-liner:] NULL means NULL. Reflect the source as-is -- don't COALESCE, don't mix representations, don't solve downstream's problems in the ECL layer.
+  #strong[One-liner:] NULL means NULL. Reflect the source as-is -- don't COALESCE, don't mix representations, don't solve downstream's problems in the pipeline.
 ]
 
 // ---
 
 === The Playbook
 <the-playbook-2>
-ECL is about reflecting the source as faithfully as possible. If the source has NULL, land NULL. If the source has empty string, land empty string. If the source has `'N/A'`, land `'N/A'`. These are three different values with potentially three different meanings, and converting one to the other is a business decision -- it belongs downstream, not in the conforming layer.
+Faithful replication means reflecting the source as accurately as possible. If the source has NULL, land NULL. If the source has empty string, land empty string. If the source has `'N/A'`, land `'N/A'`. These are three different values with potentially three different meanings, and converting one to the other is a business decision -- it belongs downstream, not in the syntactic layer.
 
 The temptation to "clean up" NULLs at extraction is strong, especially when you know downstream consumers will struggle with them. Resist it. A COALESCE in the extraction query looks harmless, but it makes an irreversible choice about what NULL means for every consumer of the table, and that choice may be wrong for some of them. A NULL `email` might mean "not provided" for the marketing team and "not applicable" for the billing team -- collapsing it to `''` destroys the distinction for both.
 
@@ -4966,17 +4964,17 @@ The source might use any combination of:
   kind: table,
 )
 
-If different source tables use different representations, document the inconsistency but don't normalize them to a single representation at the ECL level. Table A uses NULL for "no email" and table B uses `''` for "no email" -- that's the source's problem, and it's worth documenting, but converting one to match the other is a transformation decision. The downstream team gets to decide how to unify them because they understand the business context better than the pipeline does.
+If different source tables use different representations, document the inconsistency but don't normalize them to a single representation in the pipeline. Table A uses NULL for "no email" and table B uses `''` for "no email" -- that's the source's problem, and it's worth documenting, but converting one to match the other is a semantic decision the downstream team gets to make, because they understand the business context better than the pipeline does.
 
 #ecl-warning(
-  "Avoid COALESCE in the conforming layer",
-)[`COALESCE(email, '')` in the extraction query looks like cleanup. What it actually does: permanently destroys the distinction between "this field was never populated" (NULL) and "this field was explicitly set to empty" (empty string). If that distinction matters to even one consumer, you've lost it for all of them. The only justified COALESCE at the ECL level is in synthetic key hashing (see @synthetic-keys), where NULL would corrupt the hash output -- and that's infrastructure, not business logic.]
+  "Avoid COALESCE in the syntactic layer",
+)[`COALESCE(email, '')` in the extraction query looks like cleanup. What it actually does: permanently destroys the distinction between "this field was never populated" (NULL) and "this field was explicitly set to empty" (empty string). If that distinction matters to even one consumer, you've lost it for all of them. The only justified COALESCE in the pipeline is in synthetic key hashing (see @synthetic-keys), where NULL would corrupt the hash output -- and that's infrastructure, not business logic.]
 
 // ---
 
-=== When NULLs Matter at the ECL Level
-<when-nulls-matter-at-the-ecl-level>
-NULLs don't need fixing in the ECL layer, but they do need #emph[awareness] -- three places where NULL behavior affects the pipeline itself, not downstream consumption:
+=== When NULLs Matter at the Pipeline Level
+<when-nulls-matter-at-the-pipeline-level>
+NULLs don't need fixing in the pipeline, but they do need #emph[awareness] -- three places where NULL behavior affects the pipeline itself, not downstream consumption:
 
 #strong[NULL in synthetic key columns.] Most hash functions return NULL if any input is NULL, so a row with a NULL key column produces a NULL `_source_key` and the MERGE can't match it. COALESCE to a sentinel before hashing -- see @synthetic-keys. This is the one place where COALESCE is justified because it's protecting pipeline mechanics, not making a business decision.
 
@@ -4988,7 +4986,7 @@ NULLs don't need fixing in the ECL layer, but they do need #emph[awareness] -- t
 
 === Downstream Consequences
 <downstream-consequences>
-These are real, and you should document them -- but they're not your problem to fix in the ECL layer.
+These are real, and you should document them -- but they're not your problem to fix in the pipeline.
 
 #strong[`GROUP BY` groups NULLs together.] The SQL standard treats NULLs as "not distinct" for grouping, and every major engine follows this -- BigQuery, Snowflake, PostgreSQL, MySQL, SQL Server, ClickHouse, Redshift. An analyst who writes `GROUP BY status` and gets a NULL group isn't looking at a bug -- they're looking at data that has NULLs in the status column, which is what the source has.
 
@@ -5010,14 +5008,14 @@ These are real, and you should document them -- but they're not your problem to 
 
 #ecl-info(
   "Transactional to transactional",
-)[Transactional destinations _can_ enforce NOT NULL. If the destination schema has NOT NULL constraints and the source has NULLs, the load fails -- and that's a schema mismatch to resolve by adjusting the destination DDL, not a reason to COALESCE in the extraction. If you genuinely need NOT NULL at the destination (for FK integrity or application requirements), make that a conscious decision and handle the NULLs explicitly in a documented transformation step, not silently in the ECL layer.]
+)[Transactional destinations _can_ enforce NOT NULL. If the destination schema has NOT NULL constraints and the source has NULLs, the load fails -- and that's a schema mismatch to resolve by adjusting the destination DDL, not a reason to COALESCE in the extraction. If you genuinely need NOT NULL at the destination (for FK integrity or application requirements), make that a conscious decision and handle the NULLs explicitly in a documented transformation step, not silently in the pipeline.]
 
 // ---
 
 // ---
 
-== Timezone Conforming
-<timezone-conforming>
+== Timezone Handling
+<timezone-handling>
 #quote(block: true)[
   #strong[One-liner:] TZ stays TZ, naive stays naive. Don't make timezone decisions that aren't in the source data -- but know what you're landing.
 ]
@@ -5042,7 +5040,7 @@ Two fundamentally different types that look similar in query results but behave 
 
 #strong[Aware] (`TIMESTAMP WITH TIME ZONE`, `TIMESTAMPTZ`): the value `2026-03-15 14:30:00+00:00` with an explicit offset or stored as UTC internally. The timezone is part of the data. PostgreSQL's `TIMESTAMPTZ` stores everything as UTC and converts to the session timezone on display; BigQuery's `TIMESTAMP` is always UTC.
 
-The conforming decision:
+The mapping:
 
 #figure(
   align(center)[#table(
@@ -5075,7 +5073,7 @@ When you need to know what timezone a naive timestamp represents -- for document
 
 #strong[Look at timestamps around DST transitions.] If you see a gap at 2:00-3:00 AM on the spring-forward date, the source writes in a timezone that observes DST. If you see two clusters of timestamps at 1:00-2:00 AM on the fall-back date, same conclusion. If timestamps flow smoothly across both transitions, the source writes in UTC or a non-DST timezone.
 
-#strong[Multinational ERPs.] Each company or branch may write in its own local timezone -- same column, different timezone per row, no indicator column. This is genuinely bad source data quality. If the source doesn't provide a timezone indicator per row, avoid assigning timezones in the ECL layer. Land naive and let downstream handle it with whatever business context they have about which company operates in which timezone.
+#strong[Multinational ERPs.] Each company or branch may write in its own local timezone -- same column, different timezone per row, no indicator column. This is genuinely bad source data quality. If the source doesn't provide a timezone indicator per row, avoid assigning timezones in the pipeline. Land naive and let downstream handle it with whatever business context they have about which company operates in which timezone.
 
 // ---
 
@@ -5133,7 +5131,7 @@ This matters more than partition alignment. A row in the wrong partition is an i
 
 === The Playbook
 <the-playbook-4>
-Charset encoding is one of those conforming operations that should be invisible. The right approach is to declare the source encoding explicitly on the connection, let the driver handle the conversion to UTF-8, and move on. Don't write manual byte-level conversion code -- every database driver and library (SQLAlchemy, JDBC, ODBC) has solved this problem already, and their solution is better tested than yours will be.
+Charset encoding is one of those syntactic operations that should be invisible. The right approach is to declare the source encoding explicitly on the connection, let the driver handle the conversion to UTF-8, and move on. Don't write manual byte-level conversion code -- every database driver and library (SQLAlchemy, JDBC, ODBC) has solved this problem already, and their solution is better tested than yours will be.
 
 The only thing you need to get right is the declaration. If you tell the driver the source is UTF-8 and it's actually Latin-1, the conversion produces mojibake silently. If you tell it Latin-1 and it's actually Windows-1252, you lose a handful of characters (curly quotes, em dashes, ellipsis) that exist in Windows-1252 but not in Latin-1. Get the encoding right on the connection string and the rest takes care of itself.
 
@@ -5210,17 +5208,17 @@ Collation is related to encoding but distinct: encoding determines #emph[how byt
 
 #strong[Accent sensitivity.] A source with accent-insensitive collation treats `café` and `cafe` as equal. A destination with binary collation (the default on most columnar engines) treats them as different values. A JOIN on a text column that "always worked" on the source returns fewer rows on the destination, and the missing rows are the ones with accented characters.
 
-#strong[What to do about it.] Document the source collation for text columns used in JOINs or filters. If a collation mismatch causes incorrect query results at the destination, the fix belongs downstream (a `LOWER()` or `COLLATE` clause in the consumer's query), not in the ECL layer. Conforming doesn't change how strings compare -- it makes sure the bytes arrive correctly.
+#strong[What to do about it.] Document the source collation for text columns used in JOINs or filters. If a collation mismatch causes incorrect query results at the destination, the fix belongs downstream (a `LOWER()` or `COLLATE` clause in the consumer's query), not in the pipeline. Syntactic transformation doesn't change how strings compare -- it makes sure the bytes arrive correctly.
 
 // ---
 
 === Schema Naming
-<conforming-schema-naming>
+<syntactic-schema-naming>
 Related but distinct concern: the characters in table and column #emph[names];, not in the data. This is about safety and consistency across engines, not about renaming `OACT` to `chart_of_accounts`.
 
 #strong[The problem.] SQL Server allows `[Emojis 👽]` as a column name. PostgreSQL allows `"@Table"` with quotes. SAP tables are named `OACT`, `OINV`, `INV1`. These identifiers may contain spaces, special characters, brackets, or characters that are reserved words in the destination engine. A column named `order` in the source breaks every query on the destination unless quoted -- and nobody quotes consistently.
 
-#strong[What the ECL layer should do.] Normalize identifiers for #emph[safety];: lowercase, replace spaces with underscores, strip characters that require quoting on the destination engine. This isn't semantic renaming (`OACT` → `chart_of_accounts`) -- it's making sure the identifier doesn't break SQL on the other side. `[Order Lines]` → `order_lines`, `@Status` → `status`, `Column Name With Spaces` → `column_name_with_spaces`.
+#strong[What the pipeline should do.] Normalize identifiers for #emph[safety];: lowercase, replace spaces with underscores, strip characters that require quoting on the destination engine. This is syntactic normalization, not semantic renaming (`OACT` → `chart_of_accounts`) -- it's making sure the identifier doesn't break SQL on the other side. `[Order Lines]` → `order_lines`, `@Status` → `status`, `Column Name With Spaces` → `column_name_with_spaces`.
 
 This deserves its own full treatment -- see @sql-dialect-reference for the complete naming convention discussion, including when to rename vs.~preserve, schema prefixes, and how to handle identifiers that are reserved words on the destination.
 
@@ -5243,18 +5241,18 @@ This deserves its own full treatment -- see @sql-dialect-reference for the compl
 == Nested Data and JSON
 <nested-data-and-json>
 #quote(block: true)[
-  #strong[One-liner:] JSON column in the source? Land it as-is. Normalizing nested data into relational tables is transformation, not conforming.
+  #strong[One-liner:] JSON column in the source? Land it as-is. Normalizing nested data into relational tables is semantic transformation -- it belongs downstream.
 ]
 
 // ---
 
 === The Playbook
 <the-playbook-5>
-Prefer landing JSON columns as they are -- `STRING` or the destination's native JSON type (BigQuery `JSON`, Snowflake `VARIANT`, PostgreSQL `JSONB`). The source has a JSON column, the destination gets a JSON column. That's conforming.
+Prefer landing JSON columns as they are -- `STRING` or the destination's native JSON type (BigQuery `JSON`, Snowflake `VARIANT`, PostgreSQL `JSONB`). The source has a JSON column, the destination gets a JSON column. That's syntactic.
 
-Flattening JSON into normalized tables (`order`, `order__details`, `order__details__items`) is closer to ETL than ECL. The C in ECL makes data survive the crossing without restructuring it. If you have a strong reason to flatten (a consumer that absolutely cannot work with JSON and there's no downstream layer to do it), document the decision and know that you're stepping outside the conforming boundary. Most of the time, you don't need to.
+Flattening JSON into normalized tables (`order`, `order__details`, `order__details__items`) is semantic transformation. Syntactic work makes data survive the crossing without restructuring it. If you have a strong reason to flatten (a consumer that absolutely cannot work with JSON and there's no downstream layer to do it), document the decision and know that you're stepping outside the syntactic boundary. Most of the time, you don't need to.
 
-Avoid the hybrid approach (land raw JSON + flatten to normalized tables) at the ECL layer. Two representations means double the storage, double the schema maintenance, and a synchronization problem when one updates and the other doesn't. One representation is enough -- pick the simpler one and let downstream build the other if they need it.
+Avoid the hybrid approach (land raw JSON + flatten to normalized tables) in the pipeline. Two representations means double the storage, double the schema maintenance, and a synchronization problem when one updates and the other doesn't. One representation is enough -- pick the simpler one and let downstream build the other if they need it.
 
 // ---
 
@@ -5293,13 +5291,13 @@ Land it as-is. The structure, the nesting, the array of items -- all of it arriv
 
 #figure(image("diagrams/0507-nested-json.svg", width: 95%))
 
-This works well when consumers are data-conscious and comfortable with JSON query syntax. BigQuery's `JSON_EXTRACT_SCALAR(details, '$.shipping.method')`, Snowflake's `details:shipping.method`, PostgreSQL's `details->'shipping'->>'method'` -- all of these give consumers access to every field without the ECL layer making structural decisions on their behalf.
+This works well when consumers are data-conscious and comfortable with JSON query syntax. BigQuery's `JSON_EXTRACT_SCALAR(details, '$.shipping.method')`, Snowflake's `details:shipping.method`, PostgreSQL's `details->'shipping'->>'method'` -- all of these give consumers access to every field without the pipeline making structural decisions on their behalf.
 
 // ---
 
 === Know Your Consumer
 <know-your-consumer>
-Not all BI tools handle nested data the same way, and that's worth understanding even though it doesn't change the ECL approach.
+Not all BI tools handle nested data the same way, and that's worth understanding even though it doesn't change the approach.
 
 #strong[Tools that handle JSON well.] Looker, BigQuery BI Engine, Metabase (with JSON path support), any tool where the query author writes SQL. These consumers can reach into the JSON with path expressions and extract what they need.
 
@@ -5307,7 +5305,7 @@ Not all BI tools handle nested data the same way, and that's worth understanding
 
 But here's the thing: the same consumers who can't handle JSON often can't handle joins either. Normalizing the JSON into 5 relational tables and expecting a business analyst to JOIN `order` → `order__details` → `order__details__items` correctly is optimistic. You've traded one problem (they can't query JSON) for another (they can't join tables), and the second problem is arguably worse because wrong joins produce silently incorrect results while failing to query JSON produces an error.
 
-If the consumer truly can't work with JSON, the answer is a downstream transformation -- a view or materialized table that flattens the JSON into the shape the consumer needs. That's a serving concern (@query-patterns-for-analysts), not an ECL concern. The ECL layer lands the data; the serving layer shapes it for consumption.
+If the consumer truly can't work with JSON, the answer is a downstream semantic transformation -- a view or materialized table that flattens the JSON into the shape the consumer needs. That's a serving concern (@query-patterns-for-analysts). The pipeline lands the data; the serving layer shapes it for consumption.
 
 #ecl-warning(
   "Flattening views are cheap and reversible",
@@ -5319,7 +5317,7 @@ If the consumer truly can't work with JSON, the answer is a downstream transform
 <schema-mutation-in-json>
 JSON columns mutate without warning. A new field appears because the application team shipped a feature. A field disappears because someone removed it from the API response. A field that was always a string is now sometimes a number because a third-party integration changed its output format. None of this is visible in the source schema -- the column type is still `JSONB`, the DDL hasn't changed, and your extraction query returns the same column.
 
-This is downstream's problem, not the ECL layer's. Land the JSON as-is and let the consumer or the transformation layer handle schema evolution within the blob. The ECL layer doesn't parse the JSON, so it doesn't break when the JSON changes -- which is exactly the property you want.
+This is downstream's problem. Land the JSON as-is and let the consumer or the serving layer handle schema evolution within the blob. The pipeline doesn't parse the JSON, so it doesn't break when the JSON changes -- which is exactly the property you want.
 
 The one exception: when schema mutation causes the #emph[load itself] to fail. BigQuery `STRUCT` is schema-on-write -- every row must match the declared field names and types. If the JSON gains a new field that the `STRUCT` definition doesn't include, the load rejects the row by default (BigQuery's `ignoreUnknownValues` option silently drops extra fields instead, but that's data loss). Two options:
 
@@ -5513,7 +5511,7 @@ On an #strong[incremental];, the per-run check is less direct -- `rows_extracted
 
 ==== Important Columns
 <important-columns>
-The timing breakdown stays as three separate columns -- `extraction_seconds`, `normalization_seconds`, `load_seconds` -- because a single `total_seconds` hides whether the bottleneck is the source query, the conforming step, or the destination load. When a pipeline that used to take 5 minutes starts taking 40, you need to know which phase is degrading without digging into logs. The total is trivially computable from the parts; the parts are not recoverable from the total.
+The timing breakdown stays as three separate columns -- `extraction_seconds`, `normalization_seconds`, `load_seconds` -- because a single `total_seconds` hides whether the bottleneck is the source query, the syntactic layer, or the destination load. When a pipeline that used to take 5 minutes starts taking 40, you need to know which phase is degrading without digging into logs. The total is trivially computable from the parts; the parts are not recoverable from the total.
 
 `extraction_strategy` records whether this run was `full_replace`, `incremental`, `window`, or something else. The same table can run different strategies on different schedules -- a nightly full replace for purity, intraday incremental for freshness (see @tiered-freshness). Without this column, 50k `rows_extracted` is ambiguous: perfectly normal on a full replace, possibly alarming on an incremental that usually returns 2k.
 
@@ -5523,7 +5521,7 @@ The timing breakdown stays as three separate columns -- `extraction_seconds`, `n
 
 `query_used` stores the actual extraction query, which implicitly records the cursor value, window boundaries, and any filters applied. When an incremental returns 0 rows, the query tells you whether the cursor was already caught up or stuck. When a full replace suddenly takes 10x longer, the query tells you if someone added a WHERE clause that forced a full scan at source. It's the single most useful debugging column -- and the most expensive to store.
 
-`schema_json` is a JSON snapshot of the column names and types seen during this run. Comparing it to the previous run's snapshot detects schema drift without building a separate fingerprinting system. The policies for what to do when drift is detected -- evolve (accept the change) or freeze (reject the load) -- belong in @data-contracts. Silently discarding columns that don't match is a transformation decision, not a conforming one -- if the source sent it, the destination should have it (see @merge-upsert).
+`schema_json` is a JSON snapshot of the column names and types seen during this run. Comparing it to the previous run's snapshot detects schema drift without building a separate fingerprinting system. The policies for what to do when drift is detected -- evolve (accept the change) or freeze (reject the load) -- belong in @data-contracts. Silently discarding columns that don't match is a semantic decision, not syntactic work -- if the source sent it, the destination should have it (see @merge-upsert).
 
 ==== Derived Metrics
 <derived-metrics>
@@ -5600,7 +5598,7 @@ The health INSERT itself can fail -- destination timeout, permission issue, quot
 <generating-metadata-on-load>
 The ideal place to capture health metrics is inside the pipeline run itself -- as a side effect of extraction and load, not in a separate job that queries the destination afterward. If your orchestrator lets you attach custom metadata to each table after a run (row counts, extraction duration, schema fingerprint), that metadata becomes queryable and historically tracked without building a separate system.
 
-This is worth prioritizing when evaluating orchestrators for ECL workloads (see Appendix: Orchestrators). Dagster's custom asset metadata, for example, lets you record these numbers directly on the asset and graph them from the UI -- the health table columns above get populated as a side effect of the pipeline run rather than requiring a post-hoc collection step. The less infrastructure you build outside the orchestrator, the less you maintain.
+This is worth prioritizing when evaluating orchestrators for extract-and-load workloads (see Appendix: Orchestrators). Dagster's custom asset metadata, for example, lets you record these numbers directly on the asset and graph them from the UI -- the health table columns above get populated as a side effect of the pipeline run rather than requiring a post-hoc collection step. The less infrastructure you build outside the orchestrator, the less you maintain.
 
 When your orchestrator doesn't support rich metadata attachment -- which is the more common case -- the health table INSERT becomes an explicit final step in each pipeline run: a wrapper function that captures metrics and writes the row after the load completes (or fails). This works fine and is what most teams end up building. The key is placing the INSERT in a `finally` block or equivalent, so it fires regardless of whether the run succeeded, and giving it its own error handling so a health write failure doesn't mask the original pipeline error.
 
@@ -6098,13 +6096,13 @@ Within that window, arrival order shouldn't matter. Make sure no table depends o
 
 Lookup tables like `customers` and `products` ideally land before `orders` so a consumer querying right after the load sees consistent references, but if `products` is 30 minutes stale while `orders` is fresh, the join still works -- the data is slightly behind, not broken. Express this as a preferred ordering in your orchestrator if it supports it, but don't block `orders` on `products` completing unless you want slower loads.
 
-The only time you need strict ordering is when one extraction's #emph[input] depends on another extraction's #emph[output] -- which is uncommon in ECL because each table is extracted independently from the source. If you do have this case, express it as a real dependency in the orchestrator's DAG, but confirm you actually need it before building the graph.
+The only time you need strict ordering is when one extraction's #emph[input] depends on another extraction's #emph[output] -- which is uncommon because each table is extracted independently from the source. If you do have this case, express it as a real dependency in the orchestrator's DAG, but confirm you actually need it before building the graph.
 
 ==== DAG vs.~Schedule Groups
 <dag-vs.-schedule-groups>
 For the vast majority of table relationships, co-scheduling is enough: put related tables on the same cron, let them run concurrently within the window, done. No dependency graph, no ordering logic.
 
-Reserve DAG-based dependencies for actual extraction-feeds-extraction cases or for coordinating with downstream transformations that must wait for a group of tables to complete. Building a 200-node extraction DAG when 190 of those nodes are independent is complexity that buys nothing -- and a fragile DAG where one table's failure cascades into blocking dozens of unrelated tables is worse than no DAG at all.
+Reserve DAG-based dependencies for actual extraction-feeds-extraction cases or for coordinating with downstream semantic transformations that must wait for a group of tables to complete. Building a 200-node extraction DAG when 190 of those nodes are independent is complexity that buys nothing -- and a fragile DAG where one table's failure cascades into blocking dozens of unrelated tables is worse than no DAG at all.
 
 If your orchestrator can't group tables into a single schedule that runs them concurrently, that's a serious limitation -- grouping related tables for parallel extraction within a window is a basic scheduling requirement, and working around it with cron offsets (`orders` at 6:00, `order_lines` at 6:15) is fragile enough that it should push you toward a better orchestrator rather than deeper into workarounds.
 
@@ -6431,7 +6429,7 @@ Contract coverage is a budgeting decision. Not every table needs every check. A 
   kind: table,
 )
 
-These are the only two valid policies in an ECL context. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are transformation decisions, not conforming ones. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See @merge-upsert for the full reasoning.
+These are the only two valid policies at the syntactic layer. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are semantic decisions, not syntactic work. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See @merge-upsert for the full reasoning.
 
 === Column Naming as a Contract
 <column-naming-as-a-contract>
@@ -6465,7 +6463,7 @@ The practical approach is to rely on a type-mapping library (SQLAlchemy, your lo
 
 #ecl-danger(
   "Don't silently discard columns",
-)[Silently dropping new or unexpected columns that don't match your schema breaks the conforming boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or @partial-column-loading (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.]
+)[Silently dropping new or unexpected columns that don't match your schema breaks the syntactic boundary. Wide ERP tables with hundreds of columns are tempting candidates for discard, but the right answer is evolve (accept the column) or @partial-column-loading (explicitly declare which columns you extract and document why). Discarding is implicit partial column loading with no documentation -- the worst version of both.]
 
 === Tradeoffs
 <tradeoffs-6>
@@ -6971,7 +6969,7 @@ Store the results in the health table (@the-health-table): table name, source co
 ]
 
 === Plausible Wrong Data
-Something broke and bad data has been landing for a while. A schema migration that silently changed types, a cursor that skipped a range, a load strategy that dropped a column, a conforming bug that mangled values. The pipeline reported success on every run because the failure was in the data, not in the execution -- no errors, no alerts, no signal that anything was wrong until someone downstream noticed the numbers didn't add up.
+Something broke and bad data has been landing for a while. A schema migration that silently changed types, a cursor that skipped a range, a load strategy that dropped a column, a syntactic bug that mangled values. The pipeline reported success on every run because the failure was in the data, not in the execution -- no errors, no alerts, no signal that anything was wrong until someone downstream noticed the numbers didn't add up.
 
 The gap between when corruption starts and when it's detected is the blast radius. A bug introduced three months ago that nobody caught until today means three months of data in the destination is suspect, every downstream model that consumed it is suspect, and every report built on those models has been wrong for three months. The recovery isn't just reloading the data -- it's scoping the damage, fixing the root cause, rebuilding what's affected, and communicating what happened so consumers can reassess decisions they made on bad data.
 
@@ -6989,13 +6987,13 @@ If `_batch_id` is populated, the scoping is even tighter -- "all rows from batch
 
 ==== What Tables Are Affected?
 <what-tables-are-affected>
-The blast radius depends on where the root cause lives. A pipeline code change that affects the conforming layer corrupts every table processed by that code path -- potentially hundreds. A source schema change affects only tables from that source. A destination-side issue (quota exhaustion, permission change) affects only tables on that destination.
+The blast radius depends on where the root cause lives. A pipeline code change that affects the syntactic layer corrupts every table processed by that code path -- potentially hundreds. A source schema change affects only tables from that source. A destination-side issue (quota exhaustion, permission change) affects only tables on that destination.
 
 Start with the narrowest plausible scope and widen if evidence points further. Checking a handful of tables from each source against their current source state is faster than assuming everything is wrong and rebuilding the world.
 
 ==== What's Downstream?
 <whats-downstream>
-Every downstream model, materialized view, dashboard, and report that reads from the corrupted tables is also affected. Map the lineage from corrupted tables to downstream consumers -- if the destination feeds a transformation layer that builds aggregates, those aggregates are wrong too, and they need rebuilding after the source tables are clean.
+Every downstream model, materialized view, dashboard, and report that reads from the corrupted tables is also affected. Map the lineage from corrupted tables to downstream consumers -- if the destination feeds a semantic transformation layer that builds aggregates, those aggregates are wrong too, and they need rebuilding after the source tables are clean.
 
 === Recovery Strategies
 <recovery-strategies>
@@ -7074,17 +7072,17 @@ The defense is simple: land the detail. Build the totals downstream -- in views 
 
 === Where the Boundary Is
 <where-the-boundary-is>
-The line between conforming and transformation runs through aggregation. Landing `inventory_movements` as-is is conforming -- the source has those rows and you're cloning them. Building `inventory_current` by summing movements is transformation -- you're computing a derived state that encodes business logic: which movement types to include, how to handle negative quantities, whether to count pending transfers.
+The line between syntactic and semantic transformation runs through aggregation. Landing `inventory_movements` as-is is syntactic -- the source has those rows and you're cloning them. Building `inventory_current` by summing movements is semantic transformation -- you're computing a derived state that encodes business logic: which movement types to include, how to handle negative quantities, whether to count pending transfers.
 
 The same applies to derived columns. `revenue = quantity * unit_price` *looks* harmless in the extraction query, but it's a business calculation. The moment discounts apply, taxes enter the formula, or currency conversion becomes relevant, that column is wrong in every historical row and the only fix is a full backfill. Land `quantity` and `unit_price` as separate columns and let downstream compute whatever formula the business currently uses.
 
 The distinction matters because aggregation and derivation encode decisions that belong to the people who understand the business context -- and those decisions change. A grouping that makes sense today ("revenue by product category") stops making sense when the category taxonomy changes. A formula that's correct today is wrong next quarter when the pricing model shifts. If the pipeline made those decisions at extraction, every change requires a pipeline change. If a downstream view made them, the view changes and the pipeline keeps running untouched.
 
-See @what-is-conforming for the full framework.
+See @what-is-syntactic-transformation for the full framework.
 
 === The Exception: `metrics_daily`
 <the-exception-metrics_daily>
-Some source tables are already pre-aggregated. `metrics_daily` in the domain model is computed by the source system -- the aggregation decision was made upstream, not by your pipeline. Landing a pre-aggregated table as-is is conforming because you're cloning what the source has, aggregation included. The rule: don't aggregate in the pipeline -- land what the source gives you.
+Some source tables are already pre-aggregated. `metrics_daily` in the domain model is computed by the source system -- the aggregation decision was made upstream, not by your pipeline. Landing a pre-aggregated table as-is is faithful replication because you're cloning what the source has, aggregation included. The rule: don't aggregate in the pipeline -- land what the source gives you.
 
 === Movements vs.~Snapshots
 <movements-vs.-snapshots>
@@ -7139,7 +7137,7 @@ When the business logic changes -- a new product category, a different grouping,
 
 A table without a partition scheme in a columnar engine forces a full scan on every query. An analyst filtering `orders` by last week's dates scans the entire table -- five years of history, every row, every column they selected -- and the bill reflects it. Partitioning by date means that same query reads only the seven partitions that contain last week's data, and the engine skips everything else. Clustering goes one level deeper: within those seven partitions, it organizes data so a filter on `customer_id` reads fewer blocks instead of scanning every row in the partition.
 
-Both decisions are made at load time, and both affect every downstream query for the lifetime of the table. The ECL engineer picks the partition key and the cluster keys -- two of the few load-time choices that directly shape what consumers pay.
+Both decisions are made at load time, and both affect every downstream query for the lifetime of the table. The engineer picks the partition key and the cluster keys -- two of the few load-time choices that directly shape what consumers pay.
 
 #figure(image("diagrams/0702-partition-pruning.svg", width: 95%))
 
@@ -7313,8 +7311,8 @@ When the nested schema mutates -- a new field appears, a field is renamed -- the
 === Anti-Patterns
 <anti-patterns-2>
 #ecl-warning(
-  "Don't build consumer-specific ECL tables",
-)[A table shaped for one dashboard is transformation. The pipeline lands data generically; the serving layer shapes it for consumption. If the dashboard needs a different shape, change the view, not the pipeline.]
+  "Don't build consumer-specific landed tables",
+)[A table shaped for one dashboard is semantic transformation. The pipeline lands data generically; the serving layer shapes it for consumption. If the dashboard needs a different shape, change the view, not the pipeline.]
 
 #ecl-danger(
   "Don't materialize before you measure",
@@ -7330,9 +7328,9 @@ When the nested schema mutates -- a new field appears, a field is renamed -- the
 
 === Who This Is For
 <who-this-is-for>
-This is the reference you hand analysts when they get access to the destination. They didn't design the schema, they don't know what append-and-materialize means, and they will `SELECT *` on a 3TB table if nobody tells them not to. The patterns below are the minimum they need to query ECL-landed data correctly and cheaply.
+This is the reference you hand analysts when they get access to the destination. They didn't design the schema, they don't know what append-and-materialize means, and they will `SELECT *` on a 3TB table if nobody tells them not to. The patterns below are the minimum they need to query landed data correctly and cheaply.
 
-One thing to internalize before querying: the destination is not a moment-to-moment replica of the source. Data has to be extracted, conformed, and loaded before it appears -- that takes time, and the freshness depends on the table's schedule (@sla-management). If you need transactional-level freshness for point lookups ("is this order shipped right now?"), query the source directly. Columnar destinations are for analysis, not real-time lookups.
+One thing to internalize before querying: the destination is not a moment-to-moment replica of the source. Data has to be extracted and loaded before it appears -- that takes time, and the freshness depends on the table's schedule (@sla-management). If you need transactional-level freshness for point lookups ("is this order shipped right now?"), query the source directly. Columnar destinations are for analysis, not real-time lookups.
 
 === Current State from Append-Only Tables
 <current-state-from-append-only-tables>
@@ -7440,8 +7438,8 @@ WHERE order_date = '2026-03-15';
 
 `JSON_EXTRACT_SCALAR` works on string-typed JSON. `UNNEST` works on BigQuery's native repeated records and STRUCTs. Snowflake uses `:` path notation on `VARIANT` columns.
 
-=== JOINs on ECL Tables
-<joins-on-ecl-tables>
+=== JOINs on Landed Tables
+<joins-on-landed-tables>
 Header-detail JOINs (`orders` JOIN `order_lines`) work the same as on the source -- the foreign keys are the same, the column names are the same, the relationship is the same.
 
 The one difference is freshness. `orders` and `order_lines` may have been extracted minutes apart within the same pipeline run. A very recent order might exist in `orders` but not yet have its lines in `order_lines`, or vice versa. For any analysis that doesn't require real-time accuracy -- which is virtually all analysis on a columnar destination -- this gap is invisible.
@@ -7490,7 +7488,7 @@ WHERE o.order_date >= '2026-03-01';
 === Engine-Specific Costs
 Cost optimization is engine-specific. What saves money on BigQuery (reducing bytes scanned) is irrelevant on Snowflake (which bills by warehouse time). Generic advice like "use partitions" applies everywhere, but the specifics -- what to partition on, how clustering interacts with the billing model, which operations are free and which are traps -- differ enough across engines that generic advice doesn't help with the decisions that actually move the bill.
 
-The ECL engineer's load-time decisions have permanent cost consequences on every consumer query. A partition key chosen at table creation, a clustering configuration, a table format -- these compound across every query for the lifetime of the table. This chapter is the engine-specific reference for making those decisions correctly, and for knowing which levers to pull when the cost monitoring from @cost-monitoring surfaces a table that's too expensive.
+Load-time decisions have permanent cost consequences on every consumer query. A partition key chosen at table creation, a clustering configuration, a table format -- these compound across every query for the lifetime of the table. This chapter is the engine-specific reference for making those decisions correctly, and for knowing which levers to pull when the cost monitoring from @cost-monitoring surfaces a table that's too expensive.
 
 I once wasted \$500 in a single night because of unlimited retries on a badly merged table. The retries ran all night, rescanning the table roughly 30 times a minute. By next morning the bill was already in, and the lesson was clear: set per-day cost limits on the project, and understand what each query costs before you let it retry indefinitely.
 
@@ -7707,7 +7705,7 @@ WHERE customer_id = 42
   AND (valid_to > '2026-03-05' OR valid_to IS NULL);
 ```
 
-Building the SCD2 table is a downstream transformation, not a conforming operation -- the pipeline lands the current state or the append log, and a scheduled job compares consecutive extractions to detect changes and maintain the `valid_from`/`valid_to` bookkeeping. The mechanics are well-documented elsewhere; what matters for this pattern is that SCD2 gives you point-in-time queries that are cheap to run (a range filter that benefits from partitioning and clustering -- @pre-built-views), explicit in their semantics (no ambiguity about what `_extracted_at` means versus when the change actually happened), and immune to compaction, since the history is the table itself rather than a side effect of a retention window.
+Building the SCD2 table is semantic transformation; it lives in the serving layer -- the pipeline lands the current state or the append log, and a scheduled job compares consecutive extractions to detect changes and maintain the `valid_from`/`valid_to` bookkeeping. The mechanics are well-documented elsewhere; what matters for this pattern is that SCD2 gives you point-in-time queries that are cheap to run (a range filter that benefits from partitioning and clustering -- @pre-built-views), explicit in their semantics (no ambiguity about what `_extracted_at` means versus when the change actually happened), and immune to compaction, since the history is the table itself rather than a side effect of a retention window.
 
 The cost is maintaining the SCD2 pipeline itself. Every extraction needs to be diffed against the previous state to detect what changed, close out old rows, and open new ones. For a `customers` table with 100K rows that changes slowly (hence the name), this is trivial. For an `orders` table with millions of rows and high mutation rates, the daily diff becomes expensive. SCD2 earns its place on tables where the change rate is low relative to the table size and the point-in-time queries are frequent -- dimension tables like `customers`, `products`, `warehouses`. For high-mutation fact tables, the append log or snapshot approaches are usually cheaper to maintain.
 
@@ -7776,7 +7774,7 @@ The periodic full replace of the `inventory` table catches the drift -- it refle
 === Names Are Permanent
 Source systems name things however they want: `OrderID`, `@ORDER_VIEW`, `invoice_line`, `OACT`, `Column Name With Spaces`. The destination needs identifiers that are consistent and queryable without quoting gymnastics. A column called `order` clashes with a reserved word on every engine, `@Status` collides with SQL Server's variable syntax, and `Column Name With Spaces` demands quotes everywhere it appears.
 
-This is a one-time decision with permanent consequences -- changing a naming convention on a running pipeline means rebuilding every table and rewriting every downstream query, view, and dashboard that touches those names. Identifier normalization is a conforming operation: it happens at load time, not downstream. Get it right and consistently applied, and downstream teams will (mostly) follow your lead. Get it wrong, and you'll find `Vw_Sales-backup_FINAL-JSmith_2026-05` in your catalog within the year.
+This is a one-time decision with permanent consequences -- changing a naming convention on a running pipeline means rebuilding every table and rewriting every downstream query, view, and dashboard that touches those names. Identifier normalization is syntactic: it happens at load time, not downstream. Get it right and consistently applied, and downstream teams will (mostly) follow your lead. Get it wrong, and you'll find `Vw_Sales-backup_FINAL-JSmith_2026-05` in your catalog within the year.
 
 === Naming Schemes
 <naming-schemes>
@@ -7829,7 +7827,7 @@ The cost is that five sources produce five different conventions in the same des
     [ClickHouse],
     [Works, though ClickHouse's own system tables mix camelCase (`query_id` alongside `formatDateTime`). No strong ecosystem standard],
     [SQL Server],
-    [Technically fine, but the SQL Server world expects PascalCase (`OrderId`, `CustomerName`). Landing snake\_case puts your ECL tables at odds with every system table and most existing schemas. Right call if consumers write ad-hoc SQL; friction if they're .NET applications expecting `dbo.Orders.OrderId`],
+    [Technically fine, but the SQL Server world expects PascalCase (`OrderId`, `CustomerName`). Landing snake\_case puts your landed tables at odds with every system table and most existing schemas. Right call if consumers write ad-hoc SQL; friction if they're .NET applications expecting `dbo.Orders.OrderId`],
   )],
   kind: table,
 )
@@ -7902,7 +7900,7 @@ Prefixing schemas with `raw_`, `bronze_`, or `landing_` marks the data layer: `r
 
 ==== Opaque sources and layered schemas
 <opaque-sources-and-layered-schemas>
-Systems like SAP name every table with codes that mean nothing outside the source -- `OACT`, `OINV`, `INV1`. The temptation to rename `OACT` to `chart_of_accounts` at load time is strong, especially when your analysts keep asking "what's OACT?", but that rename is a semantic transformation that crosses the conforming boundary. Land the source name, use table metadata (column descriptions, table comments) to explain what it means, and let consumers discover the mapping without a separate lookup table.
+Systems like SAP name every table with codes that mean nothing outside the source -- `OACT`, `OINV`, `INV1`. The temptation to rename `OACT` to `chart_of_accounts` at load time is strong, especially when your analysts keep asking "what's OACT?", but that rename is semantic transformation and belongs in the serving layer, not the pipeline. Land the source name, use table metadata (column descriptions, table comments) to explain what it means, and let consumers discover the mapping without a separate lookup table.
 
 I run a SAP B1 deployment where I landed everything raw at first -- one schema, hundreds of opaque tables. It worked until it didn't scale. The approach that survived:
 
@@ -7925,7 +7923,7 @@ I run a SAP B1 deployment where I landed everything raw at first -- one schema, 
   kind: table,
 )
 
-Bronze lands what SAP calls it, separated by source schema. Silver consolidates across schemas and enriches with metadata, joins, and deduplication, but the tables keep their opaque names -- `OACT` is still `OACT`, just with more columns. Gold is where `OACT` finally becomes `chart_of_accounts`, because at that layer the consumers are analysts who have never logged into SAP. The semantic rename belongs here, not in the ECL layer.
+Bronze lands what SAP calls it, separated by source schema. Silver consolidates across schemas and enriches with metadata, joins, and deduplication, but the tables keep their opaque names -- `OACT` is still `OACT`, just with more columns. Gold is where `OACT` finally becomes `chart_of_accounts`, because at that layer the consumers are analysts who have never logged into SAP. The semantic rename belongs here, not in the pipeline.
 
 ==== Staging conventions
 <staging-conventions>
@@ -7935,7 +7933,7 @@ Staging tables need their own namespace to avoid colliding with production. Tabl
 <per-table-overrides>
 The convention should be configurable at two levels: a destination-wide default that covers the common case, and per-table overrides for the exceptions. Collisions from character stripping are the most common reason you'll need them.
 
-I learned this the hard way with a client who had `ProductStock` and `ProductStock$` in the same source -- identical structure, one holding unit quantities and the other monetary values. My stripping rule removed the `$`, both tables landed as `product_stock`, and whichever loaded second silently overwrote the first. I didn't catch it until the numbers stopped making sense downstream. The fix was a per-table override renaming one to `product_stock_value` -- a borderline transformation, but better than losing data. The general rule works until it doesn't, and when it doesn't, the alternative to a per-table escape hatch is rewriting the entire convention.
+I learned this the hard way with a client who had `ProductStock` and `ProductStock$` in the same source -- identical structure, one holding unit quantities and the other monetary values. My stripping rule removed the `$`, both tables landed as `product_stock`, and whichever loaded second silently overwrote the first. I didn't catch it until the numbers stopped making sense downstream. The fix was a per-table override renaming one to `product_stock_value` -- a borderline semantic transformation, but better than losing data. The general rule works until it doesn't, and when it doesn't, the alternative to a per-table escape hatch is rewriting the entire convention.
 
 @data-contracts treats the naming convention as a schema contract -- any change to it, including per-table overrides, is a breaking change that should go through the contract process.
 
@@ -7953,7 +7951,7 @@ Don't do it if you can avoid it. If you can't, treat it as a formal breaking cha
 
 #ecl-warning(
   "Don't rename source tables for readability",
-)[`OACT` → `chart_of_accounts` is a semantic rename that crosses the conforming boundary. The pipeline lands what the source calls it. If consumers need readable names, build an alias layer downstream.]
+)[`OACT` → `chart_of_accounts` is a semantic rename; keep it in the serving layer. The pipeline lands what the source calls it. If consumers need readable names, build an alias layer downstream.]
 
 #ecl-danger(
   "Don't mix conventions in one destination",
@@ -8049,7 +8047,7 @@ See @sql-dialect-reference for naming strategy.
 
 #ecl-warning(
   "BigQuery has no naive datetime",
-)[Every `TIMESTAMP` in BigQuery is UTC. Naive timestamps from the source land as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Conform timezone info during load. See @timezone-conforming.]
+)[Every `TIMESTAMP` in BigQuery is UTC. Naive timestamps from the source land as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Handle the timezone during load. See @timezone-handling.]
 
 #ecl-warning(
   "DATETIME2 precision truncates on load",
@@ -8525,7 +8523,7 @@ See @columnar-destinations for format compatibility and gotchas.
   kind: table,
 )
 
-See @nested-data-and-json for conforming strategy.
+See @nested-data-and-json for the syntactic strategy.
 
 // ---
 
@@ -8615,7 +8613,7 @@ See @transactional-sources for the full terrain.
 
 == Decision Flowchart
 <decision-flowchart>
-Three decisions drive every ECL pipeline: how to extract, how to load, and how often to refresh. These flowcharts walk through each one, then map every table in the domain model to its recommended pattern combination.
+Three decisions drive every pipeline: how to extract, how to load, and how often to refresh. These flowcharts walk through each one, then map every table in the domain model to its recommended pattern combination.
 
 === Extraction Strategy
 <extraction-strategy>
@@ -8722,7 +8720,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
 
 #strong[Compaction] -- Collapsing an append log to one row per key, removing all historical versions. Always collapse-to-latest (`QUALIFY ROW_NUMBER() = 1`), never trim-by-date. See @append-and-materialize.
 
-#strong[Conforming] -- Everything the data needs to survive the crossing between source and destination: type casting, metadata injection, null handling, charset encoding, key synthesis. If it changes business meaning, it belongs downstream. See @what-is-conforming.
+#strong[Syntactic transformation] -- The form-level work data needs to survive moving between systems without changing meaning: type casting, metadata injection, null handling, charset encoding, key synthesis. If it changes business meaning, it belongs downstream in the serving layer. See @what-is-syntactic-transformation.
 
 #strong[Corridor] -- The combination of source type and destination type. Transactional -\> Columnar (e.g.~PostgreSQL -\> BigQuery) or Transactional -\> Transactional (e.g.~PostgreSQL -\> PostgreSQL). Same pattern, different trade-offs. See @corridors.
 
@@ -8732,7 +8730,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
 
 #strong[Dedup view] -- A SQL view over an append log that uses `ROW_NUMBER() OVER (PARTITION BY pk ORDER BY _extracted_at DESC) = 1` to expose only the latest version of each row. See @append-and-materialize.
 
-#strong[ECL] -- Extract, Conform, Load. The framework this book documents. The C handles type casting, metadata injection, null handling, key synthesis -- everything the data needs to land correctly. See @the-el-myth.
+#strong[Faithful replication] -- The goal of the pipeline: landing data in the destination so it matches the source exactly, with only the form-level changes needed to survive the crossing. See @the-el-myth.
 
 #strong[EL] -- Extract-Load with zero transformation. The theoretical ideal that never survives contact with real systems. See @the-el-myth.
 
@@ -8772,7 +8770,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
 
 #strong[Reconciliation] -- Post-load verification that the destination matches the source: row count comparison, aggregate checks, hash comparison. See @reconciliation-patterns.
 
-#strong[Schema policy] -- How the pipeline responds when the source schema changes. Two valid modes in ECL: evolve (accept) or freeze (reject). See @data-contracts.
+#strong[Schema policy] -- How the pipeline responds when the source schema changes. Two valid modes: evolve (accept) or freeze (reject). See @data-contracts.
 
 #strong[Scoped full replace] -- Full-replace semantics applied to a declared scope (e.g.~current year) while historical data outside the scope is frozen. See @scoped-full-replace.
 
@@ -8804,7 +8802,7 @@ Condensed reference for the shared fictional schema used in every SQL example. F
   align(center)[#table(
     columns: (20%, 20%, 20%, 20%, 20%),
     align: (auto, auto, auto, auto, auto),
-    table.header([Table], [PK], [Key columns], [ECL role], [Primary patterns]),
+    table.header([Table], [PK], [Key columns], [Pipeline role], [Primary patterns]),
     table.hline(),
     [`orders`],
     [`order_id`],
@@ -8897,7 +8895,7 @@ See @hard-rules-soft-rules for why these matter and how your pipeline should han
 <orchestrators>
 Every pattern in the book works regardless of tooling. This page names names.
 
-An orchestrator schedules extractions, retries failures, and tracks what happened on each run. For ECL, the relevant concerns are scheduling cadence (@scheduling-and-dependencies), tiered freshness (@tiered-freshness), backfill execution (@backfill-strategies), and health table population (@the-health-table). The three serious options for a Python-based stack are Dagster, Airflow, and Prefect -- each models work differently, and the model shapes what's easy.
+An orchestrator schedules extractions, retries failures, and tracks what happened on each run. The relevant concerns are scheduling cadence (@scheduling-and-dependencies), tiered freshness (@tiered-freshness), backfill execution (@backfill-strategies), and health table population (@the-health-table). The three serious options for a Python-based stack are Dagster, Airflow, and Prefect -- each models work differently, and the model shapes what's easy.
 
 === Feature Comparison
 <feature-comparison>
@@ -8947,7 +8945,7 @@ An orchestrator schedules extractions, retries failures, and tracks what happene
 
 === Dagster
 <dagster>
-Dagster's core abstraction is the #strong[software-defined asset]: a function that produces a named data artifact, declared in code. For ECL, one asset maps to one destination table -- `orders`, `customers`, `events` -- and the orchestrator tracks when each was last materialized, whether it's fresh, and what metadata the last run attached to it.
+Dagster's core abstraction is the #strong[software-defined asset]: a function that produces a named data artifact, declared in code. One asset maps to one destination table -- `orders`, `customers`, `events` -- and the orchestrator tracks when each was last materialized, whether it's fresh, and what metadata the last run attached to it.
 
 - #strong[Partitioned assets] let you declare that `events` is partitioned by date, then backfill a range by selecting it in the UI. The orchestrator chunks the range into partition runs, respects concurrency limits, and tracks success per partition. Prefer monthly partitions over daily -- a yearly backfill with daily partitions spawns 365 individual runs with their own metadata and UI entries, while monthly gives you 12 with the same per-partition retry.
 - #strong[Asset checks] (`@asset_check`) run inline after materialization: row count validation, null rate thresholds, schema drift detection. Maps directly to @data-contracts and @extraction-status-gates.
@@ -8980,7 +8978,7 @@ Airflow 3 is a substantial release: asset-aware scheduling, scheduler-managed ba
 - The `@asset` decorator creates a DAG per asset with asset-aware scheduling, which means you can trigger downstream work when an upstream asset updates. The model is conceptually similar to Dagster's assets but architecturally different -- each `@asset` is its own DAG, and cross-asset data passes through XComs rather than through a shared graph context.
 - The team already knows it, and that matters more than any feature comparison.
 
-#strong[Where it needs more wiring for ECL:]
+#strong[Where it needs more wiring:]
 
 - Populating the health table (@the-health-table) with structured run metrics (row counts, durations, schema hashes) still requires explicit code per task. Asset metadata in 3.0 is oriented toward lineage tracking rather than the kind of per-run operational metrics that Dagster's `add_output_metadata` captures.
 - SLA miss callbacks track task duration, and 3.1's deadline alerts add proactive monitoring on schedules -- but neither directly measures data freshness as @sla-management defines it. You still need your own staleness query.
@@ -8999,7 +8997,7 @@ Prefect 3 (September 2024) brought the events and automation system to open sour
 - Ephemeral infrastructure via work pools -- Prefect spins up ECS tasks or Kubernetes jobs per run and deprovisions after completion, which keeps costs low for bursty workloads.
 - The transactional interface lets you group tasks into transactions with automatic rollback on failure, which helps with the idempotency goals from @idempotency.
 
-#strong[Where it's limited for ECL at scale:]
+#strong[Where it's limited at scale:]
 
 - No native partition concept. Backfilling a date range means parameterizing the flow and triggering N runs manually -- the orchestrator doesn't know they form a logical unit.
 - No first-class freshness tracking or per-asset metadata. The health table (@the-health-table) is entirely your responsibility.
@@ -9009,7 +9007,7 @@ Prefect 3 (September 2024) brought the events and automation system to open sour
 === Other Tools
 <other-tools>
 - #strong[Kestra] -- Event-driven, YAML-based. Good for non-Python teams and polyglot pipelines, with a visual flow editor. The tradeoff is losing Python-native advantages for data engineering.
-- #strong[Mage] -- Notebook-like UI, promising for exploratory work but less mature for production ECL at scale. The UI also gets painfully slow over time, and is by far the most volatile one.
+- #strong[Mage] -- Notebook-like UI, promising for exploratory work but less mature for production at scale. The UI also gets painfully slow over time, and is by far the most volatile one.
 - #strong[cron + scripts] -- Acceptable for < 10 tables with no dependencies and no backfill needs. Falls apart the moment you need retries, visibility, or any coordination between jobs.
 
 #ecl-warning(
@@ -9018,7 +9016,7 @@ Prefect 3 (September 2024) brought the events and automation system to open sour
 
 === My Recommendation
 <authors-recommendation>
-For a new ECL project, start with #strong[Dagster]. The asset model maps 1:1 to the "one asset = one destination table" structure this book is built around, partition-based backfills are the hardest thing to build from scratch, and inline asset checks plus freshness policies implement half of Part VI as configuration. The asset graph and partition-based backfills have justified the learning curve many times over.
+For a new project, start with #strong[Dagster]. The asset model maps 1:1 to the "one asset = one destination table" structure this book is built around, partition-based backfills are the hardest thing to build from scratch, and inline asset checks plus freshness policies implement half of Part VI as configuration. The asset graph and partition-based backfills have justified the learning curve many times over.
 
 #strong[Airflow] is a strong choice when the team already runs it, when you need the widest connector ecosystem, or when Airflow 3's asset model and managed backfills cover your needs without Dagster's steeper learning curve. The 3.0 release closed many of the gaps that used to make the comparison one-sided -- asset-aware scheduling, UI-managed backfills, and the Task SDK are real improvements. Structure one DAG per source system, add health table inserts per task, and it works well. If you're still on Airflow 2.x, upgrading to 3 is worth the effort before considering a migration to a different tool.
 
@@ -9030,7 +9028,7 @@ For a new ECL project, start with #strong[Dagster]. The asset model maps 1:1 to 
     align: (auto, auto),
     table.header([Scenario], [Recommendation]),
     table.hline(),
-    [New project, ECL-focused], [Dagster],
+    [New project, pipeline-focused], [Dagster],
     [Existing Airflow, already on 3.x or upgrading], [Stay on Airflow 3],
     [Existing Airflow 2.x], [Upgrade to 3 before considering migration],
     [Small team, < 500 tables, no platform engineer], [Prefect Cloud],
@@ -9047,7 +9045,7 @@ For a new ECL project, start with #strong[Dagster]. The asset model maps 1:1 to 
 <the-spectrum>
 Extractor/loader tools sit on a spectrum from fully managed to fully custom. On the managed end, Fivetran handles everything -- connectors, scheduling, schema decisions, infrastructure -- and you accept whatever it decides. On the custom end, you write Python with SQLAlchemy, own every line, and maintain every failure mode. In between, Airbyte gives you managed connectors with more visibility into what they do, and dlt gives you a Python library that handles the plumbing while leaving schema control, deployment, and orchestration in your hands.
 
-Where you belong on this spectrum depends on how many sources you need to cover, how much control you need over the conforming layer (@what-is-conforming), whether someone else's schema decisions are acceptable for your destination, and price. A self-built stack running dlt on your own infrastructure with BigQuery as the destination can run thousands of tables for a few hundred dollars a month in compute and storage. The same workload on Fivetran costs an order of magnitude more because you're paying per row, per sync, per connector -- and you're paying for the engineering you didn't have to do, which is a valid tradeoff only if you genuinely don't have the engineering capacity.
+Where you belong on this spectrum depends on how many sources you need to cover, how much control you need over the syntactic layer (@what-is-syntactic-transformation), whether someone else's schema decisions are acceptable for your destination, and price. A self-built stack running dlt on your own infrastructure with BigQuery as the destination can run thousands of tables for a few hundred dollars a month in compute and storage. The same workload on Fivetran costs an order of magnitude more because you're paying per row, per sync, per connector -- and you're paying for the engineering you didn't have to do, which is a valid tradeoff only if you genuinely don't have the engineering capacity.
 
 === Comparison
 <comparison>
@@ -9156,8 +9154,8 @@ The conservative option makes sense when you have a small number of high-value t
 One thing to know about `data_type: "evolve"`: when a column's type changes, dlt creates a variant column alongside it -- `amount__v_text` next to the original `amount` -- so old data stays intact while new rows land in the variant. Variant columns can accumulate if the source is messy with types.
 
 #ecl-warning(
-  "Discard modes break the conforming boundary",
-)[Silently dropping rows or values means your destination no longer mirrors the source -- you've introduced an invisible filter that nobody downstream knows about. For ECL workloads where the goal is a faithful clone, stick to `evolve` and `freeze`. See @what-is-conforming.]
+  "Discard modes break the replication boundary",
+)[Silently dropping rows or values means your destination no longer mirrors the source -- you've introduced an invisible filter that nobody downstream knows about. For extract-and-load workloads where the goal is faithful replication, stick to `evolve` and `freeze`. See @what-is-syntactic-transformation.]
 
 ==== Naming Conventions
 <naming-conventions>
@@ -9212,7 +9210,7 @@ Airbyte provides a catalog of managed connectors -- pre-built extractors for Saa
 
 #ecl-tip(
   "Check the connector support level",
-)[Airbyte classifies connectors as Generally Available, Beta, or Alpha. For production ECL pipelines, stick to GA connectors. Beta and Alpha connectors change their schemas across versions, which means your downstream queries break when Airbyte pushes an update.]
+)[Airbyte classifies connectors as Generally Available, Beta, or Alpha. For production pipelines, stick to GA connectors. Beta and Alpha connectors change their schemas across versions, which means your downstream queries break when Airbyte pushes an update.]
 
 // ---
 
@@ -9256,7 +9254,7 @@ Worth it when no alternative exists or when the extraction logic is complex enou
     align: (auto, auto, auto),
     table.header([Source type], [Recommended], [Why]),
     table.hline(),
-    [Direct DB access, SQL sources], [dlt or custom SQLAlchemy], [Full control over extraction and conforming],
+    [Direct DB access, SQL sources], [dlt or custom SQLAlchemy], [Full control over extraction and syntactic transformation],
     [SaaS APIs (Salesforce, Stripe)],
     [Airbyte or Fivetran],
     [Managed connectors handle auth, pagination, rate limits],
@@ -9275,7 +9273,7 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 == Destinations
 <destinations>
-@columnar-destinations covers how columnar engines store, partition, and price data. @cost-optimization-by-engine covers the cost levers once data is loaded. This page is the decision: which engine for which workload, and what to watch out for when running ECL pipelines against each one.
+@columnar-destinations covers how columnar engines store, partition, and price data. @cost-optimization-by-engine covers the cost levers once data is loaded. This page is the decision: which engine for which workload, and what to watch out for when running pipelines against each one.
 
 === Cost Model Comparison
 <cost-model-comparison>
@@ -9317,15 +9315,15 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 === BigQuery
 <bigquery>
-#strong[Best for:] serverless pay-per-query, many ad-hoc consumers, Google Cloud native stacks. This is my primary destination -- BigQuery's cost model rewards exactly what ECL pipelines produce: partition-scoped writes, partition-filtered reads, and bulk loads over row-by-row DML.
+#strong[Best for:] serverless pay-per-query, many ad-hoc consumers, Google Cloud native stacks. This is my primary destination -- BigQuery's cost model rewards exactly what these pipelines produce: partition-scoped writes, partition-filtered reads, and bulk loads over row-by-row DML.
 
-#strong[ECL strengths:]
+#strong[Pipeline strengths:]
 - `require_partition_filter` is the only engine with query-cost enforcement built into the table definition -- consumers literally cannot full-scan without a partition predicate
 - Copy jobs are free for same-region operations, making partition swap and staging swap nearly zero-cost
 - `QUALIFY` is native, so dedup views and compaction queries are clean single statements
 - Per-day cost limits prevent runaway retry loops from burning through the budget overnight
 
-#strong[ECL weaknesses:]
+#strong[Pipeline weaknesses:]
 - DML concurrency caps at 2 concurrent mutating statements per table, with up to 20 queued -- flood it and statements fail outright
 - Every MERGE or UPDATE rewrites entire partitions it touches, so a 10-row update across 30 dates triggers 30 full partition rewrites
 - JSON columns can't load from Parquet -- use Avro or JSONL for tables with JSON fields
@@ -9336,15 +9334,15 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 === Snowflake
 <snowflake>
-#strong[Best for:] predictable budgets, multi-workload isolation, data sharing, semi-structured data. Good for teams that need warehouse-level isolation between workloads: a small warehouse for ECL loads, a medium one for analyst queries, a large one for dashboard refreshes, each with its own auto-suspend and budget ceiling.
+#strong[Best for:] predictable budgets, multi-workload isolation, data sharing, semi-structured data. Good for teams that need warehouse-level isolation between workloads: a small warehouse for extract-and-load, a medium one for analyst queries, a large one for dashboard refreshes, each with its own auto-suspend and budget ceiling.
 
-#strong[ECL strengths:]
+#strong[Pipeline strengths:]
 - `VARIANT` handles arbitrary JSON natively with `:` path notation, no schema needed at load time
 - `SWAP WITH` is atomic metadata-only swap -- staging swap completes in milliseconds regardless of table size
 - Result cache returns identical queries within 24 hours at zero warehouse cost
 - Micro-partition pruning is automatic without explicit partition DDL
 
-#strong[ECL weaknesses:]
+#strong[Pipeline weaknesses:]
 - `PRIMARY KEY` and `UNIQUE` constraints are metadata hints only -- deduplication is entirely your responsibility
 - Grants follow the table object, not the name -- after `SWAP WITH` or `CLONE`, consumers lose access unless you re-grant or use `FUTURE GRANTS`
 - Reclustering costs warehouse credits in the background; heavily mutated tables accumulate significant charges
@@ -9354,16 +9352,16 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 === ClickHouse
 <clickhouse>
-#strong[Best for:] append-heavy analytical workloads, high-frequency incremental loads, real-time dashboards, self-hosted control. ClickHouse is the strongest fit for ECL pipelines that need many cheap incremental loads per day: `ReplacingMergeTree` (RMT) turns every upsert into a pure append and gives you an explicit knob for when to pay the deduplication cost. On a per-incremental-load basis, RMT is more economical than BigQuery's MERGE (which rewrites every partition the batch touches) and Snowflake's MERGE (which burns warehouse time on every run).
+#strong[Best for:] append-heavy analytical workloads, high-frequency incremental loads, real-time dashboards, self-hosted control. ClickHouse is the strongest fit for pipelines that need many cheap incremental loads per day: `ReplacingMergeTree` (RMT) turns every upsert into a pure append and gives you an explicit knob for when to pay the deduplication cost. On a per-incremental-load basis, RMT is more economical than BigQuery's MERGE (which rewrites every partition the batch touches) and Snowflake's MERGE (which burns warehouse time on every run).
 
-#strong[ECL strengths:]
+#strong[Pipeline strengths:]
 - Fastest raw INSERT throughput of any engine on this list -- bulk inserts into `MergeTree` engines are limited by disk I/O, not the engine
 - `ReplacingMergeTree` collapses duplicates by key on merge, turning upserts into pure appends -- no MERGE bytes-scanned bill, no partition rewrite. Read-time correctness via `SELECT ... FINAL` (partition-selective and parallel since 23.3) or an `argMax`/window dedup view
 - Self-hosted (or fixed-price Cloud) cost model has no per-query or per-insert charge -- high load frequency doesn't increase the bill the way it does on BigQuery's bytes-scanned or Snowflake's warehouse-time models
 - `REPLACE PARTITION` is atomic and operates at the partition level without rewriting other partitions
 - Materialized views trigger on INSERT, enabling real-time pre-aggregation without a separate scheduling layer
 
-#strong[ECL weaknesses:]
+#strong[Pipeline weaknesses:]
 - No ACID guarantees for mutations -- `ALTER TABLE ... UPDATE` and `DELETE` are async, queued for the next merge cycle. Stay in the RMT append model and avoid them
 - Duplicates coexist in RMT until the merge scheduler runs -- correctness on reads requires `FINAL` or a dedup view. Avoid blanket `OPTIMIZE FINAL` on large tables; use partition-scoped optimize on a schedule
 - RMT footguns: the version column must *not* be in `ORDER BY` (silently returns duplicates with `FINAL` if it is); partitioning on a column that mutates between versions creates permanent cross-partition duplicates
@@ -9374,15 +9372,15 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 === Redshift
 <redshift>
-#strong[Best for:] AWS-native shops with existing infrastructure, teams that want PostgreSQL-compatible SQL in a columnar engine. The legacy choice -- still viable for teams already invested in AWS, but BigQuery and Snowflake have moved ahead in ECL ergonomics around DML flexibility, schema evolution, and operational overhead.
+#strong[Best for:] AWS-native shops with existing infrastructure, teams that want PostgreSQL-compatible SQL in a columnar engine. The legacy choice -- still viable for teams already invested in AWS, but BigQuery and Snowflake have moved ahead in pipeline ergonomics around DML flexibility, schema evolution, and operational overhead.
 
-#strong[ECL strengths:]
+#strong[Pipeline strengths:]
 - `COPY` from S3 is fast bulk load with automatic compression, and S3 is the natural staging area for AWS pipelines
 - PostgreSQL dialect means familiar SQL for teams coming from transactional databases
 - `MERGE` added in late 2023, same syntax as BigQuery/Snowflake
 - Spectrum queries S3 data directly without loading, useful for cold-tier data
 
-#strong[ECL weaknesses:]
+#strong[Pipeline weaknesses:]
 - Sort keys and dist keys are changeable via `ALTER TABLE`, but the background rewrite can take hours on large tables -- plan them at creation
 - Automatic VACUUM DELETE handles most cleanup, but manual VACUUM may still be needed after heavy bulk deletes or to restore sort order
 - Row-by-row `INSERT` is orders of magnitude slower than `COPY` -- every load path must stage through S3
@@ -9396,20 +9394,20 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 
 DuckDB is an embedded columnar engine that runs in-process -- no server, no cluster, no infrastructure. MotherDuck adds a cloud layer on top: managed storage, sharing, and read scaling via "Ducklings" (isolated compute instances per user). The combination gives you BigQuery-class query performance on datasets up to a few TB.
 
-#strong[ECL strengths:]
+#strong[Pipeline strengths:]
 - Reads and writes Parquet and CSV natively from S3/GCS/Azure -- no separate load job needed
 - `INSERT ON CONFLICT` and `MERGE INTO` (DuckDB 1.4+) support the upsert and merge patterns from @merge-upsert
 - Develop locally with the exact same SQL that runs in MotherDuck cloud -- the dev-to-prod gap is zero
 - Local DuckDB is free. MotherDuck's per-GB price (~\$0.15/GB) is higher than BigQuery's on-demand rate (~\$0.006/GB), but the total bill is often lower because DuckDB's single-node engine scans less data per query -- no distributed overhead, no shuffle. The savings come from efficiency, not a cheaper unit price
 
-#strong[ECL weaknesses:]
+#strong[Pipeline weaknesses:]
 - Single-writer architecture -- concurrent pipeline runs writing to the same database need external coordination (one run at a time, or separate databases per table)
 - No partitioning in the BigQuery/Snowflake sense. Hive-partitioned Parquet on object storage or min/max index pruning, but no `PARTITION BY` in DDL, no partition-level replace, no `require_partition_filter`
 - `QUALIFY` is supported (since v0.5) -- dedup queries work the same as BigQuery and Snowflake
 - At multi-TB scale with many concurrent dashboard users, MotherDuck costs converge toward Snowflake territory. The cost advantage is strongest for small teams with moderate data
 - Self-hosting DuckDB on a dedicated server (Hetzner, bare metal) is zero-cost-per-query for a single client, but for multi-client pipelines the single-writer constraint means one database file per client with no shared users, roles, access control, or high availability -- at that point the engineering overhead of building isolation exceeds the hosting savings
 
-For self-hosted columnar beyond ClickHouse, #strong[StarRocks] and #strong[Apache Doris] are worth evaluating -- both are FOSS MPP databases with MySQL wire protocol, real MERGE/upsert, ACID transactions, and better write concurrency than ClickHouse. Younger ecosystems, but they solve the concurrent-write limitations that make ClickHouse awkward for mutable ECL workloads.
+For self-hosted columnar beyond ClickHouse, #strong[StarRocks] and #strong[Apache Doris] are worth evaluating -- both are FOSS MPP databases with MySQL wire protocol, real MERGE/upsert, ACID transactions, and better write concurrency than ClickHouse. Younger ecosystems, but they solve the concurrent-write limitations that make ClickHouse awkward for mutable extract-and-load workloads.
 
 #ecl-tip(
   "PostgreSQL as a destination",
@@ -9541,7 +9539,7 @@ How each engine handles the load strategies from Part IV, and what each costs re
   #set text(size: 9pt, fill: palette.fg-dim)
   #align(center)[
     *Battle-Tested Data Pipelines*\
-    The step ELT forgot -- patterns for extraction, conforming, and loading\
+    The step ELT forgot -- patterns for extraction, syntactic transformation, and loading\
     \
     First edition, 2026.\
     \
@@ -9561,7 +9559,7 @@ How each engine handles the load strategies from Part IV, and what each costs re
     fill: palette.fg-bright,
     size: 20pt,
     weight: "bold",
-  )[Every pipeline has a conforming problem.\ Most just don't have a name for it.]
+  )[Every pipeline has a syntactic transformation problem.\ Most just don't have a name for it.]
   #v(20pt)
 
   #text(
@@ -9578,7 +9576,7 @@ How each engine handles the load strategies from Part IV, and what each costs re
   - When to full replace, when to go incremental, and how to earn the complexity
   - Extraction patterns for cursors, hard deletes, late-arriving data, and mutable windows
   - Load strategies from append to merge -- with the cost and read/write tradeoffs of each
-  - The conforming layer: type casting, null handling, timezones, synthetic keys
+  - The syntactic layer: type casting, null handling, timezones, synthetic keys
   - Operating at scale: health tables, SLA management, alerting, backfill, and recovery
   - Decision flowcharts, SQL dialect reference, and tool recommendations
 

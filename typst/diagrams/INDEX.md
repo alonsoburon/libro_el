@@ -22,11 +22,11 @@
 ## Foundations & Source Archetypes
 
 ```
- 3  ecl-conforming-vs-transforming.svg  What Is Conforming / The Line Between Conforming and Transforming
+ 3  syntactic-vs-semantic.svg  What Is Conforming / The Line Between Conforming and Transforming
  4  0104-lies-sources-tell.svg          The Lies Sources Tell
  5  schema-drift-detection.svg          The Lies Sources Tell / "The schema is stable"
  6  0105-hard-vs-soft-rules.svg         Hard Rules, Soft Rules
- 7  ecl-corridors.svg                   Corridors / The Two Corridors
+ 7  corridors.svg                   Corridors / The Two Corridors
  8  0108-purity-freshness.svg           Purity vs. Freshness / Classifying a Table
  9  0109-stateless-idempotent.svg       Idempotency / Statelessness and Idempotency
 ```
