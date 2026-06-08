@@ -178,7 +178,7 @@ All SQL examples use this shared fictional domain. The goal is always to clone t
 | `orders` | Has `updated_at` but it's unreliable |
 | `order_lines` | Detail table, no own timestamp |
 | `customers` | Soft-delete via `is_active` |
-| `products` | Schema mutates (new columns appear) |
+| `products` | Item master (the sku). Schema mutates (new columns appear) |
 | `invoices` | Open/closed document pattern. Open invoices get hard-deleted regularly |
 | `invoice_lines` | Detail table for invoices, no own timestamp. Has own `status` per line. Hard-deleted independently (not just cascade) |
 | `events` | Append-only, partitioned by date |
@@ -186,6 +186,7 @@ All SQL examples use this shared fictional domain. The goal is always to clone t
 | `metrics_daily` | Pre-aggregated, overwritten daily |
 | `inventory` | Sparse cross-product (SKU x Warehouse). Most rows are zeros. Zero row vs missing row is ambiguous in destination. |
 | `inventory_movements` | Append-only log of all stock changes (sales, adjustments, transfers, write-offs). Activity signal for 0207/0208. |
+| `warehouses` | Warehouse master (dimension), referenced by `inventory` and `inventory_movements` via `warehouse_id`. The inventory subject area is a star: `products` (sku) and `warehouses` are the two dimensions. |
 
 #### Corridors
 - **Transactional → Columnar**: e.g. PostgreSQL → BigQuery (primary)

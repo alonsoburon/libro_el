@@ -126,7 +126,7 @@ What you get is a pattern language: the decisions, tradeoffs, and failure modes 
 
 == Domain Model
 <domain-model>
-Every SQL example in this book uses the same fictional schema. Same tables, same columns, same quirks -- so you can focus on the pattern, not on decoding a new schema every chapter.
+Every SQL example in this book uses the same fictional schema. Same tables, columns, and quirks; so you can focus on the pattern per source.
 
 The tables were chosen because each one represents a distinct extraction challenge.
 
@@ -134,7 +134,7 @@ The tables were chosen because each one represents a distinct extraction challen
 <schema>
 #align(center, image("diagrams/domain-model-er.svg", width: 95%))
 
-The three standalone tables -- `events`, `sessions`, and `metrics_daily` -- have no foreign keys into the schema above. `inventory` and `inventory_movements` connect to `products` via `sku_id` but have no `warehouses` table -- `warehouse_id` is a plain integer key. They represent different source archetypes.
+The three standalone tables -- `events`, `sessions`, and `metrics_daily` -- have no foreign keys into the schema above. `inventory` and `inventory_movements` form the inventory subject area: each row keys on `(sku_id, warehouse_id)`, referencing `products` (the item master -- the sku is the product) and `warehouses`. They represent different source archetypes.
 
 === The Tables and Why They're Here
 <the-tables-and-why-theyre-here>
@@ -2167,7 +2167,7 @@ This is the decision that matters. In the destination, a missing row and a filte
 
 The third column is the problem. If a consumer does `COALESCE(on_hand, 0)` on a JOIN, they get zero for both cases -- which may be exactly right. But if they're counting rows, or checking for row existence, or relying on the destination having the full cartesian product, the filtered data produces wrong results.
 
-If the source table actually contains the full cartesian product of both dimensions, you can reconstruct existence data in the destination by cross-joining the two dimension tables (`skus` and `warehouses`). The sparse table becomes an enrichment on top of a complete baseline, not the source of truth for which combinations exist.
+If the source table actually contains the full cartesian product of both dimensions, you can reconstruct existence data in the destination by cross-joining the two dimension tables (`products` and `warehouses`). The sparse table becomes an enrichment on top of a complete baseline, not the source of truth for which combinations exist.
 
 #ecl-warning(
   "Don't filter silently",
@@ -9252,7 +9252,9 @@ Worth it when no alternative exists or when the extraction logic is complex enou
     align: (auto, auto, auto),
     table.header([Source type], [Recommended], [Why]),
     table.hline(),
-    [Direct DB access, SQL sources], [dlt or custom SQLAlchemy], [Full control over extraction and syntactic transformation],
+    [Direct DB access, SQL sources],
+    [dlt or custom SQLAlchemy],
+    [Full control over extraction and syntactic transformation],
     [SaaS APIs (Salesforce, Stripe)],
     [Airbyte or Fivetran],
     [Managed connectors handle auth, pagination, rate limits],
