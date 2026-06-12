@@ -195,8 +195,8 @@ When a pattern depends on one of these holding -- or breaking -- it will say so 
   #strong[One-liner:] Pure EL doesn't exist. The moment data crosses between systems, some syntactic transformation is unavoidable.
 ]
 
-=== ETL, ELT, and the Pitch That Forgot Something
-<etl-elt-and-the-pitch-that-forgot-something>
+=== Syntactic vs Semantic
+<syntactic-vs-semantic>
 You've heard of ETL. It's the standard for a reason: it's most useful when the Business layer and the Data layer are handled by the same person. This is hugely common among analysts, who do the vast majority of data consumption. But handling the intricacies of how to query a database without blowing it up with full table scans? That's a skill most of them don't have.
 
 This is one of the reasons most companies, once they reach a certain size, choose to use an OLAP database for analysis while their ERP and internal apps keep using OLTP for ingestion.
