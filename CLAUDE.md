@@ -207,6 +207,7 @@ Decisions made during writing that apply across all chapters. Check these before
 - **Semantic renames cross the boundary.** `OACT` → `chart_of_accounts` is transformation. Land the source name; rename downstream (gold layer).
 - **Aggregation crosses the boundary.** `SUM(quantity)` at extraction is transformation. Land the detail; aggregate downstream.
 - **SCD Type 2 is downstream.** The pipeline lands current state or the append log. A scheduled job downstream builds the SCD2 table.
+- **Landed data is read-only.** The pipeline writes it; nothing modifies it afterward. All semantic transformation happens through views over landed data -- aggregations, reshaping, derived columns -- without UPDATEs or DELETEs on the landed tables. When a view is too expensive to recompute on every read, materialize it into a separate table (a cached query result, not a modification of landed data). Snapshots and SCD2 tables are materialized tables built from landed data, not modifications of it.
 
 #### Naming and structure
 - **Chapter 02 was renumbered.** Old 0202 (snapshot-append) deleted; 0203-0210 shifted to 0202-0209. All cross-references updated 2026-04-02.

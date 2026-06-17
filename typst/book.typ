@@ -203,17 +203,17 @@ This is one of the reasons most companies, once they reach a certain size, choos
 
 #ecl-warning(
   "OLAP vs OLTP",
-)[OLAP (analytical databases like BigQuery, Snowflake, and ClickHouse) stores data in a columnar way, optimized for full-column `SUM()`s and aggregations. OLTP (transactional databases like PostgreSQL, MySQL, and SQL Server) stores data row by row, optimized for inserts and transactional operations.]
+)[OLAP (analytical databases like BigQuery, Snowflake, and ClickHouse) store data in a columnar way, optimized for full-column `SUM()`s and aggregations. OLTP (transactional databases like PostgreSQL, MySQL, and SQL Server) stores data row by row, optimized for inserts and transactional operations.]
 
-The ELT framework (Extract, #strong[Load];, Transform) came as a byproduct of this. The pitch: "let's Extract and Load the data raw into our OLAP, then Transform it there." A valid way of thinking -- which sadly forgets how fundamentally different OLTP and OLAP handle things, and how incompatible all SQL dialects really are. I can't simply copy a `DATETIME2` from SQL Server into BigQuery and expect it to behave. I have to cast, handle timezones, normalize dates, inject metadata, and of course -- most of the time I want to update incrementally, which (believe me) can increase complexity ten-fold.
+The ELT framework (Extract, #strong[Load];, Transform) came as a byproduct of this. The pitch: "let's Extract and Load the data raw into our OLAP, then Transform it there." A valid way of thinking -- which mostly omits how fundamentally different OLTP and OLAP handle things, and how incompatible all SQL dialects really are. I can't simply copy a `DATETIME2` from SQL Server into BigQuery and expect it to behave. I have to cast, handle timezones, normalize dates, inject metadata, and of course -- most of the time I want to update incrementally, which can increase complexity ten-fold.
 
 === The Reality
 <the-reality>
 Pure EL doesn't exist. The moment you move data between systems, something has to give. Types need casting, nulls need handling, timestamps need timezones. This is #strong[syntactic transformation];, and it's unavoidable.
 
-So the pipeline covers two distinct jobs: extraction, syntactic transformation, and loading. The syntactic layer handles type casting, null handling, timezone normalization, metadata injection, key synthesis -- everything the data needs to land correctly on the other side. Anything that changes what the data #emph[means] belongs downstream, in the serving layer.
+So the pipeline covers three distinct jobs: extraction, syntactic transformation, and loading. The syntactic layer handles type casting, null handling, timezone normalization, metadata injection, key synthesis -- everything the data needs to land correctly on the other side.
 
-=== What About the T?
+=== What About the rest of the transformations?
 <what-about-the-t>
 When analysts aggregate, pivot, or build dashboards, they're doing semantic transformation -- reshaping the data to serve a business question. That belongs in the serving layer, and Part VII covers it. There's still a chapter in this book for helping them out, because left unsupervised, an analyst will `SELECT *` on a 3TB events table in Snowflake and then ask you why the bill spiked. I cover how to protect them (and your invoice) in @query-patterns-for-analysts.
 
@@ -221,19 +221,16 @@ When analysts aggregate, pivot, or build dashboards, they're doing semantic tran
 
 == What Is Syntactic Transformation
 <what-is-syntactic-transformation>
-#quote(block: true)[
-  #strong[One-liner:] Syntactic transformation is everything the data needs to survive the crossing. If it changes what the data means, it belongs in the serving layer.
-]
 
 === The Line Between Syntactic and Semantic
 
 To know what should be done by you, you must answer the following question: does this operation change what the data #emph[means];, or does it just make it land correctly?
 
 - Casting a `DATETIME2` to `TIMESTAMP`? Syntactic.
-- Replacing `NULL` with `''` because BigQuery handles them differently in `GROUP BY`? Syntactic.
+- Replacing `NULL` with `''` because BigQuery handles them differently in `GROUP BY`? Syntactic (Though if `NULL` and `''` mean different things in the business, crosses over into Semantic).
 - Converting `BIT` to `BOOLEAN`? Syntactic.
 
-None of these change the business meaning of the data. They just make it survive the crossing. The counter examples do:
+None of these change the business meaning of the data. They just make it survive the crossing between systems. The counter examples do:
 
 - Calculating `revenue = qty * price`? Semantic -- you're creating a derived fact.
 - Filtering out inactive customers? Semantic -- you're applying a business rule.
@@ -7062,6 +7059,8 @@ None of these prevent corruption from happening -- source schemas change, bugs s
 ]
 
 === One-Way Transformation
+Everything up to this point has been syntactic transformation -- getting data across systems intact, without changing what it means. This part covers the semantic half: the views, aggregations, and restructuring that shape landed data for consumption. The core principle is that landed data is read-only. Semantic transformation happens through views over it -- queries that aggregate, reshape, and derive without altering what the pipeline wrote. When a view becomes too expensive to recompute on every read, you materialize it into a table, but that table is a cached query result, not a modification of the source data.
+
 The first request from every non-technical consumer sounds the same: "how much did we sell?" They want a total. They want it per month, per product, per warehouse. The temptation is to build that aggregation into the extraction -- `SELECT product_id, SUM(quantity) FROM order_lines GROUP BY product_id` -- and hand them exactly what they asked for. Clean, simple, one table with the numbers they need.
 
 Then they ask "which orders drove the spike in product X?" And the detail isn't in your warehouse, because you extracted the SUM and threw away the rows. *You can't drill down from a total to its components*. You can't recompute the aggregation with a different grouping. You can't debug a number that looks wrong because the individual records that produced it were never loaded. Every client who starts with "just give me the totals" eventually asks for the detail -- and if you aggregated at extraction, the only way to answer is to rebuild the pipeline.
@@ -7227,7 +7226,7 @@ The rebuild is a full table rewrite, so it costs bytes scanned on the read and b
 === Consumer Query Mistakes
 The pipeline did its job: the data landed correctly, partitioned, with metadata columns and clean types. The destination is a faithful clone of the source. Now an analyst opens their query editor, writes `SELECT * FROM orders_log`, and gets back 90 million rows -- every version of every order from the append log, duplicates and all. They aggregate on it, get numbers that are 3x what the source shows, and file a bug against your pipeline. The data is correct; the query is wrong.
 
-This is the gap the serving layer fills. The pipeline lands raw data. The serving layer builds clean, queryable surfaces on top of it -- dedup views that expose current state from append logs, flattening views that extract fields from JSON columns, materialized tables that pre-compute expensive aggregations so consumers don't pay for them on every query. None of this is in the pipeline. It's what you build after the data lands, as a service to the people who consume it.
+This is the gap the serving layer fills. The pipeline lands raw data, and that data is read-only from this point forward -- no UPDATEs, no DELETEs, no in-place modifications. The serving layer builds clean, queryable surfaces on top of it through views: dedup views that expose current state from append logs, flattening views that extract fields from JSON columns, aggregation views that pre-compute expensive rollups so consumers don't pay for them on every query. When a view is too expensive to recompute on every read, you materialize it into a separate table -- a cached result, not a modification of the landed data. None of this is in the pipeline. It's what you build after the data lands, as a service to the people who consume it.
 
 The goal is to put a guardrail between the consumer and the raw data. Not because the raw data is wrong -- it's exactly what the source has -- but because raw data in a columnar engine is expensive to misuse, and most consumers don't know how their queries translate into bytes scanned or warehouse time. A well-built view costs you minutes to create and saves consumers thousands of dollars in accidental full scans over the life of the table.
 
