@@ -1542,7 +1542,7 @@ WHERE event_date BETWEEN :start_date AND :end_date;
 
 Load everything to a staging table on the destination. Validate. Then replace the affected partitions -- all of them, in the same job.
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(image("diagrams/0202-partition-swap-flow.svg", width: 95%))
 
 ==== Extraction Status as the First Gate
 <extraction-status-as-the-first-gate>
@@ -1980,7 +1980,7 @@ FROM stg_orders;
 <getting-creative>
 Scoped full replace sets a single boundary: managed vs.~frozen. Once you see it as a zone concept, the obvious next step is multiple zones with different replacement cadences -- each tuned to how often that slice of data actually changes.
 
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(image("diagrams/0204-freshness-zones.svg", width: 95%))
 
 #strong[Cold zone] (2+ years ago): Data is almost certainly stable. Replace weekly -- one extraction pass covers the full cold range, partition swap replaces those partitions. Cost is low because the source query is bounded and runs once a week.
 
@@ -2875,10 +2875,10 @@ One hop is straightforward. Two hops gets expensive. Three hops -- stop and reco
 
 ```sql
 -- source: transactional
-SELECT sl.*
-FROM shipment_lines sl
-JOIN shipments s ON sl.shipment_id = s.shipment_id
-JOIN orders o ON s.order_id = o.order_id
+SELECT il.*
+FROM invoice_lines il
+JOIN invoices i ON il.invoice_id = i.invoice_id
+JOIN orders o ON i.order_id = o.order_id
 WHERE o.updated_at >= :last_run;
 ```
 
@@ -3939,14 +3939,14 @@ DO UPDATE SET
 ```
 
 ```sql
--- destination: transactional (MySQL)
+-- destination: transactional (MySQL 8.0.19+)
 INSERT INTO orders (order_id, status, total, created_at, updated_at)
 SELECT order_id, status, total, created_at, updated_at
-FROM _stg_orders
+FROM _stg_orders AS new
 ON DUPLICATE KEY UPDATE
-  status = VALUES(status),
-  total = VALUES(total),
-  updated_at = VALUES(updated_at);
+  status = new.status,
+  total = new.total,
+  updated_at = new.updated_at;
 ```
 
 All three produce the same result: rows that existed get overwritten, rows that didn't get inserted.
@@ -4045,7 +4045,7 @@ Whether delete-insert beats MERGE depends on the engine:
     [A well-clustered target table lets MERGE prune 99%+ of micro-partitions, making the scan cheap. Without clustering on the join key, both approaches scan everything -- and delete-insert avoids the MATCHED/NOT MATCHED overhead. Snowflake Gen2 warehouses (2025) further reduce MERGE cost by up to 4x for sparse updates.],
     [Redshift],
     [Delete-insert],
-    [Redshift's MERGE is a macro around DELETE + INSERT + temp table -- it adds overhead without optimizing anything. AWS's own documentation recommends delete-insert in a transaction for upserts.],
+    [Redshift supports native MERGE (added 2023), but its optimizer still favors delete-insert for large batch upserts -- the MERGE path doesn't prune distribution slices as efficiently. For small batches MERGE is fine; for bulk loads, stick with delete-insert in a transaction.],
     [PostgreSQL],
     [`ON CONFLICT`],
     [`ON CONFLICT DO UPDATE` is a single-pass operation with index-only lookups. Delete-insert rebuilds all index entries for every affected row. Use delete-insert only for partition-scoped replacements where the entire range is being reloaded.],
@@ -6847,6 +6847,8 @@ WHEN NOT MATCHED BY SOURCE THEN
     DELETE;
 ```
 
+The `WHEN MATCHED` branch updates every row that has a match -- including rows where nothing changed. On a table with 10M rows and 500 duplicates, 9,999,500 rows get a no-op UPDATE that rewrites the same value. Adding `AND tgt._extracted_at != deduped._extracted_at` to the match condition skips unchanged rows, but makes the statement harder to read and reason about. For dedup-in-place -- which runs infrequently, on a known-bad table -- the simpler statement is worth the write amplification.
+
 Expensive on large tables -- it rewrites every partition -- but should be a one-off. Fix the pipeline first so duplicates stop arriving, then clean up the destination.
 
 ==== Dedup via Rebuild
@@ -8110,8 +8112,21 @@ See @type-casting-and-normalization for the full type mapping.
 )
 
 #ecl-warning(
-  "DATEDIFF argument order varies",
-)[MySQL and BigQuery put `DATEDIFF(end, start)`. SQL Server, Snowflake, and ClickHouse put the unit first: `DATEDIFF(day, start, end)`. PostgreSQL skips the function entirely and uses subtraction. Getting the argument order wrong produces results with the wrong sign.]
+  "DATEDIFF argument order varies by engine",
+)[Getting the argument order wrong produces results with the wrong sign -- a silent bug that passes every test where the expected value is zero.
+
+#align(center)[#table(
+  columns: (auto, auto, auto),
+  align: (left, left, left),
+  table.header([*Engine*], [*Syntax*], [*Reference*]),
+  [MySQL], [`DATEDIFF(end, start)`], [two-argument, returns days only],
+  [BigQuery], [`DATE_DIFF(end, start, DAY)`], [unit is the third argument],
+  [SQL Server], [`DATEDIFF(day, start, end)`], [unit first, then start, then end],
+  [Snowflake], [`DATEDIFF(day, start, end)`], [same as SQL Server],
+  [ClickHouse], [`dateDiff('day', start, end)`], [unit as string, then start, then end],
+  [PostgreSQL], [`end - start`], [interval subtraction, no function],
+)]
+]
 
 // ---
 
@@ -8149,14 +8164,19 @@ DO UPDATE SET
 #strong[MySQL]
 
 ```sql
+-- engine: mysql 8.0.19+
 INSERT INTO orders (order_id, status, total, created_at, updated_at)
 SELECT order_id, status, total, created_at, updated_at
-FROM _stg_orders
+FROM _stg_orders AS new
 ON DUPLICATE KEY UPDATE
-  status = VALUES(status),
-  total = VALUES(total),
-  updated_at = VALUES(updated_at);
+  status = new.status,
+  total = new.total,
+  updated_at = new.updated_at;
 ```
+
+#ecl-warning(
+  "MySQL VALUES() in ON DUPLICATE KEY is deprecated",
+)[The `VALUES(col)` syntax for referencing incoming values in `ON DUPLICATE KEY UPDATE` is deprecated since MySQL 8.0.20 and will be removed in a future release. Use an alias on the source (`AS new`) and reference columns through it (`new.status`). The examples above use the modern syntax.]
 
 #strong[ClickHouse] -- no MERGE statement, by design. The idiomatic upsert is to insert into a `ReplacingMergeTree` and let the engine collapse duplicates on merge (paid lazily, or eagerly via partition-scoped `OPTIMIZE`), with reads going through `SELECT ... FINAL` or an `argMax` view. The load is a pure append -- no per-row cost, no partition rewrite. See @append-and-materialize for the read-time dedup pattern this maps to.
 
@@ -8615,19 +8635,19 @@ Three decisions drive every pipeline: how to extract, how to load, and how often
 
 === Extraction Strategy
 <extraction-strategy>
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(image("diagrams/0801-extraction-strategy.svg", width: 95%))
 
 The default path is the shortest: if the table fits a full scan, use full replace and stop thinking. Every branch to the right adds complexity that should be earned, not assumed.
 
 === Load Strategy
 <load-strategy>
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(image("diagrams/0802-load-strategy.svg", width: 95%))
 
 On transactional destinations, MERGE is cheap -- use it by default. On columnar destinations, append-and-materialize avoids the per-run MERGE cost and shifts deduplication to read time or a scheduled compaction job.
 
 === Freshness Tier
 <freshness-tier>
-// TODO: Convert mermaid diagram to Typst or embed as SVG
+#figure(image("diagrams/0803-freshness-tier.svg", width: 95%))
 
 See @tiered-freshness for the full framework.
 

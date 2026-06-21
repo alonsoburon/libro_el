@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200">
+  <rect width="720" height="200" fill="#ffffff" rx="6"/>
+  <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Partition swap: extract, stage, validate, replace</text>
+
+  <!-- ======= Source ======= -->
+  <rect x="16" y="50" width="120" height="44" fill="#f9f5d7" stroke="#d5c4a1" stroke-width="1" rx="4"/>
+  <rect x="16" y="50" width="120" height="14" fill="#ebdbb2" rx="4"/>
+  <rect x="16" y="60" width="120" height="4" fill="#ebdbb2"/>
+  <text x="76" y="61" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="600">Source: events</text>
+  <text x="76" y="80" text-anchor="middle" fill="#3c3836" font-family="monospace" font-size="8">start_date..end_date</text>
+  <text x="76" y="91" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">one extraction pass</text>
+
+  <!-- ======= Arrow: source to gate ======= -->
+  <line x1="136" y1="72" x2="172" y2="72" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="171,69 177,72 171,75" fill="#7c6f64"/>
+
+  <!-- ======= Extraction gate ======= -->
+  <rect x="177" y="55" width="100" height="34" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="227" y="70" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Extraction</text>
+  <text x="227" y="82" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">succeeded?</text>
+
+  <!-- ======= Gate FAIL: down to abort ======= -->
+  <line x1="227" y1="89" x2="227" y2="110" stroke="#9d0006" stroke-width="1.2"/>
+  <polygon points="224,109 227,115 230,109" fill="#9d0006"/>
+  <text x="237" y="103" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="700">ERROR</text>
+
+  <rect x="167" y="115" width="120" height="24" fill="#9d0006" opacity="0.07" rx="4"/>
+  <rect x="167" y="115" width="120" height="24" fill="none" stroke="#9d0006" stroke-width="1.2" rx="4"/>
+  <text x="179" y="131" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">&#x2717;</text>
+  <text x="193" y="130" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Abort</text>
+  <text x="227" y="143" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">staging never touched</text>
+
+  <!-- ======= Gate OK: right to staging ======= -->
+  <line x1="277" y1="72" x2="313" y2="72" stroke="#79740e" stroke-width="1.2"/>
+  <polygon points="312,69 318,72 312,75" fill="#79740e"/>
+  <text x="295" y="67" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="700">OK</text>
+
+  <!-- ======= Staging ======= -->
+  <rect x="318" y="50" width="110" height="44" fill="#458588" opacity="0.06" stroke="#458588" stroke-width="1" rx="4"/>
+  <text x="373" y="68" text-anchor="middle" fill="#458588" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Staging</text>
+  <text x="373" y="80" text-anchor="middle" fill="#7c6f64" font-family="monospace" font-size="8">stg_events</text>
+  <text x="373" y="91" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">validate rows</text>
+
+  <!-- ======= Arrow: staging to validation ======= -->
+  <line x1="428" y1="72" x2="464" y2="72" stroke="#7c6f64" stroke-width="1"/>
+  <polygon points="463,69 469,72 463,75" fill="#7c6f64"/>
+
+  <!-- ======= Validation gate ======= -->
+  <rect x="469" y="55" width="100" height="34" fill="#f9f5d7" stroke="#7c6f64" stroke-width="1" rx="4"/>
+  <text x="519" y="70" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Row count</text>
+  <text x="519" y="82" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">+ null checks?</text>
+
+  <!-- ======= Validation FAIL: down to abort ======= -->
+  <line x1="519" y1="89" x2="519" y2="110" stroke="#9d0006" stroke-width="1.2"/>
+  <polygon points="516,109 519,115 522,109" fill="#9d0006"/>
+  <text x="533" y="103" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="700">FAIL</text>
+
+  <rect x="459" y="115" width="120" height="24" fill="#9d0006" opacity="0.07" rx="4"/>
+  <rect x="459" y="115" width="120" height="24" fill="none" stroke="#9d0006" stroke-width="1.2" rx="4"/>
+  <text x="471" y="131" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="10" font-weight="700">&#x2717;</text>
+  <text x="485" y="130" fill="#9d0006" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-weight="600">Abort</text>
+  <text x="519" y="143" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">destination untouched</text>
+
+  <!-- ======= Validation OK: right to destination ======= -->
+  <line x1="569" y1="72" x2="605" y2="72" stroke="#79740e" stroke-width="1.2"/>
+  <polygon points="604,69 610,72 604,75" fill="#79740e"/>
+  <text x="587" y="67" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="7.5" font-weight="700">PASS</text>
+
+  <!-- ======= Destination ======= -->
+  <rect x="610" y="50" width="94" height="44" fill="#79740e" opacity="0.08" stroke="#79740e" stroke-width="1.2" rx="4"/>
+  <text x="657" y="66" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">Replace</text>
+  <text x="657" y="78" text-anchor="middle" fill="#79740e" font-family="'Segoe UI', system-ui, sans-serif" font-size="9" font-weight="600">partitions</text>
+  <text x="657" y="91" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="7">only target range</text>
+
+  <!-- ======= Legend ======= -->
+  <line x1="16" y1="170" x2="704" y2="170" stroke="#ebdbb2" stroke-width="0.5"/>
+  <rect x="16" y="178" width="3" height="8" fill="#79740e" opacity="0.4" rx="1"/>
+  <text x="25" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">success path: extract, stage, validate, swap</text>
+  <rect x="340" y="178" width="3" height="8" fill="#9d0006" opacity="0.4" rx="1"/>
+  <text x="349" y="185" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5">failure at any gate: abort without touching destination</text>
+</svg>
