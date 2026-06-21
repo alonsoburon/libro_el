@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240">
   <rect width="720" height="240" fill="#ffffff" rx="6"/>
   <text x="360" y="18" text-anchor="middle" fill="#7c6f64" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" letter-spacing="0.3">Schema evolution policies: pick the response per drift type</text>
-  <text x="360" y="32" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">evolve and freeze are conforming; discard_* cross into transformation territory</text>
+  <text x="360" y="32" text-anchor="middle" fill="#928374" font-family="'Segoe UI', system-ui, sans-serif" font-size="8.5" font-style="italic">evolve and freeze are syntactic; discard_* cross into transformation territory</text>
 
   <!-- =========================================== -->
   <!-- Column headers                              -->

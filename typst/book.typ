@@ -250,7 +250,7 @@ But here's where it gets interesting. `order_lines` has no `updated_at`. If you 
 
 === The Syntactic Checklist
 <the-syntactic-checklist>
-These are the syntactic operations that belong in the pipeline. Each one gets its own chapter in Part IV, but here's the overview so you know what you're signing up for.
+These are the syntactic operations that belong in the pipeline. Each one gets its own chapter in Part V, but here's the overview so you know what you're signing up for.
 
 #strong[Type casting.] Every engine has its own type system, and they don't agree on anything. SQL Server's `DATETIME2` has nanosecond precision; BigQuery's `TIMESTAMP` has microseconds. PostgreSQL's `NUMERIC(18,6)` is exact; BigQuery's `FLOAT64` is not. You will lose precision if you don't map these explicitly. See @type-casting-and-normalization.
 
@@ -544,7 +544,7 @@ Loading goes through stages: internal (Snowflake-managed) or external (S3, GCS, 
 
 Snowflake's `VARIANT` type handles semi-structured data natively. JSON, Avro, nested Parquet -- it all lands in `VARIANT` and you query it with `:` path notation. But there's a catch: loading JSON from Parquet files converts `VARIANT` to a string. You need `PARSE_JSON` on the other side to get it back into a queryable structure.
 
-Some loaders implement full replace via `CREATE TABLE ... CLONE` from staging -- a metadata-only operation, fast -- but permissions don't carry over on Snowflake. Ensure `FUTURE GRANTS` are set or your consumers lose access after every replace.
+Some loaders implement full replace via `CREATE TABLE ... CLONE` from staging -- a metadata-only operation, fast -- but permissions don't carry over on Snowflake unless `COPY GRANTS` is specified. Ensure `FUTURE GRANTS` are set or your consumers lose access after every replace.
 
 `PRIMARY KEY` and `UNIQUE` constraints exist in Snowflake's DDL but they're #strong[not enforced];. They're metadata hints. If your pipeline relies on the destination rejecting duplicates, Snowflake won't help you. Deduplication is your problem.
 
@@ -615,8 +615,8 @@ When data crosses from a transactional source to a columnar destination, types d
 )
 
 #ecl-warning(
-  "BigQuery has no naive datetime",
-)[Every `TIMESTAMP` in BigQuery is timezone-aware. If your source has naive timestamps, BigQuery treats them as UTC. If they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. You must handle the timezone during load.]
+  "BigQuery TIMESTAMP is always UTC",
+)[Every `TIMESTAMP` in BigQuery is timezone-aware and stored as UTC. If your source has naive timestamps, BigQuery treats them as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Use `DATETIME` for naive values that should remain timezone-unaware, or convert explicitly during load.]
 
 #strong[Decimals.] `NUMERIC(18,6)` in PostgreSQL has fixed precision. BigQuery's `NUMERIC` supports up to `NUMERIC(38,9)`. Snowflake offers `NUMBER(p,s)` with configurable precision, or `DECFLOAT` for unbound decimals -- but DECFLOAT only works with JSONL and CSV loads. Parquet doesn't support it. If your loader converts to `FLOAT64` anywhere in the pipeline, you lose precision. Financial data loaded as floating point is a bug waiting to surface. See @type-casting-and-normalization.
 
@@ -776,7 +776,7 @@ If this returns anything above zero, your incremental extraction is already inco
   "Verify before you commit",
 )[Before building an incremental extraction on a cursor, run three checks: (1) query `WHERE updated_at IS NULL` -- if it returns rows, you need a fallback; (2) run `EXPLAIN` on your cursor query -- confirm it hits the index; (3) if you can -- create a row, wait a minute, then update it and check that `updated_at` changed both times. If any check fails, treat this as an unreliable cursor and plan accordingly.]
 
-See @create-vs-update-separation for the pattern when `updated_at` only fires on update, and @reliable-loads for fallback strategies.
+See @create-vs-update-separation for the pattern when `updated_at` only fires on update, and @timestamp-extraction-foundations for fallback strategies.
 
 === "Primary keys are unique and stable"
 <primary-keys-are-unique-and-stable>
@@ -1052,7 +1052,7 @@ The mitigations all involve some form of lookback -- accepting that `updated_at`
 
 Full replace sidesteps all of this. A table that gets fully replaced every run doesn't care whether `updated_at` is reliable -- the whole thing comes fresh. This is another reason to default to full replace and earn incremental complexity only when the table is genuinely too large or too slow to reload. See @purity-vs-freshness.
 
-See @cursor-based-timestamp-extraction for lookback window patterns, and @reliable-loads for building incrementals that survive unreliable cursors.
+See @cursor-based-timestamp-extraction for lookback window patterns, and @stateless-window-extraction for building incrementals that survive unreliable cursors.
 
 // ---
 
@@ -1110,8 +1110,9 @@ SELECT
     line_num,
     quantity::NUMERIC(10,2) AS quantity,
     NOW() AT TIME ZONE 'UTC' AS _extracted_at
-FROM order_lines
-WHERE updated_at >= :last_run;
+FROM order_lines ol
+JOIN orders o ON ol.order_id = o.order_id
+WHERE o.updated_at >= :last_run;
 ```
 
 Free if the source can handle it and you're running at 2am. Dangerous if you're on a busy production ERP at 10am -- you're adding work to someone else's production database, and the DBA will find you.
@@ -1574,18 +1575,18 @@ Load to staging, then DELETE + INSERT in a transaction. Delete the full target r
 -- engine: snowflake / redshift
 BEGIN;
 DELETE FROM events
-WHERE partition_date BETWEEN :start_date AND :end_date;
+WHERE event_date BETWEEN :start_date AND :end_date;
 INSERT INTO events SELECT * FROM stg_events;
 COMMIT;
 ```
 
 Atomic: if the INSERT fails, the DELETE rolls back, so it's safe to retry.
 
-The DELETE must cover the full target range, not `IN (SELECT DISTINCT partition_date FROM stg)`. If Saturday had 10 rows last run and the source corrected them to Friday, staging has no Saturday rows -- and a DELETE driven by staging would leave the old Saturday data in place. Delete by the declared range; insert whatever staging holds, including nothing for days with no activity.
+The DELETE must cover the full target range, not `IN (SELECT DISTINCT event_date FROM stg)`. If Saturday had 10 rows last run and the source corrected them to Friday, staging has no Saturday rows -- and a DELETE driven by staging would leave the old Saturday data in place. Delete by the declared range; insert whatever staging holds, including nothing for days with no activity.
 
 ==== BigQuery
 <fullreplace-bigquery>
-MERGE is the wrong answer here. It scans both tables in full and is the slowest, most expensive DML option BigQuery has. Real-world cases of MERGE consuming hours of slot time on large tables are documented. DELETE + INSERT has no transaction wrapper and leaves an empty-partition window between the two statements.
+MERGE is the wrong answer here. It scans both tables in full and is the slowest, most expensive DML option BigQuery has. I've seen MERGE consume hours of slot time on tables with hundreds of millions of rows. DELETE + INSERT has no transaction wrapper and leaves an empty-partition window between the two statements.
 
 The right approach: load all data to a staging table partitioned by the same column as the destination, then use #strong[partition copy] per partition -- a near-metadata operation that is orders of magnitude faster than any DML:
 
@@ -3682,7 +3683,7 @@ When the table is partitioned and you're replacing a slice -- yesterday's data, 
 -- destination: snowflake / redshift
 BEGIN;
 DELETE FROM events
-WHERE partition_date BETWEEN :start_date AND :end_date;
+WHERE event_date BETWEEN :start_date AND :end_date;
 INSERT INTO events SELECT * FROM stg_events;
 COMMIT;
 ```
@@ -3724,7 +3725,7 @@ Three ways to clear destination data before loading, each with different behavio
 
 #ecl-tip(
   "TRUNCATE vs DELETE in columnar engines",
-)[BigQuery `TRUNCATE` is a metadata operation that resets the table instantly at zero cost. `DELETE FROM table` without a WHERE clause rewrites every partition and charges for bytes scanned. Snowflake `TRUNCATE` reclaims storage immediately (no Time Travel retention); `DELETE` preserves Time Travel history. Choose based on whether you need the recovery window, and are willing to pay the cost.]
+)[BigQuery `TRUNCATE` is a metadata operation that resets the table instantly at zero cost. `DELETE FROM table` without a WHERE clause rewrites every partition and charges for bytes scanned. Snowflake `TRUNCATE` and `DELETE` both preserve data for Time Travel during the retention period. To reclaim storage immediately, set `DATA_RETENTION_TIME_IN_DAYS = 0` before truncating -- but that disables Time Travel recovery. Choose based on whether you need the recovery window.]
 
 // ---
 
@@ -4550,7 +4551,7 @@ UUID or sequential integer -- consistency matters more than format. If your orch
 A lightweight metadata table on the destination that tracks each extraction run:
 
 ```sql
--- destination: any
+-- destination: transactional
 CREATE TABLE _batches (
     batch_id        TEXT PRIMARY KEY,
     table_name      TEXT NOT NULL,
@@ -4834,7 +4835,7 @@ Multiply that rounding error by a million invoice lines and the aggregate diverg
   kind: table,
 )
 
-Explicit type in the destination DDL -- never let the loader infer the numeric type. Most loaders default to `FLOAT64` because it's the safest generic choice (it accepts everything), and that's exactly the problem.
+Explicit type in the destination DDL -- never let the loader infer the numeric type. Loaders inferring schema from untyped data often default to `FLOAT64` because it's the safest generic choice (it accepts everything), and that's exactly the problem.
 
 Replicating with full precision is worth trying but don't get married to it. Some source engines have types that don't map cleanly to any destination type (SQL Server `MONEY` with implicit currency rounding, Oracle `NUMBER` without scale), and chasing exact precision across every column can burn more time than it's worth for columns where nobody cares about the sixth decimal.
 
@@ -5023,7 +5024,7 @@ The rule follows the same principle as @null-handling: reflect the source. If th
 
 Most transactional sources store naive timestamps. The application knows what timezone it means, but the column doesn't say -- and often nobody at the source team documented it either. That's the source's data quality problem. Your job is to land what the source gives you, not to retroactively assign timezone semantics that weren't there.
 
-#figure(image("diagrams/0505-timezone-conforming.svg", width: 95%))
+#figure(image("diagrams/0505-timezone-handling.svg", width: 95%))
 
 // ---
 
@@ -5286,7 +5287,7 @@ Land it as-is. The structure, the nesting, the array of items -- all of it arriv
 
 #figure(image("diagrams/0507-nested-json.svg", width: 95%))
 
-This works well when consumers are data-conscious and comfortable with JSON query syntax. BigQuery's `JSON_EXTRACT_SCALAR(details, '$.shipping.method')`, Snowflake's `details:shipping.method`, PostgreSQL's `details->'shipping'->>'method'` -- all of these give consumers access to every field without the pipeline making structural decisions on their behalf.
+This works well when consumers are data-conscious and comfortable with JSON query syntax. BigQuery's `JSON_VALUE(details, '$.shipping.method')`, Snowflake's `details:shipping.method`, PostgreSQL's `details->'shipping'->>'method'` -- all of these give consumers access to every field without the pipeline making structural decisions on their behalf.
 
 // ---
 
@@ -5304,7 +5305,7 @@ If the consumer truly can't work with JSON, the answer is a downstream semantic 
 
 #ecl-warning(
   "Flattening views are cheap and reversible",
-)[A `CREATE VIEW orders_flat AS SELECT order_id, JSON_EXTRACT_SCALAR(details, '$.shipping.method') AS shipping_method, ...` gives the consumer a flat table without modifying the landed data. If the JSON structure changes, you update the view. If a new consumer needs a different shape, you create another view. The raw JSON in the landed table is always the source of truth.]
+)[A `CREATE VIEW orders_flat AS SELECT order_id, JSON_VALUE(details, '$.shipping.method') AS shipping_method, ...` gives the consumer a flat table without modifying the landed data. If the JSON structure changes, you update the view. If a new consumer needs a different shape, you create another view. The raw JSON in the landed table is always the source of truth.]
 
 // ---
 
@@ -6424,7 +6425,7 @@ Contract coverage is a budgeting decision. Not every table needs every check. A 
   kind: table,
 )
 
-These are the only two valid policies at the syntactic layer. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are semantic decisions, not syntactic work. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See @merge-upsert for the full reasoning.
+These are the only two valid policies at the syntactic layer. Some loaders offer `discard_row` and `discard_value` modes that silently drop data when the schema doesn't match -- these are semantic decisions, not syntactic work. If the source sent it, the destination should have it. Either accept the change or reject the load; don't silently drop data. See @merge-and-schema-evolution for the full reasoning.
 
 === Column Naming as a Contract
 <column-naming-as-a-contract>
@@ -6635,9 +6636,9 @@ For multi-chunk backfills, staging tables may intentionally persist between chun
 
 === State Reset
 <state-reset>
-After a full backfill, the incremental state -- cursor position, high-water mark, schema version -- must match the data you just loaded. If the cursor still points to its old position, the next incremental run skips everything between that cursor and the most recent data, leaving an invisible gap. Some pipelines wipe state automatically on a full refresh; others require explicit cleanup (clearing a cursor table, deleting state files, resetting partition metadata). If state cleanup is a manual step, document it prominently -- a backfill that reloads the data but leaves the old cursor in place is worse than no backfill, because the pipeline reports success while silently skipping rows.
+After a full backfill, the incremental state -- cursor position, high-water mark, schema version -- must match the data you just loaded. If the cursor still points to its old position, the next incremental run skips everything between that cursor and the most recent data, leaving an invisible gap. Some pipelines wipe state automatically on a full replace; others require explicit cleanup (clearing a cursor table, deleting state files, resetting partition metadata). If state cleanup is a manual step, document it prominently -- a backfill that reloads the data but leaves the old cursor in place is worse than no backfill, because the pipeline reports success while silently skipping rows.
 
-The risk compounds when pipeline state lives in a separate store. After clearing that state, the next scheduled run starts from scratch -- effectively a full refresh of every table, not just the one you backfilled. Engineers who don't expect this find out the hard way. This is one of the strongest arguments for stateless window extraction (@stateless-window-extraction): the next scheduled run re-reads its normal trailing window regardless of any backfill, there's no state to reset, and the failure mode of "reload data but forget to fix the cursor" doesn't exist. It's also far simpler to reason about -- "the pipeline always grabs the last N days" requires no mental model of cursor state, cleanup procedures, or post-backfill sequencing.
+The risk compounds when pipeline state lives in a separate store. After clearing that state, the next scheduled run starts from scratch -- effectively a full replace of every table, not just the one you backfilled. Engineers who don't expect this find out the hard way. This is one of the strongest arguments for stateless window extraction (@stateless-window-extraction): the next scheduled run re-reads its normal trailing window regardless of any backfill, there's no state to reset, and the failure mode of "reload data but forget to fix the cursor" doesn't exist. It's also far simpler to reason about -- "the pipeline always grabs the last N days" requires no mental model of cursor state, cleanup procedures, or post-backfill sequencing.
 
 === Backfill as Routine
 <backfill-as-routine>
@@ -6681,7 +6682,7 @@ Both should be launchable from your orchestrator's UI without modifying code or 
 
 #ecl-danger(
   "Don't forget the state reset",
-)[On cursor-based pipelines, reloading the data while the cursor still points to the old high-water mark means the next incremental run skips everything between the cursor and the new data. Clear the state or force a full refresh. Stateless window extraction avoids this entirely -- there's no state to forget.]
+)[On cursor-based pipelines, reloading the data while the cursor still points to the old high-water mark means the next incremental run skips everything between the cursor and the new data. Clear the state or force a full replace. Stateless window extraction avoids this entirely -- there's no state to forget.]
 
 #ecl-warning(
   "Don't let backfills compete with schedules",
@@ -7160,7 +7161,7 @@ Partitioning controls which date slices a query reads. Clustering controls how d
 
 Choose cluster keys based on how consumers filter: `customer_id`, `product_id`, `status` -- the columns that appear in WHERE clauses and JOIN conditions. Column order matters on BigQuery: the first column clusters most effectively, so put the highest-cardinality filter first. Don't cluster by columns nobody filters on -- it costs storage reorganization for no query benefit, and don't cluster by pipeline metadata like `_extracted_at`.
 
-Clustering interacts with load strategy. Append-only loads naturally cluster by ingestion time -- good for time-series queries, bad for entity lookups. Full replace rebuilds clustering from scratch on every load. MERGE can fragment clustering over time as updates scatter across micro-partitions -- BigQuery auto-reclusters in the background, Snowflake reclustering costs warehouse credits.
+Clustering interacts with load strategy. Append-only loads naturally cluster by ingestion time -- good for time-series queries, bad for entity lookups. Full replace rebuilds clustering from scratch on every load. MERGE can fragment clustering over time as updates scatter across micro-partitions -- BigQuery auto-reclusters in the background, Snowflake reclustering consumes serverless compute credits.
 
 === `require_partition_filter`
 <require_partition_filter>
@@ -7269,8 +7270,8 @@ SELECT
     order_id,
     customer_id,
     status,
-    JSON_EXTRACT_SCALAR(details, '$.shipping.method') AS shipping_method,
-    JSON_EXTRACT_SCALAR(details, '$.shipping.address.city') AS shipping_city,
+    JSON_VALUE(details, '$.shipping.method') AS shipping_method,
+    JSON_VALUE(details, '$.shipping.address.city') AS shipping_city,
     order_date
 FROM orders;
 ```
@@ -7289,17 +7290,17 @@ SELECT
 FROM orders o, UNNEST(o.items) AS item;
 ```
 
-`UNNEST` explodes the array into rows -- one row per item per order. This is the BigQuery-native way to flatten repeated fields; `JSON_EXTRACT_SCALAR` only works on string-typed JSON, not on STRUCTs or repeated records.
+`UNNEST` explodes the array into rows -- one row per item per order. This is the BigQuery-native way to flatten repeated fields; `JSON_VALUE` only works on string-typed JSON, not on STRUCTs or repeated records.
 
 Different consumer groups can have different flattening views over the same nested data -- the sales team sees shipping and pricing fields, logistics sees warehouse and carrier fields -- each shaped for their use case without duplicating the underlying data.
 
-When the nested schema mutates -- a new field appears, a field is renamed -- the view definition changes. The pipeline doesn't. This is the same principle as @partitioning-clustering-and-pruning: the pipeline lands what the source has, the serving layer adapts it for consumption.
+When the nested schema mutates -- a new field appears, a field is renamed -- the view definition changes. The pipeline doesn't. This is the same principle as @dont-pre-aggregate: the pipeline lands what the source has, the serving layer adapts it for consumption.
 
 === Per Engine
 <per-engine-1>
 #strong[BigQuery.] SQL views are free to create but every query scans the underlying table and bills for bytes read. Materialized views auto-refresh and BigQuery routes queries to the MV when it can -- this is where the cost savings happen, because the query scans the pre-computed result instead of the full base table. Scheduled queries write to destination tables on a cron and are the workhorse for consumer-facing aggregation tables that join multiple sources.
 
-#strong[Snowflake.] SQL views are free to create, same caveat -- every query costs warehouse time against the underlying table. Materialized views refresh automatically on data change, costing warehouse credits for each refresh. Snowflake's `SECURE VIEW` hides the view definition from consumers, useful when the view encodes business logic you don't want exposed.
+#strong[Snowflake.] SQL views are free to create, same caveat -- every query costs warehouse time against the underlying table. Materialized views refresh automatically on data change via a Snowflake-managed background service (serverless compute credits, no user warehouse required). Snowflake's `SECURE VIEW` hides the view definition from consumers, useful when the view encodes business logic you don't want exposed.
 
 #strong[PostgreSQL.] `CREATE MATERIALIZED VIEW` with `REFRESH MATERIALIZED VIEW CONCURRENTLY` for zero-downtime refreshes. No auto-refresh -- schedule via cron, orchestrator, or a post-load hook. Standard SQL views are free and fast for simple cases.
 
@@ -7413,7 +7414,7 @@ Some source tables have JSON or nested data columns that land as-is (@nested-dat
 -- destination: bigquery (JSON string column)
 SELECT
     order_id,
-    JSON_EXTRACT_SCALAR(details, '$.shipping.method') AS shipping_method
+    JSON_VALUE(details, '$.shipping.method') AS shipping_method
 FROM orders
 WHERE order_date = '2026-03-15';
 
@@ -7433,7 +7434,7 @@ FROM orders
 WHERE order_date = '2026-03-15';
 ```
 
-`JSON_EXTRACT_SCALAR` works on string-typed JSON. `UNNEST` works on BigQuery's native repeated records and STRUCTs. Snowflake uses `:` path notation on `VARIANT` columns.
+`JSON_VALUE` works on string-typed JSON. `UNNEST` works on BigQuery's native repeated records and STRUCTs. Snowflake uses `:` path notation on `VARIANT` columns.
 
 === JOINs on Landed Tables
 <joins-on-landed-tables>
@@ -7494,12 +7495,12 @@ I once wasted \$500 in a single night because of unlimited retries on a badly me
 BigQuery on-demand billing charges per byte scanned: \$6.25/TB. Every query pays for the bytes it reads from the columns it touches, regardless of how many rows the result returns. The optimization target is reducing bytes scanned per query.
 
 #ecl-info("BigQuery documentation")[#link("https://cloud.google.com/bigquery/pricing")[Pricing] -- #link(
-    "https://cloud.google.com/bigquery/docs/partitioned-tables",
+    "https://docs.cloud.google.com/bigquery/docs/partitioned-tables",
   )[Partitioned tables] -- #link(
-    "https://cloud.google.com/bigquery/docs/clustered-tables",
+    "https://docs.cloud.google.com/bigquery/docs/clustered-tables",
   )[Clustered tables] -- #link(
-    "https://cloud.google.com/bigquery/docs/materialized-views-intro",
-  )[Materialized views] -- #link("https://cloud.google.com/bigquery/docs/reservations-intro")[Reservations (slots)]]
+    "https://docs.cloud.google.com/bigquery/docs/materialized-views-intro",
+  )[Materialized views] -- #link("https://docs.cloud.google.com/bigquery/docs/reservations-intro")[Reservations (slots)]]
 
 #strong[Partitioning + `require_partition_filter`.] Mandatory cost control for any table over a few GB. A query that filters on the partition column reads only the partitions that match; everything else is skipped at zero cost. `require_partition_filter = true` rejects queries that forget the filter, turning a potential \$50 full scan into an error message. See @partitioning-clustering-and-pruning for partition key selection.
 
@@ -7645,7 +7646,7 @@ WHERE created_at <= '2026-03-05'
 GROUP BY sku_id, warehouse_id;
 ```
 
-The two queries are identical except for the WHERE clause. Any point-in-time snapshot is computable from the event log by moving the date boundary -- this is why @partitioning-clustering-and-pruning insists on landing the movements: the detail produces any aggregate, but the aggregate can't reproduce the detail.
+The two queries are identical except for the WHERE clause. Any point-in-time snapshot is computable from the event log by moving the date boundary -- this is why @dont-pre-aggregate insists on landing the movements: the detail produces any aggregate, but the aggregate can't reproduce the detail.
 
 For high-frequency point-in-time queries -- a dashboard showing stock levels at close-of-business for each day of the month -- replaying the full movement history on every query gets expensive fast. A materialized table built from movements avoids the rescan: a scheduled query (@query-patterns-for-analysts) runs after each extraction, replays movements up to each date, and writes the result.
 
@@ -7959,7 +7960,7 @@ Don't do it if you can avoid it. If you can't, treat it as a formal breaking cha
 = Part VIII: Appendix
 == SQL Dialect Reference
 <sql-dialect-reference>
-The lookup table for every operation that differs between engines. When a pattern in the book says "syntax varies by engine," it points here. Six engines are covered: PostgreSQL, MySQL, and SQL Server as sources and transactional destinations; BigQuery, Snowflake, ClickHouse, and Redshift as columnar destinations.
+The lookup table for every operation that differs between engines. When a pattern in the book says "syntax varies by engine," it points here. Seven engines are covered: PostgreSQL, MySQL, and SQL Server as sources and transactional destinations; BigQuery, Snowflake, ClickHouse, and Redshift as columnar destinations.
 
 #strong[Quick nav]
 
@@ -8002,7 +8003,7 @@ The lookup table for every operation that differs between engines. When a patter
   kind: table,
 )
 
-See @sql-dialect-reference for naming strategy.
+See @schema-naming-conventions for naming strategy.
 
 // ---
 
@@ -8018,7 +8019,7 @@ See @sql-dialect-reference for naming strategy.
     [`TIMESTAMP`],
     [`DATETIME`],
     [`DATETIME2(n)`],
-    [--],
+    [`DATETIME`],
     [`TIMESTAMP_NTZ`],
     [`DateTime`],
     [`TIMESTAMP`],
@@ -8043,8 +8044,8 @@ See @sql-dialect-reference for naming strategy.
 )
 
 #ecl-warning(
-  "BigQuery has no naive datetime",
-)[Every `TIMESTAMP` in BigQuery is UTC. Naive timestamps from the source land as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Handle the timezone during load. See @timezone-handling.]
+  "BigQuery TIMESTAMP is always UTC",
+)[Every `TIMESTAMP` in BigQuery is UTC. Naive timestamps from the source land as UTC -- if they were actually in `America/Santiago` or `Europe/Berlin`, every value is wrong from the moment it lands. Use `DATETIME` for naive values, or convert explicitly during load. See @timezone-handling.]
 
 #ecl-warning(
   "DATETIME2 precision truncates on load",
@@ -8250,7 +8251,7 @@ FROM orders_log
 QUALIFY ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY _extracted_at DESC) = 1;
 ```
 
-#strong[Dedup view -- PostgreSQL / MySQL / SQL Server / Redshift]
+#strong[Dedup view -- PostgreSQL / MySQL / SQL Server]
 
 ```sql
 CREATE OR REPLACE VIEW orders AS
@@ -8350,7 +8351,7 @@ Staging must be partitioned by the same column and type as the destination. One 
 ```sql
 BEGIN;
 DELETE FROM events
-WHERE partition_date BETWEEN :start_date AND :end_date;
+WHERE event_date BETWEEN :start_date AND :end_date;
 INSERT INTO events SELECT * FROM stg_events;
 COMMIT;
 ```
@@ -8400,7 +8401,7 @@ CREATE TABLE events (
 CLUSTER BY (event_date, event_type);
 ```
 
-Snowflake has no traditional partitions -- micro-partitions are managed automatically. Clustering keys guide the physical layout. Snowflake auto-reclusters in the background (costs warehouse time).
+Snowflake has no traditional partitions -- micro-partitions are managed automatically. Clustering keys guide the physical layout. Snowflake auto-reclusters in the background (serverless compute credits, no user warehouse required).
 
 #strong[ClickHouse]
 
@@ -8451,7 +8452,7 @@ QUALIFY ROW_NUMBER() OVER (
 ) = 1;
 ```
 
-#strong[PostgreSQL / MySQL / SQL Server / Redshift -- subquery wrapper]
+#strong[PostgreSQL / MySQL / SQL Server -- subquery wrapper]
 
 ```sql
 SELECT * FROM (
@@ -8676,7 +8677,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
     [Hot],
     [Append-only, partitioned by date, never updated],
     [`sessions`],
-    [Sequential ID or `created_at` cursor],
+    [Sequential ID or `started_at` cursor],
     [Append-only (@append-only-load)],
     [Hot],
     [Late-arriving events need wider window (@late-arriving-data)],
@@ -8713,7 +8714,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
 
 #strong[Batch ID (`_batch_id`)] -- Metadata column that correlates all rows from the same extraction run. Used for rollback, debugging, and reconciliation. See @metadata-column-injection.
 
-#strong[Cold tier] -- Freshness tier for historical data refreshed weekly or monthly via full replace. Acts as the purity safety net. See @tiered-freshness.
+#strong[Cold tier] -- Freshness tier for historical data refreshed weekly or monthly via full replace. Is the purity safety net. See @tiered-freshness.
 
 #strong[Compaction] -- Collapsing an append log to one row per key, removing all historical versions. Always collapse-to-latest (`QUALIFY ROW_NUMBER() = 1`), never trim-by-date. See @append-and-materialize.
 
@@ -8763,7 +8764,7 @@ Every table in the domain model mapped to its recommended extraction, load, and 
 
 #strong[Purity] -- The degree to which the destination is an exact clone of the source at a given point in time. Full replace maximizes it; incremental carries purity debt. See @purity-vs-freshness.
 
-#strong[QUALIFY] -- SQL clause that filters directly on window functions without a subquery. Native on BigQuery, Snowflake, ClickHouse. Not supported on PostgreSQL, MySQL, SQL Server, Redshift. See @decision-flowchart.
+#strong[QUALIFY] -- SQL clause that filters directly on window functions without a subquery. Native on BigQuery, Snowflake, ClickHouse (since 24.4), and Redshift (since July 2023). Not supported on PostgreSQL, MySQL, SQL Server. See @deduplication-qualify-vs-subquery.
 
 #strong[Reconciliation] -- Post-load verification that the destination matches the source: row count comparison, aggregate checks, hash comparison. See @reconciliation-patterns.
 
@@ -8804,7 +8805,7 @@ Condensed reference for the shared fictional schema used in every SQL example. F
     [`orders`],
     [`order_id`],
     [`customer_id`, `status`, `total`, `created_at`, `updated_at`],
-    [Broken cursor showcase],
+    [Broken cursor example],
     [@timestamp-extraction-foundations, @stateless-window-extraction, @create-vs-update-separation],
     [`order_lines`],
     [`line_id`],
@@ -8852,6 +8853,11 @@ Condensed reference for the shared fictional schema used in every SQL example. F
     [`sku_id`, `warehouse_id`, `movement_type`, `quantity`, `movement_date`],
     [Activity signal, append-only],
     [@activity-driven-extraction, @append-only-load, @schema-naming-conventions],
+    [`warehouses`],
+    [`warehouse_id`],
+    [`name`, `location`],
+    [Warehouse dimension],
+    [@full-scan-strategies, @full-replace-load],
   )],
   kind: table,
 )
@@ -8884,7 +8890,7 @@ See @hard-rules-soft-rules for why these matter and how your pipeline should han
 <relationships>
 #align(center, image("diagrams/domain-model-er.svg", width: 90%))
 
-`events`, `sessions`, and `metrics_daily` have no foreign keys into the schema above. `inventory` and `inventory_movements` connect to `products` via `sku_id` but have no `warehouses` table -- `warehouse_id` is a plain integer key.
+`events`, `sessions`, and `metrics_daily` have no foreign keys into the schema above. `inventory` and `inventory_movements` connect to `products` via `sku_id` and to `warehouses` via `warehouse_id`, forming a star schema with `products` and `warehouses` as the two dimensions.
 
 // ---
 
@@ -9158,7 +9164,7 @@ One thing to know about `data_type: "evolve"`: when a column's type changes, dlt
 <naming-conventions>
 dlt normalizes all identifiers through a naming convention before they reach the destination. The default is `snake_case` -- lowercased, ASCII only, special characters stripped. Other options include `duck_case` (case-sensitive Unicode), `direct` (preserve as-is), and SQL-safe variants (`sql_cs_v1`, `sql_ci_v1`).
 
-This is a one-time decision with permanent consequences -- the same tradeoff described in @sql-dialect-reference. Changing the convention after data exists is destructive: dlt re-normalizes already-normalized identifiers (it doesn't store the originals), which means every table and column name in your destination could change.
+This is a one-time decision with permanent consequences -- the same tradeoff described in @schema-naming-conventions. Changing the convention after data exists is destructive: dlt re-normalizes already-normalized identifiers (it doesn't store the originals), which means every table and column name in your destination could change.
 
 #ecl-warning(
   "Normalization can collide source keys",
@@ -9344,7 +9350,7 @@ Worth it when no alternative exists or when the extraction logic is complex enou
 #strong[Pipeline weaknesses:]
 - `PRIMARY KEY` and `UNIQUE` constraints are metadata hints only -- deduplication is entirely your responsibility
 - Grants follow the table object, not the name -- after `SWAP WITH` or `CLONE`, consumers lose access unless you re-grant or use `FUTURE GRANTS`
-- Reclustering costs warehouse credits in the background; heavily mutated tables accumulate significant charges
+- Reclustering consumes serverless compute credits in the background; heavily mutated tables accumulate significant charges
 - No partition filter enforcement -- consumers can full-scan any table without warning
 
 // ---
