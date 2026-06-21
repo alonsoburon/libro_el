@@ -3760,6 +3760,10 @@ Both are idempotent -- rerunning the same extraction and load produces the same 
   "Transactional to transactional",
 )[Both mechanisms work cleanly. PostgreSQL's transactional DDL means the `RENAME` approach inside a transaction is atomic and instant. One caveat: foreign keys referencing the production table will break during the rename. Disable FK checks or drop and recreate constraints as part of the swap if other tables reference the target.]
 
+#ecl-story(
+  "Three ways an empty staging table wiped production",
+)[We've seen empty staging tables replace production data in at least three different ways. An incremental extraction that truncated the destination before loading only its narrow window -- turning what looked like an incremental job into a full replace that left the table with a few hours of data. Staging tables truncated as part of a swap pattern and then never filled because the extraction timed out, so the empty table got promoted to production. And once a client gave us what they called a "replication database" that turned out not to be a replica at all -- the source tables were periodically truncated, so our full scan faithfully cloned empty tables into the destination. That last one took weeks of evidence gathering to convince the client the problem was on their side.]
+
 // ---
 
 // ---
@@ -3864,6 +3868,10 @@ The cost advantage of this pattern depends entirely on the source being immutabl
 The recovery path is expensive. You either switch to @merge-upsert (which rewrites partitions on every load), add a dedup-and-reconcile layer from @append-and-materialize, or run a full replace from @full-replace-load to reset the destination. What was the cheapest load pattern in the book becomes one of the most expensive the moment the assumption breaks, because the pipeline has no mechanism to detect or correct the mutation -- it just keeps appending new rows while the old ones stay wrong.
 
 Before choosing this pattern, ask how confident you are that the source will stay immutable -- not today, but across schema changes, team turnover, and the admin script someone will write at 2am during an incident. If the answer is "pretty confident but not certain," a periodic full replace via @full-replace-load is the safety net, and its cadence should reflect how much damage a silent mutation would cause before the next reload.
+
+#ecl-story(
+  "No source we don't control has stayed append-only",
+)[In our experience, nothing outside our direct control is truly append-only, so we treat every external append-only table with suspicion regardless of what the source team promises. The practical middle ground is treating it as a strictly monotonically increasing table with incremental extraction during the week and a full replace once or twice a week to catch whatever was quietly mutated or deleted behind us.]
 
 // ---
 
@@ -4305,6 +4313,10 @@ The result is two tiers in a single table: daily extractions for the recent wind
   "Match compression boundary to actual needs",
 )[What's the shortest period where daily granularity changes a decision? If nobody looks at daily stock levels older than 30 days, compress at 30. If finance needs daily for quarter-close reconciliation, compress at 90. Ask the consumer before picking the number -- they usually need less daily granularity than they think.]
 
+#ecl-story(
+  "A client who thought compaction deleted their stock history",
+)[A client was using our `products` table -- which contained a `current_stock` column -- to reconstruct historical stock levels at arbitrary points in time. When we compacted the table down to one row per product, they were furious: we had "deleted all their history." We pointed them to the `inventory_movements` table, which recorded every stock change as an append-only log and let them reconstruct stock at any date with a running sum. The real solution was better than what they had been doing, and the distinction between a snapshot table (current state, compactable) and a movement log (historical record, never compacted) is worth making explicit with every client who touches inventory data.]
+
 See @point-in-time-from-events for the full treatment of point-in-time reconstruction from append logs, event tables, and SCD2.
 
 // ---
@@ -4478,6 +4490,14 @@ A pipeline that fails silently is worse than one that fails loudly. Your orchest
 #ecl-info(
   "Transactional to transactional",
 )[Transactional engines allow atomic cursor advancement: write the data and update the cursor in the same transaction, making the confirmation gap effectively zero. This is the simplest path to reliable loads -- if you can use it, do. Partial load recovery is also simpler because you can wrap the entire batch in a single transaction and roll back on failure.]
+
+#ecl-story(
+  "A confirmed successful load with no data behind it",
+)[We had a pipeline that reported a successful extraction but never ran the load step, so the destination quietly went stale. It took us two weeks to notice because the table updated slowly and had low freshness requirements -- nobody was looking at it closely enough to catch the gap. That incident is why we now check row counts and last-modified timestamps on the destination as a separate verification step, independent of whatever the pipeline itself reports.]
+
+#ecl-story(
+  "SQL Server NOLOCK producing genuine duplicate rows mid-scan",
+)[We had duplicates appear in the destination that didn't come from retries or pipeline bugs -- the source genuinely returned the same row twice. The extraction was paging through a SQL Server table using `WITH (NOLOCK)`, and under concurrent writes a page split moved a row between pages mid-scan, causing it to appear in two different pages of results. The client caught the doubled transactions from their own reconciliation the same day.]
 
 // ---
 
@@ -5618,6 +5638,10 @@ This setup also unlocks cross-client comparison, which individual orchestrator d
   "Central health table is a dependency",
 )[If the health destination is unreachable, every pipeline run across all clients loses its monitoring write. A local fallback -- writing the health row to a staging table in each client's own destination, then syncing centrally on a schedule -- mitigates this at the cost of slight staleness in the unified view. At minimum, the health INSERT should log to stderr on failure so the orchestrator's native run output still captures what happened, even if the health table doesn't.]
 
+#ecl-story(
+  "A full-load table that started overlapping because of an XML column",
+)[A client asked for a table to be fully loaded every run during the day. It ran fine for weeks until the load started overlapping -- each run hadn't finished before the next one fired. We'd warned the client that table growth would cause this, and when we investigated we found the culprit: a string column in each row containing a full XML document that had been growing steadily as the client's integration partner packed more data into it. We negotiated to exclude that single column and the load time dropped back to well within the schedule window.]
+
 === Tradeoffs
 <tradeoffs>
 #figure(
@@ -5750,6 +5774,10 @@ The practical workflow is top-down: aggregate cost in a dashboard or a weekly sc
 #ecl-warning(
   "Don't optimize without measuring",
 )[\"MERGE is expensive\" is true in general, but _how_ expensive depends on table size, partition layout, and update volume. A MERGE on a 10k-row lookup table costs fractions of a cent -- switching it to append-and-materialize for cost reasons adds complexity with no real savings. Measure the actual cost per table before deciding anything is worth changing.]
+
+#ecl-story(
+  "650 retries overnight on a single invoice table",
+)[A large ERP client's `invoices` table had roughly 5,000 rows with an enormous text field that made merge operations crawl past the batch timeout. Each batch that hit those rows failed and retried, and the retry loop ran unattended overnight -- about 650 attempts before we caught it in the morning. The bill for a single night of retries on that one table was around \$500. That incident forced us to set per-day, per-query, and per-user cost limits, plus alerts that fire on retry count so a runaway loop gets killed in minutes instead of hours.]
 
 === What Comes Next
 <what-comes-next-1>
@@ -5897,6 +5925,10 @@ A single breach is an incident. Sustained breaches mean the SLA is wrong -- eith
 #ecl-warning(
   "Don't confuse desire with willingness to pay",
 )[I had a client who wanted 15-minute maximum delay on their invoicing data. They weren't willing to pay the increased BigQuery bill, and their source had terrible metadata, hard deletes, and no reliable cursor -- making high-frequency extraction expensive to build and expensive to run. After scoping the effort and cost, they realized all they actually needed was one extra on-demand refresh per day. The Head of Sales wanted fresh numbers on his dashboard mid-morning, and a refresh button that triggered the pipeline solved the problem at a fraction of the cost and complexity. Ask what decision the freshness enables before engineering the SLA around it.]
+
+#ecl-story(
+  "Receivables emails sent against nightly-refresh data",
+)[A client's accounting team sent a batch of collections emails to customers with overdue receivables, based on a report they assumed was real-time. It wasn't -- we were updating nightly. We'd told the client's tech team explicitly that the data refreshed once a day, and the emails between us were clear on that point. But the tech team handed the reports to accounting without passing along the freshness caveat, and when accounting emailed customers who had already paid that morning, the tech team tried to blame us for "low clarity." The emails we'd sent them settled that quickly -- but the incident is a good reminder that SLAs need to reach the people who actually act on the data, not just the people who set up the connection.]
 
 === What Comes Next
 <what-comes-next-2>
@@ -6229,6 +6261,10 @@ The relationship with the source team determines how much access you keep and ho
 
 #strong[Own your incidents] -- when your query causes a slowdown, acknowledge it and fix the schedule before they have to ask. Nothing destroys trust faster than a DBA discovering your pipeline caused an issue and you didn't notice or didn't say anything.
 
+#ecl-story(
+  "A production database that collapsed under a filtered query",
+)[A client gave us access to a production database that was already in poor shape. The moment we ran a `WHERE updated_at >= :last_run` filter, the query triggered a full table scan -- there was no index on `updated_at` -- and the database buckled. The DBAs, who had protocols ready for exactly this kind of failure, revived it and told us we were "irresponsible for running `SELECT *` on production." Once we showed them we'd specifically requested indexes on the columns we needed to filter on before we started -- and that those indexes had never been built -- they built them and the extraction ran without incident.]
+
 === Anti-Patterns
 <anti-patterns-5>
 #ecl-danger(
@@ -6317,6 +6353,10 @@ The tier boundaries shift with business cycles. Month-end might widen the hot wi
 #ecl-danger(
   "Same frequency, wrong method",
 )[Refreshing a table many times a day is fine. Full-replacing a year's worth of data many times a day is not. If a table needs intraday freshness, the hot tier should extract only the recent window incrementally -- not reload the entire history on every run. The frequency is a schedule concern; the method is a pattern concern. Getting one right and the other wrong is how you end up on the phone with the DBA.]
+
+#ecl-story(
+  "Full-replacing orders every run because of paid_to_date",
+)[A client wanted to track paid amounts using `orders.paid_to_date` -- a column that updated when payments were applied but did not touch `updated_at` when it changed. We told them the correct approach was to join `payments` with `orders` downstream, which would give them accurate amounts without forcing a full scan. They refused: they were comfortable with `paid_to_date`, didn't want to write the join, and asked us to fully replace the entire `orders` table on every run. We obliged. Less skilled consumers will tank significant cost and source load to avoid changing a query -- and sometimes the right answer is to let them, as long as they understand the tradeoff.]
 
 === Tradeoffs
 <tradeoffs-5>
@@ -6688,6 +6728,10 @@ Both should be launchable from your orchestrator's UI without modifying code or 
   "Don't let backfills compete with schedules",
 )[A backfill that blocks a scheduled run isn't fixing the pipeline -- it's degrading it. Isolate backfills in separate jobs with lower priority, and design the chunking so a backfill can yield to a scheduled run between chunks.]
 
+#ecl-story(
+  "A four-night backfill through a slow retail API",
+)[We were loading transaction history for a retailer whose extraction API was painfully slow -- slow enough that a full historical backfill would have taken roughly 96 hours of continuous extraction. Instead of leaving a single job running for four days straight, we chopped the load into year-sized chunks and ran one chunk per night. Having a `WHERE` clause builder in our extraction framework made this straightforward: `WHERE doc_date BETWEEN '2023-01-01' AND '2024-01-01'` for one run, shift the window for the next, and each chunk was an independent idempotent load that could be restarted without replaying the whole history.]
+
 // ---
 
 == Partial Failure Recovery
@@ -6958,6 +7002,10 @@ Store the results in the health table (@the-health-table): table name, source co
   "Don't reconcile only on count",
 )[A table with 1M rows at source and 1M rows at destination can still be wrong: 1,000 rows missing, 1,000 duplicates. Count matches, data doesn't. Use aggregate reconciliation for critical tables.]
 
+#ecl-story(
+  "Recurring support tickets for missing inventory movements",
+)[A client's warehouse staff regularly performs bulk inventory adjustments outside their ERP -- manual corrections that never generate movement records. Every time a new analyst joins the client's team and starts exploring the data, they notice that the movement totals don't reconcile with current stock and file a support ticket about "missing movements." We eventually asked the client to create an `inventory_bulk_adjustments` table so we could join it into the consumption view downstream, but they never trained their staff on the distinction. The tickets still come in.]
+
 // ---
 
 == Recovery from Corruption
@@ -7052,6 +7100,10 @@ None of these prevent corruption from happening -- source schemas change, bugs s
   "Don't rebuild before confirming the fix",
 )[Reloading 3 months of data only to have the same bug corrupt it again is wasted work and a wasted weekend. Confirm the fix is deployed, test it on a small range, then run the full rebuild. The checklist above puts "test on a small range" before the rebuild for exactly this reason.]
 
+#ecl-story(
+  "A Linux locale change that broke every date parse",
+)[We changed the default language on the Linux machine we used for extractions, and date parsing across every pipeline broke silently -- values that had been interpreted as `MM/DD` were now being read as `DD/MM`, or locale-dependent format strings stopped matching. It took us a while to trace it back to the OS-level locale change because the symptoms looked like source data corruption. The fix was permanent: we switched every date format in every extraction to ISO 8601 (`YYYY-MM-DD`), which is locale-independent by definition.]
+
 // ---
 
 = Part VII: Serving the Destination
@@ -7126,6 +7178,14 @@ When the business logic changes -- a new product category, a different grouping,
 #ecl-danger(
   "Don't compute derived columns at extraction",
 )[`revenue = quantity \* unit_price` in the extraction query is a business calculation baked into the pipeline. When the formula changes -- and it will -- every historical row is wrong and the only fix is a full backfill of the entire table. Land the raw columns, compute downstream.]
+
+#ecl-story(
+  "A client whose sales totals disagreed with a manual spreadsheet",
+)[People are accustomed to working with totals first and assume you should aggregate at extraction time, but the moment you do, someone downstream groups the data differently and gets a different number. The conversation is always the same: the client says "your sales numbers are wrong, mine don't match," and produces a manually typed Excel file with no audit trail and no formula transparency. Landing detail rows and aggregating downstream means every number is traceable back to the same source rows, which turns "your numbers are wrong" into a solvable conversation instead of a standoff.]
+
+#ecl-story(
+  "Building KPIs on DocTotal instead of line-level detail",
+)[A client told us to build all sales KPIs from the order header's `DocTotal` column, with tax calculated as a simple multiplication of `DocTotal` times the tax rate. Their reports were consistent for months -- until they started selling in other markets with different tax rules and offering batch-payment discounts across multiple orders. The header-level total no longer reflected what was actually collected, because discounts were applied at the payment level, the order level, and the line level depending on the scenario. They realized they'd been tracking costs and margins wrong for years. The C-suite was furious and it cost the client two employees -- our transparency about having followed their explicit instructions kept us out of the blast radius.]
 
 // ---
 
@@ -7217,6 +7277,10 @@ The rebuild is a full table rewrite, so it costs bytes scanned on the read and b
 #ecl-danger(
   "Don't cluster by _extracted_at",
 )[Pipeline metadata isn't a consumer filter. Cluster by business columns that appear in downstream WHERE clauses.]
+
+#ecl-story(
+  "A \\$0.60 query looped every 30 seconds into an \\$800 bill",
+)[A more technical client wanted to show the current price of an item on a live dashboard. They wrote a query against the full unpartitioned table -- about \$0.60 per execution on BigQuery -- and set it to loop every 30 seconds. The query scanned the entire table each time because the filtering happened in the frontend, not in SQL. They woke up to an \$800 increase on their BigQuery bill from a single dashboard widget. Partition pruning and a `WHERE` clause on the item would have brought that query down to fractions of a cent per execution.]
 
 // ---
 
@@ -7762,6 +7826,10 @@ The periodic full replace of the `inventory` table catches the drift -- it refle
 #ecl-danger(
   "Don't compact without considering consumers",
 )[Compacting the append log to latest-only destroys version history. If consumers depend on point-in-time queries against the log, the compaction retention window must be longer than their lookback requirement.]
+
+#ecl-story(
+  "Stock reconciliation that uncovered bulk adjustments, integration gaps, and theft",
+)[A client asked us to build point-in-time stock reconstruction from their `inventory_movements` table so they could reconcile physical counts against system records. The transparency of having every movement as a discrete row -- each with a timestamp, a quantity, and a reason code -- made discrepancies impossible to hide. The reconciliation surfaced three distinct categories of problems: bulk adjustments their warehouse software applied outside the ERP, integration failures between their logistics platform and their ERP that silently dropped movements, and actual employee theft. All three had been invisible when the client was looking only at current stock levels.]
 
 // ---
 
